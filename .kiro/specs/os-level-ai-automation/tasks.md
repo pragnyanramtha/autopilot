@@ -1,19 +1,19 @@
 # Implementation Plan
 
-- [x] 1. Set up project structure and core interfaces
+- [-] 1. Set up project structure and core interfaces
   - Create Node.js/TypeScript project with proper directory structure
   - Define core interfaces for CommandInput, TaskStep, and ExecutionPlan
   - Set up package.json with necessary dependencies (commander, puppeteer, sqlite3)
   - _Requirements: 1.1, 8.1_
 
 - [ ] 2. Implement command parser and CLI foundation
-  - [ ] 2.1 Create basic CLI structure with commander.js
+  - [x] 2.1 Create basic CLI structure with commander.js
     - Set up `alido` and `ali` commands with proper argument parsing
     - Implement command registration for ter, brw, and do subcommands
     - Handle raw command parsing for alido (everything after alido as single string)
     - _Requirements: 8.1, 8.2, 8.5_
 
-  - [ ] 2.2 Implement natural language command parsing
+  - [x] 2.2 Implement natural language command parsing
     - Create command parser that identifies task type and required tools
     - Build task breakdown logic to convert natural language to executable steps
     - Add mode detection (auto-select terminal vs browser based on task content)
