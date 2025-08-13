@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { CommandInput, ExecutionMode } from './types/interfaces';
 import { CommandParser } from './parser/CommandParser';
 import { TaskPlanner } from './planner/TaskPlanner';
+import { TerminalEngine } from './terminal/TerminalEngine';
 
 const program = new Command();
 
@@ -66,6 +67,16 @@ aliCommand
   .action(async (taskArgs: string[]) => {
     const task = taskArgs.join(' ');
     await executeTask(task, 'auto', false);
+  });
+
+// Error handling demo
+aliCommand
+  .command('demo-errors')
+  .description('Demonstrate progressive error handling capabilities')
+  .action(async () => {
+    const { ErrorHandlingDemo } = await import('./terminal/ErrorHandlingDemo');
+    const demo = new ErrorHandlingDemo();
+    await demo.demonstrateErrorHandling();
   });
 
 // Main task execution function
@@ -130,9 +141,40 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isAlidoComman
     console.log(`  ${i + 1}. ${stepIcon} ${step.command}${authIndicator}`);
   });
   
-  // Show what would happen next
-  console.log(warning('\n⚠️  Actual execution not yet implemented'));
-  console.log('Next implementation phase will execute these steps.');
+  // Execute terminal steps (for demonstration)
+  console.log(info('\n🚀 Executing terminal steps...'));
+  
+  const terminalEngine = new TerminalEngine();
+  
+  for (const step of plan.steps) {
+    if (step.type === 'terminal' && step.command) {
+      try {
+        console.log(`\n▶️  Executing: ${step.command}`);
+        const result = await terminalEngine.executeCommand(step.command);
+        
+        if (result.exitCode === 0) {
+          console.log(success(`✅ Success (${result.duration}ms)`));
+          if (result.stdout) {
+            console.log(`   Output: ${result.stdout.substring(0, 200)}${result.stdout.length > 200 ? '...' : ''}`);
+          }
+        } else {
+          console.log(error(`❌ Failed with exit code ${result.exitCode}`));
+          if (result.stderr) {
+            console.log(`   Error: ${result.stderr.substring(0, 200)}${result.stderr.length > 200 ? '...' : ''}`);
+          }
+        }
+      } catch (err) {
+        console.log(error(`❌ Execution failed: ${err instanceof Error ? err.message : String(err)}`));
+        
+        // The error handling is now built into executeCommand with progressive retry
+        console.log(error(`💥 Command execution failed after all retry attempts`));
+      }
+    } else {
+      console.log(warning(`⏭️  Skipping ${step.type} step: ${step.command} (not implemented yet)`));
+    }
+  }
+  
+  console.log(success('\n🎉 Task execution completed!'));
 }
 
 // Handle different command invocations based on process.argv[1]

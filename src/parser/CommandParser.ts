@@ -275,13 +275,14 @@ export class CommandParser {
         });
       }
     } else {
-      // Generic task - create a single step
+      // Generic task - try to convert to actual commands
       const stepType: TaskStepType = mode === 'browser' ? 'browser' : 'terminal';
+      const actualCommand = this.convertToActualCommand(task);
       
       steps.push({
         id: `step_${stepID++}`,
         type: stepType,
-        command: task
+        command: actualCommand
       });
     }
     
@@ -369,5 +370,109 @@ export class CommandParser {
     const installOpenRegex = /install\s+(?:and\s+open\s+)?(\w+)/;
     const match = task.match(installOpenRegex);
     return match ? match[1] : null;
+  }
+
+  private convertToActualCommand(task: string): string {
+    const taskLower = task.toLowerCase();
+
+    // Directory operations
+    if (taskLower.includes('create') && (taskLower.includes('directory') || taskLower.includes('folder'))) {
+      const dirName = this.extractDirectoryName(task) || 'new-directory';
+      return `mkdir -p ${dirName}`;
+    }
+
+    if (taskLower.includes('create') && taskLower.includes('project')) {
+      return 'create_project_structure';
+    }
+
+    // File operations
+    if (taskLower.includes('create') && taskLower.includes('file')) {
+      const fileName = this.extractFileName(task) || 'new-file.txt';
+      return `touch ${fileName}`;
+    }
+
+    if (taskLower.includes('list') && (taskLower.includes('file') || taskLower.includes('directory'))) {
+      return 'ls -la';
+    }
+
+    // System operations
+    if (taskLower.includes('check') && taskLower.includes('disk')) {
+      return 'df -h';
+    }
+
+    if (taskLower.includes('check') && taskLower.includes('memory')) {
+      return 'free -h';
+    }
+
+    if (taskLower.includes('update') && taskLower.includes('system')) {
+      return 'sudo apt update && sudo apt upgrade -y';
+    }
+
+    // Git operations
+    if (taskLower.includes('git') && taskLower.includes('init')) {
+      return 'git init';
+    }
+
+    if (taskLower.includes('git') && taskLower.includes('status')) {
+      return 'git status';
+    }
+
+    // Check if it looks like a shell command (has common command patterns)
+    if (this.looksLikeShellCommand(task)) {
+      return task; // Pass through as-is
+    }
+
+    // Default: return the original task with a helpful message
+    return `echo "Command not recognized: ${task}. Please use more specific commands."`;
+  }
+
+  private extractDirectoryName(task: string): string | null {
+    // Look for directory names after "create", "make", etc.
+    const patterns = [
+      /create\s+(?:directory|folder)\s+(?:named\s+)?(\w+)/i,
+      /make\s+(?:directory|folder)\s+(?:named\s+)?(\w+)/i,
+      /mkdir\s+(\w+)/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = task.match(pattern);
+      if (match) return match[1];
+    }
+
+    return null;
+  }
+
+  private extractFileName(task: string): string | null {
+    // Look for file names after "create", "make", etc.
+    const patterns = [
+      /create\s+file\s+(?:named\s+)?(\S+)/i,
+      /make\s+file\s+(?:named\s+)?(\S+)/i,
+      /touch\s+(\S+)/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = task.match(pattern);
+      if (match) return match[1];
+    }
+
+    return null;
+  }
+
+  private looksLikeShellCommand(task: string): boolean {
+    // Common shell command patterns
+    const shellCommandPatterns = [
+      /^(cat|ls|grep|find|ps|top|htop|df|free|who|whoami|id|pwd|cd|cp|mv|rm|chmod|chown|sudo|su|which|whereis|locate|man|info|history|alias|unalias|export|env|set|unset|echo|printf|read|test|true|false|yes|no|sleep|date|cal|uptime|uname|hostname|ping|curl|wget|ssh|scp|rsync|tar|gzip|gunzip|zip|unzip|head|tail|sort|uniq|cut|tr|sed|awk|wc|diff|cmp|file|stat|du|mount|umount|fdisk|lsblk|lscpu|lsmem|lsusb|lspci|systemctl|service|crontab|at|jobs|bg|fg|nohup|screen|tmux|vim|nano|emacs|less|more|git|npm|pip|docker|kubectl|terraform|ansible)\s/,
+      /\s+\|\s+/, // Contains pipes
+      /\s+&&\s+/, // Contains logical AND
+      /\s+\|\|\s+/, // Contains logical OR
+      /\s+>\s+/, // Contains redirection
+      /\s+>>\s+/, // Contains append redirection
+      /\s+<\s+/, // Contains input redirection
+      /^\/\w+/, // Starts with absolute path
+      /^\.\//,  // Starts with relative path
+      /--?\w+/, // Contains command line flags
+    ];
+
+    return shellCommandPatterns.some(pattern => pattern.test(task));
   }
 }
