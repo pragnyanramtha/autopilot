@@ -1,4 +1,4 @@
-import { TerminalEngine } from './TerminalEngine';
+import { TerminalEngine } from './TerminalEngine.js';
 
 export class ErrorHandlingDemo {
   private terminalEngine: TerminalEngine;

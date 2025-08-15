@@ -69,7 +69,21 @@ program
 
 // Main task execution function
 async function executeTask(task: string, mode: string, isKiraCommand: boolean): Promise<void> {
-  console.log(info('🤖 Kira AI Autopilot'));
+  // Check if user has initialized Kira
+  const { ProfileManager } = await import('./profile/ProfileManager.js');
+  const profileManager = ProfileManager.getInstance();
+  const isInitialized = await profileManager.isInitialized();
+  
+  if (!isInitialized) {
+    console.log(info('🤖 Kira AI Autopilot'));
+    console.log(warning('⚠️  Kira is not initialized yet.'));
+    console.log('For the best experience, please run: kira init');
+    console.log('This will set up your preferences and system detection.\n');
+  } else {
+    const userName = await profileManager.getUserName();
+    console.log(info(`🤖 Kira AI Autopilot - Hello ${userName}!`));
+  }
+  
   console.log(`Task: ${task}`);
   
   if (isKiraCommand) {
@@ -173,10 +187,14 @@ if (scriptName?.includes('kira') || process.argv[2] === 'kira') {
     executeTask(args.join(' '), 'auto', true).catch(console.error);
   } else {
     console.log(error('❌ Please provide a task description'));
-    console.log('Examples:');
+    console.log('\n🚀 Getting started:');
+    console.log('  kira init          # First-time setup (recommended)');
+    console.log('  kira setup         # Check system requirements');
+    console.log('\n💡 Examples:');
     console.log('  kira install and open firefox');
     console.log('  kira check disk space');
     console.log('  kira create a website from my resume');
+    console.log('  kira help me set up development environment');
   }
 } else {
   // Default command structure

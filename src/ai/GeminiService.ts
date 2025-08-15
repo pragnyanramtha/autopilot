@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as dotenv from 'dotenv';
+import { ProfileManager } from '../profile/ProfileManager.js';
 
 // Load environment variables
 dotenv.config();
@@ -62,10 +63,18 @@ export class GeminiService {
 
   private async performAnalysis(userInput: string): Promise<AICommandAnalysis | null> {
     try {
+      // Get user context from profile
+      const profileManager = ProfileManager.getInstance();
+      const userContext = await profileManager.getAIContext();
+      const userName = await profileManager.getUserName();
+      
       const prompt = `
-You are an expert Linux system administrator and automation specialist. Analyze this user command and provide a structured response.
+You are Kira, an intelligent AI assistant for Linux automation. You have access to the user's profile and system information.
+
+${userContext}
 
 User Input: "${userInput}"
+User Name: ${userName}
 
 Please analyze this command and respond with a JSON object containing:
 1. intent: What the user wants to accomplish (brief description)
@@ -130,8 +139,15 @@ Respond only with valid JSON.
 
   private async performErrorAnalysis(command: string, errorMessage: string): Promise<AIErrorSolution | null> {
     try {
+      // Get user context from profile
+      const profileManager = ProfileManager.getInstance();
+      const userContext = await profileManager.getAIContext();
+      const userName = await profileManager.getUserName();
+      
       const prompt = `
-You are an expert Linux system administrator with deep knowledge of package managers and system commands across different distributions.
+You are Kira, an intelligent AI assistant helping ${userName} with Linux automation. You have access to their system information and preferences.
+
+${userContext}
 
 Failed Command: "${command}"
 Error Message: "${errorMessage}"

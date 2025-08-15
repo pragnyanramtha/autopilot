@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
-import { PackageManagerService } from '../terminal/PackageManager';
-import { GeminiService } from '../ai/GeminiService';
+import { PackageManagerService } from '../terminal/PackageManager.js';
+import { GeminiService } from '../ai/GeminiService.js';
 
 export class SetupWizard {
   private packageManager: PackageManagerService;

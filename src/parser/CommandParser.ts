@@ -1,5 +1,5 @@
-import { CommandInput, ParsedCommand, ExecutionMode, TaskStep, TaskStepType } from '../types/interfaces';
-import { GeminiService } from '../ai/GeminiService';
+import { CommandInput, ParsedCommand, ExecutionMode, TaskStep, TaskStepType } from '../types/interfaces.js';
+import { GeminiService } from '../ai/GeminiService.js';
 
 export class CommandParser {
   private geminiService: GeminiService;

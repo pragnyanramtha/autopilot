@@ -1,8 +1,8 @@
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
-import { CommandResult, CommandError, RetryStrategy, Solution } from '../types/interfaces';
-import { GeminiService } from '../ai/GeminiService';
-import { PackageManagerService } from './PackageManager';
+import { CommandResult, CommandError, RetryStrategy, Solution } from '../types/interfaces.js';
+import { GeminiService } from '../ai/GeminiService.js';
+import { PackageManagerService } from './PackageManager.js';
 
 const execAsync = promisify(exec);
 
