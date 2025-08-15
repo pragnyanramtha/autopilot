@@ -32,7 +32,7 @@
     - Implement fallback command generation based on error types
     - _Requirements: 1.3, 7.1, 7.2_
 
-  - [-] 3.3 Add Linux package manager integration
+  - [x] 3.3 Add Linux package manager integration
     - Implement apt, snap, and flatpak command generation
     - Add root access detection and explanation system
     - Create package installation workflows with user confirmation

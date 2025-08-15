@@ -53,6 +53,15 @@ export class GeminiService {
     }
 
     try {
+      return await this.withTimeout(this.performAnalysis(userInput), 8000);
+    } catch (error) {
+      console.warn('⚠️  Gemini API error:', error instanceof Error ? error.message : String(error));
+      return null;
+    }
+  }
+
+  private async performAnalysis(userInput: string): Promise<AICommandAnalysis | null> {
+    try {
       const prompt = `
 You are an expert Linux system administrator and automation specialist. Analyze this user command and provide a structured response.
 
@@ -69,10 +78,11 @@ Please analyze this command and respond with a JSON object containing:
 
 Focus on:
 - Converting natural language to actual Linux commands
+- ALWAYS use bash shell syntax and commands
 - Prioritizing terminal/CLI solutions over GUI
-- Using package managers: apt, snap, flatpak
+- Using package managers: apt, snap, flatpak, pacman
 - Being security-conscious
-- Providing safe, tested commands
+- Providing safe, tested bash commands
 
 Example response format:
 {
@@ -101,8 +111,7 @@ Respond only with valid JSON.
 
       return null;
     } catch (error) {
-      console.warn('⚠️  Gemini API error:', error instanceof Error ? error.message : String(error));
-      return null;
+      throw error; // Re-throw to be caught by withTimeout wrapper
     }
   }
 
@@ -134,7 +143,8 @@ Focus on:
 - Network connectivity
 - Disk space issues
 
-Provide practical, safe commands that will likely resolve the issue.
+Provide practical, safe BASH commands that will likely resolve the issue.
+ALWAYS use bash shell syntax and built-in commands.
 Respond only with valid JSON.
 `;
 
@@ -173,8 +183,9 @@ Provide an improved version that:
 - Uses safer flags/options
 - Includes necessary prerequisites
 - Follows Linux best practices
+- USES BASH SHELL SYNTAX ONLY
 
-Respond with just the improved command, no explanation.
+Respond with just the improved bash command, no explanation.
 `;
 
       const result = await this.model.generateContent(prompt);
@@ -193,6 +204,14 @@ Respond with just the improved command, no explanation.
 
   isAIEnabled(): boolean {
     return this.isEnabled;
+  }
+
+  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = 8000): Promise<T> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`AI request timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
+    
+    return Promise.race([promise, timeoutPromise]);
   }
 
   private async switchToProModel(): Promise<any> {

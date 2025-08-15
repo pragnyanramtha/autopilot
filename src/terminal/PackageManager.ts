@@ -202,10 +202,11 @@ export class PackageManagerService {
         const { stdout } = await execAsync(checkCmd, { timeout: 10000 });
         
         if (stdout.trim()) {
+          const version = this.extractVersion(stdout, manager.name);
           return { 
             installed: true, 
             manager: manager.name,
-            version: this.extractVersion(stdout, manager.name)
+            ...(version && { version })
           };
         }
       } catch (error) {

@@ -44,10 +44,29 @@ export class TerminalEngine {
       }
     } catch (error) {
       const duration = Date.now() - startTime;
+      
+      let errorMessage = '';
+      let exitCode = 1;
+      
+      if (error && typeof error === 'object') {
+        const err = error as any;
+        exitCode = err.code || err.exitCode || 1;
+        
+        if (err.stderr && typeof err.stderr === 'string') {
+          errorMessage = err.stderr.trim();
+        } else if (err.message && typeof err.message === 'string') {
+          errorMessage = err.message;
+        } else {
+          errorMessage = String(error);
+        }
+      } else {
+        errorMessage = String(error);
+      }
+      
       const commandError: CommandError = {
         command,
-        exitCode: error instanceof Error && 'code' in error ? (error as any).code : 1,
-        stderr: error instanceof Error ? error.message : String(error),
+        exitCode,
+        stderr: errorMessage,
         timestamp: new Date()
       };
       
@@ -58,7 +77,18 @@ export class TerminalEngine {
 
   private async handleCommandFailure(error: CommandError, retryCount: number): Promise<CommandResult> {
     console.log(`❌ Command failed: ${error.command}`);
-    console.log(`   Error: ${typeof error.stderr === 'string' ? error.stderr : JSON.stringify(error.stderr)}`);
+    
+    // Fix the error message display
+    let errorMessage = '';
+    if (typeof error.stderr === 'string') {
+      errorMessage = error.stderr;
+    } else if (error.stderr && typeof error.stderr === 'object') {
+      errorMessage = JSON.stringify(error.stderr);
+    } else {
+      errorMessage = String(error.stderr || 'Unknown error');
+    }
+    
+    console.log(`   Error: ${errorMessage}`);
     console.log(`   Exit code: ${error.exitCode}`);
 
     // Phase 1: Immediate retry (for transient issues)
@@ -370,6 +400,11 @@ export class TerminalEngine {
     const startTime = Date.now();
 
     try {
+      // For sudo commands, inherit stdio to allow password input
+      if (command.includes('sudo')) {
+        return await this.executeSudoCommand(command, startTime);
+      }
+
       const { stdout, stderr } = await execAsync(command, {
         timeout: this.commandTimeout,
         maxBuffer: 1024 * 1024 * 10 // 10MB buffer
@@ -388,11 +423,23 @@ export class TerminalEngine {
       
       // If the command failed, throw an error to trigger retry logic
       if (error.code && error.code !== 0) {
-        const errorMessage = error.stderr?.trim() || error.message || `Command failed with code ${error.code}`;
+        let errorMessage = '';
+        
+        // Properly extract error message
+        if (error.stderr && typeof error.stderr === 'string') {
+          errorMessage = error.stderr.trim();
+        } else if (error.message && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else if (error.stderr) {
+          errorMessage = String(error.stderr);
+        } else {
+          errorMessage = `Command failed with exit code ${error.code}`;
+        }
+        
         const commandError: CommandError = {
           command,
           exitCode: error.code,
-          stderr: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage),
+          stderr: errorMessage,
           timestamp: new Date()
         };
         throw commandError;
@@ -405,6 +452,49 @@ export class TerminalEngine {
         duration
       };
     }
+  }
+
+  private async executeSudoCommand(command: string, startTime: number): Promise<CommandResult> {
+    return new Promise((resolve, reject) => {
+      console.log(`🔐 Executing sudo command: ${command}`);
+      console.log(`   Please enter your password when prompted...`);
+      
+      const child = spawn('bash', ['-c', command], {
+        stdio: 'inherit' // This allows password input
+      });
+
+      child.on('close', (code) => {
+        const duration = Date.now() - startTime;
+        
+        if (code === 0) {
+          resolve({
+            exitCode: 0,
+            stdout: 'Command executed successfully',
+            stderr: '',
+            duration
+          });
+        } else {
+          const error: CommandError = {
+            command,
+            exitCode: code || 1,
+            stderr: `Command failed with exit code ${code}`,
+            timestamp: new Date()
+          };
+          reject(error);
+        }
+      });
+
+      child.on('error', (error) => {
+        const duration = Date.now() - startTime;
+        const commandError: CommandError = {
+          command,
+          exitCode: 1,
+          stderr: error.message,
+          timestamp: new Date()
+        };
+        reject(commandError);
+      });
+    });
   }
 
   private async handlePackageInstall(command: string): Promise<CommandResult> {
