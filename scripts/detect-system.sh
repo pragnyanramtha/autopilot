@@ -1,39 +1,85 @@
 #!/bin/bash
 
 # Kira System Detection Script
-# This script gathers comprehensive system information for Kira AI
+# This script gathers comprehensive system information for Kira AI (Linux & macOS)
 
 echo "🔍 Detecting system information..."
+
+# Detect OS type
+OS_TYPE="$(uname -s)"
+
+# Get hostname (with fallback)
+HOSTNAME_CMD="hostname"
+if ! command -v hostname >/dev/null 2>&1; then
+  if [ "$OS_TYPE" = "Darwin" ]; then
+    HOSTNAME_CMD="scutil --get ComputerName"
+  else
+    HOSTNAME_CMD="cat /proc/sys/kernel/hostname 2>/dev/null || echo 'unknown'"
+  fi
+fi
+
+# macOS-specific functions
+get_macos_cpu_info() {
+  if [ "$OS_TYPE" = "Darwin" ]; then
+    sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "unknown"
+  else
+    echo "unknown"
+  fi
+}
+
+get_macos_memory() {
+  if [ "$OS_TYPE" = "Darwin" ]; then
+    echo "$(( $(sysctl -n hw.memsize 2>/dev/null || echo 0) / 1024 / 1024 / 1024 ))GB"
+  else
+    echo "unknown"
+  fi
+}
+
+get_macos_cores() {
+  if [ "$OS_TYPE" = "Darwin" ]; then
+    sysctl -n hw.ncpu 2>/dev/null || echo "unknown"
+  else
+    echo "unknown"
+  fi
+}
 
 # Create JSON output
 cat << EOF
 {
   "timestamp": "$(date -Iseconds)",
   "system": {
-    "hostname": "$(hostname)",
+    "hostname": "$($HOSTNAME_CMD 2>/dev/null || echo 'unknown')",
     "username": "$(whoami)",
     "home_directory": "$HOME",
     "current_directory": "$(pwd)",
     "shell": "$SHELL",
-    "shell_version": "$(bash --version | head -n1)",
+    "shell_version": "$(bash --version 2>/dev/null | head -n1 || echo 'unknown')",
     "terminal": "$TERM",
-    "display": "$DISPLAY"
+    "display": "$DISPLAY",
+    "os_type": "$OS_TYPE"
   },
   "os": {
     "kernel": "$(uname -s)",
     "kernel_version": "$(uname -r)",
     "architecture": "$(uname -m)",
-    "platform": "$(uname -p)",
-    "os_release": $(cat /etc/os-release 2>/dev/null | grep -E '^(NAME|VERSION|ID|VERSION_ID|PRETTY_NAME)=' | sed 's/^/    "/' | sed 's/=/":" /' | sed 's/$/",/' | sed '$ s/,$//' | tr '\n' ' ' | sed 's/ *$//' || echo '{}')
+    "platform": "$(uname -p 2>/dev/null || uname -m)",
+    "os_release": $(if [ "$OS_TYPE" = "Darwin" ]; then
+      echo '{"NAME": "macOS", "VERSION": "'$(sw_vers -productVersion 2>/dev/null || echo 'unknown')'", "ID": "macos", "PRETTY_NAME": "macOS '$(sw_vers -productVersion 2>/dev/null || echo 'unknown')'"}'
+    else
+      cat /etc/os-release 2>/dev/null | grep -E '^(NAME|VERSION|ID|VERSION_ID|PRETTY_NAME)=' | sed 's/^/    "/' | sed 's/=/":" /' | sed 's/$/",/' | sed '$ s/,$//' | tr '\n' ' ' | sed 's/ *$//' || echo '{}'
+    fi)
   },
   "hardware": {
-    "cpu_info": "$(lscpu | grep 'Model name' | cut -d':' -f2 | xargs)",
-    "cpu_cores": "$(nproc)",
-    "memory_total": "$(free -h | grep '^Mem:' | awk '{print $2}')",
-    "memory_available": "$(free -h | grep '^Mem:' | awk '{print $7}')",
-    "disk_usage": "$(df -h / | tail -1 | awk '{print $3 "/" $2 " (" $5 " used)"}')"
+    "cpu_info": "$(if [ "$OS_TYPE" = "Darwin" ]; then get_macos_cpu_info; else lscpu | grep 'Model name' | cut -d':' -f2 | xargs 2>/dev/null || echo 'unknown'; fi)",
+    "cpu_cores": "$(if [ "$OS_TYPE" = "Darwin" ]; then get_macos_cores; else nproc 2>/dev/null || echo 'unknown'; fi)",
+    "memory_total": "$(if [ "$OS_TYPE" = "Darwin" ]; then get_macos_memory; else free -h | grep '^Mem:' | awk '{print $2}' 2>/dev/null || echo 'unknown'; fi)",
+    "memory_available": "$(if [ "$OS_TYPE" = "Darwin" ]; then echo 'N/A'; else free -h | grep '^Mem:' | awk '{print $7}' 2>/dev/null || echo 'unknown'; fi)",
+    "disk_usage": "$(df -h / | tail -1 | awk '{print $3 "/" $2 " (" $5 " used)")' 2>/dev/null || echo 'unknown')"
   },
   "package_managers": {
+    "brew": $(command -v brew >/dev/null 2>&1 && echo 'true' || echo 'false'),
+    "port": $(command -v port >/dev/null 2>&1 && echo 'true' || echo 'false'),
+    "mas": $(command -v mas >/dev/null 2>&1 && echo 'true' || echo 'false'),
     "apt": $(command -v apt >/dev/null 2>&1 && echo 'true' || echo 'false'),
     "apt-get": $(command -v apt-get >/dev/null 2>&1 && echo 'true' || echo 'false'),
     "yum": $(command -v yum >/dev/null 2>&1 && echo 'true' || echo 'false'),
@@ -55,9 +101,10 @@ cat << EOF
     "python3": $(command -v python3 >/dev/null 2>&1 && echo '"'$(python3 --version 2>&1)'"' || echo 'false'),
     "docker": $(command -v docker >/dev/null 2>&1 && echo '"'$(docker --version)'"' || echo 'false'),
     "code": $(command -v code >/dev/null 2>&1 && echo 'true' || echo 'false'),
-    "vim": $(command -v vim >/dev/null 2>&1 && echo '"'$(vim --version | head -1)'"' || echo 'false'),
-    "nano": $(command -v nano >/dev/null 2>&1 && echo '"'$(nano --version | head -1)'"' || echo 'false'),
-    "emacs": $(command -v emacs >/dev/null 2>&1 && echo '"'$(emacs --version | head -1)'"' || echo 'false')
+    "vim": $(command -v vim >/dev/null 2>&1 && echo '"'$(vim --version 2>/dev/null | head -1)'"' || echo 'false'),
+    "nano": $(command -v nano >/dev/null 2>&1 && echo '"'$(nano --version 2>/dev/null | head -1)'"' || echo 'false'),
+    "emacs": $(command -v emacs >/dev/null 2>&1 && echo '"'$(emacs --version 2>/dev/null | head -1)'"' || echo 'false'),
+    "xcode": $(if [ "$OS_TYPE" = "Darwin" ]; then command -v xcodebuild >/dev/null 2>&1 && echo '"'$(xcodebuild -version | head -1)'"' || echo 'false'; else echo 'false'; fi)
   },
   "desktop_environment": {
     "desktop_session": "$DESKTOP_SESSION",

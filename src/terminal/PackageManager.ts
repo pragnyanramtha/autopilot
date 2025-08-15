@@ -22,6 +22,40 @@ export interface PackageManager {
 
 export class PackageManagerService {
   private packageManagers: PackageManager[] = [
+    // macOS Package Managers
+    {
+      name: 'brew',
+      installCommand: (pkg: string) => `brew install ${pkg}`,
+      searchCommand: (pkg: string) => `brew search ${pkg}`,
+      updateCommand: 'brew update && brew upgrade',
+      listInstalledCommand: 'brew list',
+      isAvailable: async () => this.commandExists('brew')
+    },
+    {
+      name: 'brew-cask',
+      installCommand: (pkg: string) => `brew install --cask ${pkg}`,
+      searchCommand: (pkg: string) => `brew search --cask ${pkg}`,
+      updateCommand: 'brew update && brew upgrade --cask',
+      listInstalledCommand: 'brew list --cask',
+      isAvailable: async () => this.commandExists('brew')
+    },
+    {
+      name: 'mas',
+      installCommand: (pkg: string) => `mas install ${pkg}`,
+      searchCommand: (pkg: string) => `mas search ${pkg}`,
+      updateCommand: 'mas upgrade',
+      listInstalledCommand: 'mas list',
+      isAvailable: async () => this.commandExists('mas')
+    },
+    {
+      name: 'port',
+      installCommand: (pkg: string) => `sudo port install ${pkg}`,
+      searchCommand: (pkg: string) => `port search ${pkg}`,
+      updateCommand: 'sudo port selfupdate && sudo port upgrade outdated',
+      listInstalledCommand: 'port installed',
+      isAvailable: async () => this.commandExists('port')
+    },
+    // Linux Package Managers
     {
       name: 'apt',
       installCommand: (pkg: string) => `sudo apt install -y ${pkg}`,
@@ -177,6 +211,18 @@ export class PackageManagerService {
         let checkCmd = '';
         
         switch (manager.name) {
+          case 'brew':
+            checkCmd = `brew list | grep ${packageName}`;
+            break;
+          case 'brew-cask':
+            checkCmd = `brew list --cask | grep ${packageName}`;
+            break;
+          case 'mas':
+            checkCmd = `mas list | grep ${packageName}`;
+            break;
+          case 'port':
+            checkCmd = `port installed | grep ${packageName}`;
+            break;
           case 'apt':
             checkCmd = `dpkg -l | grep ${packageName}`;
             break;
@@ -248,8 +294,13 @@ export class PackageManagerService {
   }
 
   private getPreferredOrder(): PackageManager[] {
-    // Get preference from environment or use default order
-    const preference = process.env.PACKAGE_MANAGER_PREFERENCE?.split(',') || ['apt', 'snap', 'flatpak', 'npm', 'pip', 'cargo'];
+    // Get preference from environment or use default order based on OS
+    const isMacOS = process.platform === 'darwin';
+    const defaultOrder = isMacOS 
+      ? ['brew', 'brew-cask', 'mas', 'port', 'npm', 'pip', 'cargo']
+      : ['apt', 'pacman', 'dnf', 'yum', 'zypper', 'snap', 'flatpak', 'npm', 'pip', 'cargo'];
+    
+    const preference = process.env.PACKAGE_MANAGER_PREFERENCE?.split(',') || defaultOrder;
     
     const ordered: PackageManager[] = [];
     

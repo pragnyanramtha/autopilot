@@ -28,23 +28,54 @@ export class GeminiService {
   private isEnabled: boolean = false;
 
   constructor() {
-    // Temporarily disable AI for testing
-    const apiKey = process.env.GEMINI_API_KEY ;
-
-    if (apiKey && apiKey !== 'your_gemini_api_key_here') {
-      try {
-        this.genAI = new GoogleGenerativeAI(apiKey);
-        // Prioritize Gemini 2.5 Flash for speed and efficiency
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        this.isEnabled = true;
-        console.log('🤖 Gemini AI service initialized with Flash model');
-      } catch (error) {
-        console.warn('⚠️  Failed to initialize Gemini AI:', error instanceof Error ? error.message : String(error));
-        this.isEnabled = false;
-      }
-    } else {
-      console.log('ℹ️  Gemini API key not provided. Using built-in command parsing.');
-      this.isEnabled = false;
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey === '' || apiKey.trim() === '') {
+      console.error('❌ Gemini API key is REQUIRED for Kira to function.');
+      console.error('');
+      console.error('🔑 Get your FREE API key from Google AI Studio:');
+      console.error('   👉 https://aistudio.google.com/app/apikey');
+      console.error('   👉 https://makersuite.google.com/app/apikey (alternative)');
+      console.error('');
+      console.error('📋 Quick setup steps:');
+      console.error('   1. Visit: https://aistudio.google.com/app/apikey');
+      console.error('   2. Sign in with your Google account');
+      console.error('   3. Click "Create API Key"');
+      console.error('   4. Copy the generated key');
+      console.error('');
+      console.error('📝 Add it to your .env file:');
+      console.error('   echo "GEMINI_API_KEY=your_api_key_here" >> .env');
+      console.error('');
+      console.error('💡 Or run: kira init (for interactive setup)');
+      console.error('');
+      console.error('ℹ️  The Gemini API is free with generous limits:');
+      console.error('   • 15 requests per minute');
+      console.error('   • 1 million tokens per minute');
+      console.error('   • 1,500 requests per day');
+      console.error('');
+      process.exit(1);
+    }
+    
+    try {
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      // Prioritize Gemini 2.5 Flash for speed and efficiency
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      this.isEnabled = true;
+      console.log('🤖 Gemini AI service initialized with Flash model');
+    } catch (error) {
+      console.error('❌ Failed to initialize Gemini AI:', error instanceof Error ? error.message : String(error));
+      console.error('');
+      console.error('🔑 Please verify your API key:');
+      console.error('   👉 https://aistudio.google.com/app/apikey');
+      console.error('   👉 https://makersuite.google.com/app/apikey');
+      console.error('');
+      console.error('🔧 Common issues:');
+      console.error('   • API key might be invalid or expired');
+      console.error('   • Check for extra spaces in your .env file');
+      console.error('   • Ensure you have internet connectivity');
+      console.error('   • Try regenerating your API key');
+      console.error('');
+      process.exit(1);
     }
   }
 

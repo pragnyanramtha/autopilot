@@ -199,7 +199,7 @@ export class InitWizard {
       terminal_preference: await this.askChoice('What\'s your preferred terminal?', 
         ['bash', 'zsh', 'fish', 'current'], 'current'),
       package_manager_preference: await this.askMultiChoice('Preferred package managers (in order)?', 
-        ['apt', 'pacman', 'yum', 'dnf', 'zypper', 'snap', 'flatpak'], this.detectPreferredPackageManagers()),
+        this.getPackageManagerOptions(), this.detectPreferredPackageManagers()),
       development_languages: await this.askMultiChoice('What programming languages do you use?', 
         ['javascript', 'typescript', 'python', 'rust', 'go', 'java', 'c++', 'php', 'ruby', 'other'], []),
       work_style: await this.askChoice('How do you prefer to work?', 
@@ -300,15 +300,27 @@ Instructions for AI:
     return false; // Default to no for safety
   }
 
+  private getPackageManagerOptions(): string[] {
+    const isMacOS = process.platform === 'darwin';
+    return isMacOS 
+      ? ['brew', 'brew-cask', 'mas', 'port', 'npm', 'pip', 'cargo']
+      : ['apt', 'pacman', 'yum', 'dnf', 'zypper', 'snap', 'flatpak', 'npm', 'pip', 'cargo'];
+  }
+
   private detectPreferredPackageManagers(): string[] {
-    if (!this.systemInfo?.package_managers) return ['apt'];
+    if (!this.systemInfo?.package_managers) {
+      return process.platform === 'darwin' ? ['brew'] : ['apt'];
+    }
     
     const available = Object.entries(this.systemInfo.package_managers)
       .filter(([_, isAvailable]) => isAvailable)
       .map(([name, _]) => name);
 
-    // Order by preference based on common distributions
-    const preferenceOrder = ['apt', 'pacman', 'dnf', 'yum', 'zypper', 'apk', 'snap', 'flatpak'];
+    // Order by preference based on OS
+    const isMacOS = process.platform === 'darwin';
+    const preferenceOrder = isMacOS
+      ? ['brew', 'brew-cask', 'mas', 'port', 'npm', 'pip', 'cargo']
+      : ['apt', 'pacman', 'dnf', 'yum', 'zypper', 'apk', 'snap', 'flatpak', 'npm', 'pip', 'cargo'];
     
     return preferenceOrder.filter(pm => available.includes(pm));
   }
