@@ -6,10 +6,10 @@ import chalk from 'chalk';
 
 // Load environment variables
 dotenv.config();
-import { CommandInput, ExecutionMode } from './types/interfaces';
-import { CommandParser } from './parser/CommandParser';
-import { TaskPlanner } from './planner/TaskPlanner';
-import { TerminalEngine } from './terminal/TerminalEngine';
+import { CommandInput, ExecutionMode } from './types/interfaces.js';
+import { CommandParser } from './parser/CommandParser.js';
+import { TaskPlanner } from './planner/TaskPlanner.js';
+import { TerminalEngine } from './terminal/TerminalEngine.js';
 
 const program = new Command();
 
@@ -37,12 +37,22 @@ program
     await executeTask(task, 'auto', true);
   });
 
+// Init command - First-time setup
+program
+  .command('init')
+  .description('Initialize Kira with system detection and user preferences')
+  .action(async () => {
+    const { InitWizard } = await import('./setup/InitWizard.js');
+    const wizard = new InitWizard();
+    await wizard.run();
+  });
+
 // Setup command
 program
   .command('setup')
   .description('Setup Kira configuration and check system requirements')
   .action(async () => {
-    const { SetupWizard } = await import('./setup/SetupWizard');
+    const { SetupWizard } = await import('./setup/SetupWizard.js');
     const wizard = new SetupWizard();
     await wizard.run();
   });
@@ -52,7 +62,7 @@ program
   .command('demo')
   .description('Demonstrate error handling capabilities')
   .action(async () => {
-    const { ErrorHandlingDemo } = await import('./terminal/ErrorHandlingDemo');
+    const { ErrorHandlingDemo } = await import('./terminal/ErrorHandlingDemo.js');
     const demo = new ErrorHandlingDemo();
     await demo.demonstrateErrorHandling();
   });
