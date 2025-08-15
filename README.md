@@ -1,6 +1,6 @@
-# Alvioli - AI-Powered OS Automation for Linux
+# Autopilot - Kira AI Assistant for Linux
 
-Alvioli is a terminal-first AI automation system that can perform complex multi-step tasks across your Linux system using natural language commands. It intelligently combines terminal operations with browser automation to accomplish sophisticated workflows.
+Kira is an intelligent AI automation system that can perform complex tasks across your Linux system using natural language commands. It uses advanced AI to understand your intent and execute the appropriate commands safely and efficiently.
 
 ## Features
 
@@ -24,79 +24,65 @@ cd alvioli
 make install
 ```
 
-This will install three commands:
-- `alvioli` - Main application
-- `alido` - General-purpose automation (recommended)
-- `ali` - Mode-specific automation
+This will install the Kira command:
+- `kira` - AI-powered automation assistant
 
 ## Usage
 
-### General Purpose Commands (Recommended)
+### Usage
 
-Use `alido` for most tasks - it automatically determines the best execution approach:
+Use `kira` for any task - it intelligently analyzes and executes your commands:
 
 ```bash
 # Install and open applications
-alido install and open upscayl
-
-# Search and download content
-alido search for good wallpapers with a dark aesthetic
-
-# Development tasks
-alido create a portfolio website from ~/resume.pdf
+kira install and open firefox
 
 # System management
-alido update system and install docker
-```
+kira update system and install docker
 
-### Mode-Specific Commands
+# Development tasks
+kira create a portfolio website from ~/resume.pdf
 
-Use `ali` with subcommands when you want to force a specific execution mode:
+# File operations
+kira create directory named projects and clone my repo
 
-```bash
-# Terminal-first execution
-ali ter "set up development environment"
-
-# Browser-first execution  
-ali brw "generate mail summary"
-
-# Auto-mode selection
-ali do "install chrome and create a github repo named ai-server"
+# System monitoring
+kira check disk space and memory usage
 ```
 
 ## Examples
 
 ### Email Management
 ```bash
-alido read my gmail and summarize important emails
+kira read my gmail and summarize important emails
 ```
 
 ### Development Workflow
 ```bash
-alido use ~/portfolio.pdf to create a beautiful website and deploy it
+kira use ~/portfolio.pdf to create a beautiful website and deploy it
 ```
 
 ### System Administration
 ```bash
-alido install docker, set up a nginx container, and configure it for my website
+kira install docker, set up a nginx container, and configure it for my website
 ```
 
 ### Content Creation
 ```bash
-alido download some dark aesthetic wallpapers and set one as my background
+kira download some dark aesthetic wallpapers and set one as my background
 ```
 
 ## How It Works
 
-1. **Command Parsing**: Alvioli analyzes your natural language command
-2. **Task Planning**: Breaks down the task into executable steps
-3. **Intelligent Execution**: Uses terminal commands primarily, browser automation when needed
-4. **Error Recovery**: Automatically handles failures with progressive retry strategies
-5. **Learning**: Stores successful patterns and solutions for future use
+1. **AI Analysis**: Kira uses advanced AI to understand your natural language command
+2. **Intelligent Planning**: Breaks down complex tasks into safe, executable steps
+3. **Smart Execution**: Automatically detects your Linux distribution and uses appropriate commands
+4. **Error Recovery**: Intelligently handles failures with distribution-aware solutions
+5. **Learning**: Continuously improves through AI-powered error analysis
 
 ## Configuration
 
-Alvioli creates a configuration file at `~/.alvioli/config.json` on first run. You can customize:
+Kira creates a configuration file at `~/.env` on first run. You can customize:
 
 - Browser settings and timeouts
 - Terminal shell and command timeouts

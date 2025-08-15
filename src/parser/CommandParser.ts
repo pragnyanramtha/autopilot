@@ -84,7 +84,7 @@ export class CommandParser {
   };
 
   async parse(input: CommandInput): Promise<ParsedCommand> {
-    // Try AI-enhanced parsing first
+    // Always use AI-enhanced parsing with intelligent error handling
     if (this.geminiService.isAIEnabled()) {
       // Determine if this is a complex command that needs Pro model
       const isComplex = this.isComplexCommand(input.task);
@@ -93,18 +93,18 @@ export class CommandParser {
         ? await this.geminiService.analyzeComplexCommand(input.task)
         : await this.geminiService.analyzeCommand(input.task);
         
-      if (aiAnalysis && aiAnalysis.confidence > 0.7) {
+      if (aiAnalysis && aiAnalysis.confidence > 0.6) {
         console.log(`🤖 AI Analysis (${isComplex ? 'Pro' : 'Flash'}): ${aiAnalysis.explanation}`);
         
         const steps: TaskStep[] = aiAnalysis.suggestedCommands.map((cmd, i) => ({
           id: `ai_step_${i + 1}`,
-          type: aiAnalysis.executionMode as TaskStepType,
+          type: 'terminal' as TaskStepType, // Always use terminal
           command: cmd,
           requiresAuth: aiAnalysis.requiresRoot
         }));
 
         return {
-          executionMode: aiAnalysis.executionMode as ExecutionMode,
+          executionMode: 'terminal' as ExecutionMode, // Always terminal
           steps,
           requiredTools: this.identifyRequiredTools(input.task),
           estimatedComplexity: this.estimateComplexityFromAI(aiAnalysis)
@@ -118,11 +118,8 @@ export class CommandParser {
     // Normalize the task string
     const task = input.task.toLowerCase().trim();
     
-    // Detect execution mode if not specified or if auto
-    let executionMode = input.mode;
-    if (executionMode === 'auto' || input.isAlidoCommand) {
-      executionMode = this.detectMode(task);
-    }
+    // Always use terminal mode
+    const executionMode = 'terminal' as ExecutionMode;
     
     // Break down the task into steps
     const steps = await this.breakdownTask(task, executionMode);
@@ -453,6 +450,12 @@ export class CommandParser {
 
     if (taskLower.includes('git') && taskLower.includes('status')) {
       return 'git status';
+    }
+
+    // Handle install commands
+    if (taskLower.includes('install') && !taskLower.includes('npm install')) {
+      const packageName = this.extractPackageFromInstallCommand(task) || task.split(' ').pop();
+      return `install_package:${packageName}`;
     }
 
     // Check if it looks like a shell command (has common command patterns)

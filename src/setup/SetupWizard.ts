@@ -12,8 +12,8 @@ export class SetupWizard {
   }
 
   async run(): Promise<void> {
-    console.log(chalk.cyan.bold('\n🚀 Alvioli Setup Wizard\n'));
-    console.log('This wizard will help you configure Alvioli for optimal performance.\n');
+    console.log(chalk.cyan.bold('\n🚀 Kira Autopilot Setup Wizard\n'));
+    console.log('This wizard will help you configure Kira for optimal performance.\n');
 
     // Check system requirements
     await this.checkSystemRequirements();
@@ -129,12 +129,12 @@ export class SetupWizard {
     
     console.log(chalk.cyan('📝 Next Steps:\n'));
     console.log('1. Edit .env file and add your Gemini API key for enhanced AI features');
-    console.log('2. Test the installation: alido check disk space');
+    console.log('2. Test the installation: kira check disk space');
     console.log('3. Try some examples:');
-    console.log('   • alido install and open upscayl');
-    console.log('   • alido list files');
-    console.log('   • alido create directory named test-folder');
-    console.log('   • ali demo-errors (to see error handling)');
+    console.log('   • kira install and open firefox');
+    console.log('   • kira list files');
+    console.log('   • kira create directory named test-folder');
+    console.log('   • kira demo (to see error handling)');
     
     console.log(chalk.cyan('\n🔧 Configuration:\n'));
     console.log('• Configuration file: .env');
@@ -147,6 +147,6 @@ export class SetupWizard {
     console.log('• Issues: [Issues URL]');
     console.log('• API Keys: https://makersuite.google.com/app/apikey');
     
-    console.log(chalk.green('\n✨ Alvioli is ready to automate your Linux workflows!\n'));
+    console.log(chalk.green('\n✨ Kira is ready to automate your Linux workflows!\n'));
   }
 }

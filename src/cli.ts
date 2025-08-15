@@ -21,97 +21,60 @@ const warning = chalk.yellow;
 
 // Main program setup
 program
-  .name('alvioli')
-  .description('AI-powered OS automation for Linux')
+  .name('kira')
+  .description('Kira - AI-powered OS automation for Linux')
   .version('0.1.0')
   .option('-v, --verbose', 'Enable verbose output')
   .option('-n, --dry-run', 'Show what would be executed without running')
-  .option('-c, --config <path>', 'Config file path');
-
-// Alido command - main general-purpose command
-program
-  .command('alido')
-  .description('Execute general-purpose AI automation tasks')
-  .argument('<task...>', 'Task description (everything after alido)')
+  .option('-c, --config <path>', 'Config file path')
+  .argument('[task...]', 'Task description')
   .action(async (taskArgs: string[]) => {
+    if (taskArgs.length === 0) {
+      program.help();
+      return;
+    }
     const task = taskArgs.join(' ');
     await executeTask(task, 'auto', true);
-  });
-
-// Ali command with subcommands
-const aliCommand = program
-  .command('ali')
-  .description('AI automation with mode selection');
-
-// Terminal-first execution
-aliCommand
-  .command('ter')
-  .description('Execute task with terminal-first approach')
-  .argument('<task...>', 'Task description')
-  .action(async (taskArgs: string[]) => {
-    const task = taskArgs.join(' ');
-    await executeTask(task, 'terminal', false);
-  });
-
-// Browser-first execution
-aliCommand
-  .command('brw')
-  .description('Execute task with browser-first approach')
-  .argument('<task...>', 'Task description')
-  .action(async (taskArgs: string[]) => {
-    const task = taskArgs.join(' ');
-    await executeTask(task, 'browser', false);
-  });
-
-// Auto-mode execution
-aliCommand
-  .command('do')
-  .description('Execute task with automatic mode detection')
-  .argument('<task...>', 'Task description')
-  .action(async (taskArgs: string[]) => {
-    const task = taskArgs.join(' ');
-    await executeTask(task, 'auto', false);
-  });
-
-// Error handling demo
-aliCommand
-  .command('demo-errors')
-  .description('Demonstrate progressive error handling capabilities')
-  .action(async () => {
-    const { ErrorHandlingDemo } = await import('./terminal/ErrorHandlingDemo');
-    const demo = new ErrorHandlingDemo();
-    await demo.demonstrateErrorHandling();
   });
 
 // Setup command
 program
   .command('setup')
-  .description('Setup Alvioli configuration and check system requirements')
+  .description('Setup Kira configuration and check system requirements')
   .action(async () => {
     const { SetupWizard } = await import('./setup/SetupWizard');
     const wizard = new SetupWizard();
     await wizard.run();
   });
 
+// Demo command
+program
+  .command('demo')
+  .description('Demonstrate error handling capabilities')
+  .action(async () => {
+    const { ErrorHandlingDemo } = await import('./terminal/ErrorHandlingDemo');
+    const demo = new ErrorHandlingDemo();
+    await demo.demonstrateErrorHandling();
+  });
+
 // Main task execution function
-async function executeTask(task: string, mode: string, isAlidoCommand: boolean): Promise<void> {
-  console.log(info('🤖 Alvioli AI Automation'));
+async function executeTask(task: string, mode: string, isKiraCommand: boolean): Promise<void> {
+  console.log(info('🤖 Kira AI Autopilot'));
   console.log(`Task: ${task}`);
-  console.log(`Mode: ${mode}`);
   
-  if (isAlidoCommand) {
-    console.log(info('Using general-purpose alido command'));
+  if (isKiraCommand) {
+    console.log(info('Analyzing and executing task...'));
   }
   
   try {
-    await parseAndPlanTask(task, mode as ExecutionMode, isAlidoCommand);
+    await parseAndPlanTask(task, mode as ExecutionMode, isKiraCommand);
   } catch (err) {
     console.log(error(`❌ Error: ${err instanceof Error ? err.message : String(err)}`));
   }
 }
 
 // Parse and plan task function
-async function parseAndPlanTask(task: string, mode: ExecutionMode, isAlidoCommand: boolean): Promise<void> {
+async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand: boolean): Promise<void> {
   console.log(info('🔍 Parsing command...'));
   
   // Create parser and planner instances
@@ -122,7 +85,7 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isAlidoComman
   const input: CommandInput = {
     mode,
     task,
-    isAlidoCommand
+    isAlidoCommand: isKiraCommand
   };
   
   // Parse the command
@@ -191,29 +154,21 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isAlidoComman
   console.log(success('\n🎉 Task execution completed!'));
 }
 
-// Handle different command invocations based on process.argv[1]
+// Handle different command invocations
 const scriptName = process.argv[1];
-if (scriptName?.includes('alido')) {
-  // Called as 'alido' - treat everything after as a single command
-  const args = process.argv.slice(2);
+if (scriptName?.includes('kira') || process.argv[2] === 'kira') {
+  // Called as 'kira' - treat everything after as a single command
+  const args = process.argv.slice(scriptName?.includes('kira') ? 2 : 3);
   if (args.length > 0) {
     executeTask(args.join(' '), 'auto', true).catch(console.error);
   } else {
     console.log(error('❌ Please provide a task description'));
-    console.log('Example: alido install and open upscayl');
-  }
-} else if (scriptName?.includes('ali') && !scriptName.includes('alvioli')) {
-  // Called as 'ali' - use subcommands
-  if (process.argv.length <= 2) {
-    console.log(error('❌ Please use ali with a subcommand'));
     console.log('Examples:');
-    console.log('  ali ter "install something"');
-    console.log('  ali brw "search for wallpapers"');
-    console.log('  ali do "create a website"');
-  } else {
-    program.parse();
+    console.log('  kira install and open firefox');
+    console.log('  kira check disk space');
+    console.log('  kira create a website from my resume');
   }
 } else {
-  // Called as 'alvioli' - use full command structure
+  // Default command structure
   program.parse();
 }

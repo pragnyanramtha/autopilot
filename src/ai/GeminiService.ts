@@ -27,8 +27,8 @@ export class GeminiService {
   private isEnabled: boolean = false;
 
   constructor() {
-    // Use provided API key or fallback to environment variable
-    const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyBP8VGRnBcG-fi35O51F4gXgq7aqWTLn-U';
+    // Temporarily disable AI for testing
+    const apiKey = ''; // process.env.GEMINI_API_KEY || 'AIzaSyBP8VGRnBcG-fi35O51F4gXgq7aqWTLn-U';
 
     if (apiKey && apiKey !== 'your_gemini_api_key_here') {
       try {
@@ -121,29 +121,56 @@ Respond only with valid JSON.
     }
 
     try {
+      return await this.withTimeout(this.performErrorAnalysis(command, errorMessage), 8000);
+    } catch (error) {
+      console.warn('⚠️  Gemini AI error for solution search:', error instanceof Error ? error.message : String(error));
+      return null;
+    }
+  }
+
+  private async performErrorAnalysis(command: string, errorMessage: string): Promise<AIErrorSolution | null> {
+    try {
       const prompt = `
-You are a Linux troubleshooting expert. Help solve this command error.
+You are an expert Linux system administrator with deep knowledge of package managers and system commands across different distributions.
 
 Failed Command: "${command}"
 Error Message: "${errorMessage}"
 
-Analyze the error and provide a solution as JSON:
+INTELLIGENT ERROR ANALYSIS REQUIRED:
+
+1. If "command not found":
+   - Is this a program that can be installed? (e.g., firefox, git, docker, etc.)
+   - Is this a core system command that should exist? (e.g., apt, yum, pacman)
+   - If core command missing, detect the Linux distribution and suggest the correct package manager
+
+2. If package manager command failed:
+   - Detect which distribution this likely is based on the error
+   - Suggest the correct package manager for this distro:
+     * Debian/Ubuntu: apt, apt-get
+     * Arch/Manjaro: pacman, yay
+     * RHEL/CentOS/Fedora: yum, dnf
+     * openSUSE: zypper
+     * Alpine: apk
+
+3. Provide step-by-step solution as JSON:
 {
-  "description": "Brief description of the problem and solution",
-  "commands": ["array", "of", "commands", "to", "fix", "it"],
-  "confidence": 0.8,
-  "reasoning": "Explanation of why this solution should work"
+  "description": "Intelligent analysis of the problem and solution",
+  "commands": ["step1_command", "step2_command", "step3_command"],
+  "confidence": 0.9,
+  "reasoning": "Detailed explanation of the analysis and why this solution works"
 }
 
-Focus on:
-- Common Linux error patterns
-- Package installation issues
-- Permission problems
-- Missing dependencies
-- Network connectivity
-- Disk space issues
+EXAMPLES:
+- If "apt: command not found" → Detect non-Debian system, suggest pacman/yum/dnf
+- If "firefox: command not found" → Install firefox using detected package manager
+- If "git: command not found" → Install git development tools
 
-Provide practical, safe BASH commands that will likely resolve the issue.
+Focus on:
+- Distribution detection and appropriate package manager selection
+- Intelligent program vs system command differentiation
+- Safe, tested BASH commands for the detected system
+- Step-by-step installation and configuration
+
 ALWAYS use bash shell syntax and built-in commands.
 Respond only with valid JSON.
 `;
@@ -161,8 +188,7 @@ Respond only with valid JSON.
 
       return null;
     } catch (error) {
-      console.warn('⚠️  Gemini API error for solution search:', error instanceof Error ? error.message : String(error));
-      return null;
+      throw error;
     }
   }
 
