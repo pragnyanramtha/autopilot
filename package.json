@@ -1,5 +1,5 @@
 {
-  "name": "alvioli",
+  "name": "autopilot",
   "version": "0.1.0",
   "description": "AI-powered OS automation for Linux",
   "main": "dist/index.js",

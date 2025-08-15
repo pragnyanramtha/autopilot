@@ -29,7 +29,7 @@ export class GeminiService {
   constructor() {
     // Use provided API key or fallback to environment variable
     const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyBP8VGRnBcG-fi35O51F4gXgq7aqWTLn-U';
-    
+
     if (apiKey && apiKey !== 'your_gemini_api_key_here') {
       try {
         this.genAI = new GoogleGenerativeAI(apiKey);
@@ -194,7 +194,7 @@ Respond with just the improved bash command, no explanation.
 
       // Remove any markdown formatting
       const cleanCommand = text.replace(/```bash\n?|```\n?/g, '').trim();
-      
+
       return cleanCommand || null;
     } catch (error) {
       console.warn('⚠️  Gemini API error for command improvement:', error instanceof Error ? error.message : String(error));
@@ -210,13 +210,13 @@ Respond with just the improved bash command, no explanation.
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error(`AI request timeout after ${timeoutMs}ms`)), timeoutMs);
     });
-    
+
     return Promise.race([promise, timeoutPromise]);
   }
 
   private async switchToProModel(): Promise<any> {
     if (!this.genAI) return null;
-    
+
     try {
       console.log('🔄 Switching to Gemini Pro for complex reasoning...');
       return this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
