@@ -1,31 +1,73 @@
 # Autopilot - Kira AI Assistant for Linux
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
+[![AI Powered](https://img.shields.io/badge/AI-Gemini%20Powered-orange.svg)](https://ai.google.dev/)
+
 Kira is an intelligent AI automation system that can perform complex tasks across your Linux system using natural language commands. It uses advanced AI to understand your intent and execute the appropriate commands safely and efficiently.
 
-## Features
+## ✨ Features
 
-- **Natural Language Commands**: Tell Alvioli what you want in plain English
-- **Terminal-First Approach**: Prioritizes command-line solutions for efficiency
-- **Intelligent Error Handling**: Automatically retries, searches for solutions, and learns from failures
-- **Browser Automation**: Seamlessly handles web-based tasks when needed
-- **Context Memory**: Remembers information across sessions to improve efficiency
-- **Progressive Learning**: Gets better at solving problems over time
+- **🤖 AI-Powered**: Uses Google Gemini for intelligent command understanding
+- **🐧 Linux Native**: Built specifically for Linux with multi-distro support
+- **📦 Smart Package Management**: Auto-detects and uses the right package manager (apt, pacman, yum, etc.)
+- **🔧 Progressive Error Handling**: Automatically retries, analyzes errors, and suggests solutions
+- **👤 Personalized**: Learns your preferences and system configuration
+- **🛡️ Safe & Secure**: Conservative approach with user confirmation for risky operations
+- **🎯 Context Aware**: Remembers your setup and preferences across sessions
 
-## Installation
+## 🚀 Quick Start
+
+```bash
+# 1. Clone and install
+git clone https://github.com/pragnyanramtha/autopilot.git
+cd autopilot
+npm install && npm run build
+
+# 2. Initialize Kira (first-time setup)
+kira init
+
+# 3. Start using Kira!
+kira check disk space
+kira install git
+kira help me set up a development environment
+```
+
+## 📦 Installation
 
 ### From Source
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd alvioli
+git clone https://github.com/pragnyanramtha/autopilot.git
+cd autopilot
 
-# Build and install
-make install
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Install globally (optional)
+npm install -g .
 ```
 
 This will install the Kira command:
 - `kira` - AI-powered automation assistant
+
+### 🤖 AI Setup (Optional but Recommended)
+
+For enhanced AI capabilities, get a free Gemini API key:
+
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Create a free API key
+3. Add it to your `.env` file:
+   ```bash
+   echo "GEMINI_API_KEY=your_api_key_here" >> .env
+   ```
+
+Without an API key, Kira will use built-in command parsing (still very capable!).
 
 ## Usage
 
@@ -145,21 +187,33 @@ alvioli/
 
 ## Contributing
 
+We welcome contributions! Here's how to get started:
+
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
 4. Add tests for new functionality
-5. Run `make test` and `make lint`
-6. Submit a pull request
+5. Run `npm test` and `npm run lint`
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
 ## License
 
-[License information to be added]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Author
+
+**Pragnya Ramtha** - [@pragnyanramtha](https://github.com/pragnyanramtha)
 
 ## Roadmap
 
-- [ ] Core command parsing and execution
-- [ ] Terminal engine with error handling
+- [x] Core command parsing and execution
+- [x] Terminal engine with error handling
+- [x] AI-powered command analysis
+- [x] Progressive error handling with solutions
+- [x] User profile and system detection
+- [x] Multi-package manager support
 - [ ] Browser automation integration
 - [ ] Context memory and learning system
 - [ ] Web search for error solutions
@@ -169,4 +223,7 @@ alvioli/
 
 ## Support
 
-For issues, questions, or contributions, please visit the project repository or create an issue.
+For issues, questions, or contributions, please visit:
+- **Repository**: https://github.com/pragnyanramtha/autopilot
+- **Issues**: https://github.com/pragnyanramtha/autopilot/issues
+- **Discussions**: https://github.com/pragnyanramtha/autopilot/discussions

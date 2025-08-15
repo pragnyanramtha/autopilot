@@ -143,8 +143,8 @@ export class SetupWizard {
     console.log('• Browser: Uses system default browser');
     
     console.log(chalk.cyan('\n📚 Documentation:\n'));
-    console.log('• GitHub: [Repository URL]');
-    console.log('• Issues: [Issues URL]');
+    console.log('• GitHub: https://github.com/pragnyanramtha/autopilot');
+    console.log('• Issues: https://github.com/pragnyanramtha/autopilot/issues');
     console.log('• API Keys: https://makersuite.google.com/app/apikey');
     
     console.log(chalk.green('\n✨ Kira is ready to automate your Linux workflows!\n'));

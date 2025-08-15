@@ -26,8 +26,16 @@
     "terminal",
     "browser"
   ],
-  "author": "Alvioli Team",
+  "author": "Pragnya Ramtha <pragnyanramtha@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pragnyanramtha/autopilot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pragnyanramtha/autopilot/issues"
+  },
+  "homepage": "https://github.com/pragnyanramtha/autopilot#readme",
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "axios": "^1.7.7",

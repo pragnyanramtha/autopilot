@@ -29,7 +29,7 @@ export class GeminiService {
 
   constructor() {
     // Temporarily disable AI for testing
-    const apiKey = ''; // process.env.GEMINI_API_KEY || 'AIzaSyBP8VGRnBcG-fi35O51F4gXgq7aqWTLn-U';
+    const apiKey = process.env.GEMINI_API_KEY ;
 
     if (apiKey && apiKey !== 'your_gemini_api_key_here') {
       try {
