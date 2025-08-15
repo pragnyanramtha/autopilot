@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
+import * as dotenv from 'dotenv';
 import { Command } from 'commander';
 import chalk from 'chalk';
+
+// Load environment variables
+dotenv.config();
 import { CommandInput, ExecutionMode } from './types/interfaces';
 import { CommandParser } from './parser/CommandParser';
 import { TaskPlanner } from './planner/TaskPlanner';
@@ -77,6 +81,16 @@ aliCommand
     const { ErrorHandlingDemo } = await import('./terminal/ErrorHandlingDemo');
     const demo = new ErrorHandlingDemo();
     await demo.demonstrateErrorHandling();
+  });
+
+// Setup command
+program
+  .command('setup')
+  .description('Setup Alvioli configuration and check system requirements')
+  .action(async () => {
+    const { SetupWizard } = await import('./setup/SetupWizard');
+    const wizard = new SetupWizard();
+    await wizard.run();
   });
 
 // Main task execution function

@@ -1,12 +1,21 @@
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import { CommandResult, CommandError, RetryStrategy, Solution } from '../types/interfaces';
+import { GeminiService } from '../ai/GeminiService';
+import { PackageManagerService } from './PackageManager';
 
 const execAsync = promisify(exec);
 
 export class TerminalEngine {
   private maxRetries: number = 3;
   private commandTimeout: number = 300000; // 5 minutes in milliseconds
+  private geminiService: GeminiService;
+  private packageManager: PackageManagerService;
+
+  constructor() {
+    this.geminiService = new GeminiService();
+    this.packageManager = new PackageManagerService();
+  }
 
   async executeCommand(command: string): Promise<CommandResult> {
     return await this.executeCommandWithRetry(command, 0);
@@ -70,14 +79,35 @@ export class TerminalEngine {
       }
     }
 
-    // Phase 3: Search for solutions online
+    // Phase 3: Search for solutions online (AI-enhanced)
     if (retryCount <= 2) {
-      console.log(`🔍 Phase 3: Searching for solutions online...`);
+      console.log(`🔍 Phase 3: Searching for solutions...`);
+      
+      // Try AI solution first
+      if (this.geminiService.isAIEnabled()) {
+        console.log(`🤖 Consulting AI for error solution...`);
+        const aiSolution = await this.geminiService.findErrorSolution(error.command, error.stderr);
+        
+        if (aiSolution && aiSolution.confidence > 0.6) {
+          console.log(`💡 AI Solution: ${aiSolution.description}`);
+          console.log(`   Reasoning: ${aiSolution.reasoning}`);
+          console.log(`   Confidence: ${aiSolution.confidence}`);
+          
+          if (aiSolution.commands.length > 0) {
+            const solutionCommand = aiSolution.commands[0];
+            console.log(`🔧 Trying AI solution: ${solutionCommand}`);
+            await this.delay(2000);
+            return await this.executeCommandWithRetry(solutionCommand, retryCount + 1);
+          }
+        }
+      }
+      
+      // Fallback to built-in solutions
       const solutions = await this.searchSolution(error.stderr);
       
       if (solutions.length > 0) {
         const bestSolution = solutions[0]; // Use the highest confidence solution
-        console.log(`💡 Found solution: ${bestSolution.description}`);
+        console.log(`💡 Built-in solution: ${bestSolution.description}`);
         console.log(`   Source: ${bestSolution.source} (confidence: ${bestSolution.confidence})`);
         console.log(`   Available commands: ${bestSolution.commands.join(', ')}`);
         
@@ -386,29 +416,31 @@ export class TerminalEngine {
 
     console.log(`📦 Installing package: ${packageName}`);
 
-    // Try different package managers in order of preference
-    const packageManagers = [
-      { cmd: `sudo apt install -y ${packageName}`, name: 'apt' },
-      { cmd: `sudo snap install ${packageName}`, name: 'snap' },
-      { cmd: `flatpak install -y ${packageName}`, name: 'flatpak' }
-    ];
-
-    for (const pm of packageManagers) {
-      try {
-        console.log(`   Trying ${pm.name}...`);
-        const result = await this.executeGenericCommand(pm.cmd);
-        
-        if (result.exitCode === 0) {
-          console.log(`✅ Successfully installed ${packageName} using ${pm.name}`);
-          return result;
-        }
-      } catch (error) {
-        console.log(`   ${pm.name} failed, trying next...`);
-        continue;
-      }
+    // Check if already installed
+    const installCheck = await this.packageManager.isPackageInstalled(packageName);
+    if (installCheck.installed) {
+      console.log(`✅ Package ${packageName} is already installed (${installCheck.manager} v${installCheck.version})`);
+      return {
+        exitCode: 0,
+        stdout: `Package ${packageName} already installed`,
+        stderr: '',
+        duration: 0
+      };
     }
 
-    throw new Error(`Failed to install ${packageName} with any package manager`);
+    // Use the enhanced package manager service
+    const result = await this.packageManager.installPackage(packageName);
+    
+    if (result.success) {
+      return {
+        exitCode: 0,
+        stdout: result.output || `Successfully installed ${packageName} with ${result.manager}`,
+        stderr: '',
+        duration: 0
+      };
+    } else {
+      throw new Error(result.error || `Failed to install ${packageName}`);
+    }
   }
 
   private async handleApplicationLaunch(command: string): Promise<CommandResult> {

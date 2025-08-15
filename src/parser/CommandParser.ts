@@ -1,6 +1,13 @@
 import { CommandInput, ParsedCommand, ExecutionMode, TaskStep, TaskStepType } from '../types/interfaces';
+import { GeminiService } from '../ai/GeminiService';
 
 export class CommandParser {
+  private geminiService: GeminiService;
+
+  constructor() {
+    this.geminiService = new GeminiService();
+  }
+
   private terminalPatterns: string[] = [
     'install\\s+\\w+',
     'update\\s+system',
@@ -77,6 +84,37 @@ export class CommandParser {
   };
 
   async parse(input: CommandInput): Promise<ParsedCommand> {
+    // Try AI-enhanced parsing first
+    if (this.geminiService.isAIEnabled()) {
+      // Determine if this is a complex command that needs Pro model
+      const isComplex = this.isComplexCommand(input.task);
+      
+      const aiAnalysis = isComplex 
+        ? await this.geminiService.analyzeComplexCommand(input.task)
+        : await this.geminiService.analyzeCommand(input.task);
+        
+      if (aiAnalysis && aiAnalysis.confidence > 0.7) {
+        console.log(`🤖 AI Analysis (${isComplex ? 'Pro' : 'Flash'}): ${aiAnalysis.explanation}`);
+        
+        const steps: TaskStep[] = aiAnalysis.suggestedCommands.map((cmd, i) => ({
+          id: `ai_step_${i + 1}`,
+          type: aiAnalysis.executionMode as TaskStepType,
+          command: cmd,
+          requiresAuth: aiAnalysis.requiresRoot
+        }));
+
+        return {
+          executionMode: aiAnalysis.executionMode as ExecutionMode,
+          steps,
+          requiredTools: this.identifyRequiredTools(input.task),
+          estimatedComplexity: this.estimateComplexityFromAI(aiAnalysis)
+        };
+      }
+    }
+
+    // Fallback to built-in parsing
+    console.log('🔧 Using built-in command parsing');
+    
     // Normalize the task string
     const task = input.task.toLowerCase().trim();
     
@@ -474,5 +512,40 @@ export class CommandParser {
     ];
 
     return shellCommandPatterns.some(pattern => pattern.test(task));
+  }
+
+  private estimateComplexityFromAI(aiAnalysis: any): number {
+    let complexity = aiAnalysis.suggestedCommands.length * 15; // Base complexity
+    
+    if (aiAnalysis.riskLevel === 'high') complexity += 30;
+    else if (aiAnalysis.riskLevel === 'medium') complexity += 15;
+    
+    if (aiAnalysis.requiresRoot) complexity += 20;
+    if (aiAnalysis.confidence < 0.8) complexity += 10;
+    
+    return complexity;
+  }
+
+  private isComplexCommand(task: string): boolean {
+    const complexPatterns = [
+      /create.*website.*from.*pdf/i,
+      /portfolio.*deploy/i,
+      /setup.*development.*environment/i,
+      /install.*configure.*and.*setup/i,
+      /build.*and.*deploy/i,
+      /create.*project.*with/i,
+      /automate.*workflow/i,
+      /multi.*step/i,
+      /pipeline/i,
+      /orchestrate/i,
+      /integrate.*with/i,
+      /configure.*system/i
+    ];
+
+    const hasMultipleSteps = task.split(/\s+and\s+|\s+then\s+|\s+,\s+/).length > 2;
+    const hasComplexPattern = complexPatterns.some(pattern => pattern.test(task));
+    const isLongCommand = task.length > 50;
+
+    return hasMultipleSteps || hasComplexPattern || isLongCommand;
   }
 }
