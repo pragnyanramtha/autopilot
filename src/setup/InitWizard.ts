@@ -217,14 +217,17 @@ export class InitWizard {
   }
 
   private createAIContext(preferences: UserPreferences): string {
-    const distro = this.systemInfo?.os.os_release.ID || 'linux';
+    const isMacOS = this.systemInfo?.system.os_type === 'Darwin';
+    const osName = isMacOS ? 'macOS' : 'Linux';
+    const distro = isMacOS ? 'macos' : (this.systemInfo?.os.os_release.ID || 'linux');
     const packageManagers = Object.entries(this.systemInfo?.package_managers || {})
       .filter(([_, available]) => available)
       .map(([name, _]) => name);
 
     return `User Profile for AI Context:
 - Name: ${preferences.preferred_name}
-- System: ${this.systemInfo?.os.os_release.PRETTY_NAME || 'Linux'} (${this.systemInfo?.os.architecture})
+- Operating System: ${osName}
+- System: ${this.systemInfo?.os.os_release.PRETTY_NAME || osName} (${this.systemInfo?.os.architecture})
 - Distribution: ${distro}
 - Shell: ${this.systemInfo?.system.shell}
 - Available Package Managers: ${packageManagers.join(', ')}
@@ -239,14 +242,17 @@ export class InitWizard {
 
 Instructions for AI:
 - Always address the user as "${preferences.preferred_name}"
+- Operating System: ${osName} - use appropriate commands and package managers
 - Use ${preferences.package_manager_preference[0]} as the primary package manager
+- ${isMacOS ? 'For macOS: Use brew for CLI tools, brew --cask for GUI apps, mas for App Store apps' : 'For Linux: Use appropriate package manager based on distribution'}
 - Prefer ${preferences.text_editor} for text editing tasks
 - Prefer ${preferences.code_editor} for code editing tasks
 - Automation level is "${preferences.automation_level}" - adjust command suggestions accordingly
 - Work style is "${preferences.work_style}" - provide appropriate level of detail
 - When suggesting installations, prioritize: ${preferences.package_manager_preference.join(' > ')}
 - System has ${this.systemInfo?.hardware.cpu_cores} CPU cores and ${this.systemInfo?.hardware.memory_total} memory
-- User develops in: ${preferences.development_languages.join(', ')}`;
+- User develops in: ${preferences.development_languages.join(', ')}
+- ${isMacOS ? 'macOS-specific: Use open command for launching apps, prefer GUI applications when available' : 'Linux-specific: Use appropriate desktop environment commands'}`;
   }
 
   private async saveProfile(preferences: UserPreferences, aiContext: string): Promise<void> {

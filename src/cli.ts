@@ -22,7 +22,7 @@ const warning = chalk.yellow;
 // Main program setup
 program
   .name('kira')
-  .description('Kira - AI-powered OS automation for Linux')
+  .description('Kira - AI-powered OS automation for Linux and macOS')
   .version('0.1.0')
   .option('-v, --verbose', 'Enable verbose output')
   .option('-n, --dry-run', 'Show what would be executed without running')
@@ -67,8 +67,46 @@ program
     await demo.demonstrateErrorHandling();
   });
 
+// Check API key function
+function checkApiKey(): boolean {
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === '') {
+    console.log(error('❌ Gemini API key is REQUIRED for Kira to function.'));
+    console.log('');
+    console.log(info('🔑 Get your FREE API key from Google AI Studio:'));
+    console.log('   👉 https://aistudio.google.com/app/apikey');
+    console.log('   👉 https://makersuite.google.com/app/apikey (alternative)');
+    console.log('');
+    console.log(info('📋 Quick setup steps:'));
+    console.log('   1. Visit: https://aistudio.google.com/app/apikey');
+    console.log('   2. Sign in with your Google account');
+    console.log('   3. Click "Create API Key"');
+    console.log('   4. Copy the generated key');
+    console.log('');
+    console.log(info('📝 Add it to your .env file:'));
+    console.log('   echo "GEMINI_API_KEY=your_api_key_here" >> .env');
+    console.log('');
+    console.log(info('💡 Or run: kira init (for interactive setup)'));
+    console.log('');
+    console.log(info('ℹ️  The Gemini API is free with generous limits:'));
+    console.log('   • 15 requests per minute');
+    console.log('   • 1 million tokens per minute');
+    console.log('   • 1,500 requests per day');
+    console.log('');
+    return false;
+  }
+  
+  return true;
+}
+
 // Main task execution function
 async function executeTask(task: string, mode: string, isKiraCommand: boolean): Promise<void> {
+  // Check API key first
+  if (!checkApiKey()) {
+    process.exit(1);
+  }
+  
   // Check if user has initialized Kira
   const { ProfileManager } = await import('./profile/ProfileManager.js');
   const profileManager = ProfileManager.getInstance();

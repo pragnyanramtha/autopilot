@@ -8,8 +8,9 @@ Thank you for your interest in contributing to Kira! This document provides guid
 
 - Node.js 18+ 
 - npm or yarn
-- Linux system (for testing)
+- Linux or macOS system (for testing)
 - Git
+- **macOS only**: Xcode Command Line Tools (`xcode-select --install`)
 
 ### Development Setup
 
@@ -26,10 +27,14 @@ Thank you for your interest in contributing to Kira! This document provides guid
 
 3. **Set up Development Environment**
    ```bash
+   # macOS: Run setup script (optional but recommended)
+   ./scripts/setup-macos.sh
+   
    # Copy environment template
    cp .env.example .env
    
-   # Add your Gemini API key (optional but recommended)
+   # Add your Gemini API key (REQUIRED)
+   # Get it from: https://aistudio.google.com/app/apikey
    echo "GEMINI_API_KEY=your_api_key_here" >> .env
    ```
 
@@ -103,10 +108,11 @@ autopilot/
 - **Testing**: Add comprehensive test coverage
 
 ### Medium Priority
-- **Package Manager Support**: Add support for more Linux distributions
+- **Package Manager Support**: Add support for more Linux distributions and improve macOS integration
 - **Performance**: Optimize command execution and AI response times
 - **Documentation**: Improve user guides and API documentation
 - **Internationalization**: Add support for multiple languages
+- **macOS Features**: Enhanced App Store integration, system preferences automation
 
 ### Low Priority
 - **GUI Interface**: Desktop application companion
@@ -185,6 +191,7 @@ When reporting bugs, please include:
    - Error messages
    - Log files
    - Screenshots (if applicable)
+   - Package manager availability (`brew --version`, `apt --version`, etc.)
 
 ## 💡 Feature Requests
 

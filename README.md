@@ -1,17 +1,20 @@
-# Autopilot - Kira AI Assistant for Linux
+# Autopilot - Kira AI Assistant for Linux & macOS
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
 [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Powered-orange.svg)](https://ai.google.dev/)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/pragnyanramtha/autopilot)
 
-Kira is an intelligent AI automation system that can perform complex tasks across your Linux system using natural language commands. It uses advanced AI to understand your intent and execute the appropriate commands safely and efficiently.
+Kira is an intelligent AI automation system that can perform complex tasks across your Linux and macOS systems using natural language commands. It uses advanced AI to understand your intent and execute the appropriate commands safely and efficiently.
 
 ## ✨ Features
 
 - **🤖 AI-Powered**: Uses Google Gemini for intelligent command understanding
-- **🐧 Linux Native**: Built specifically for Linux with multi-distro support
-- **📦 Smart Package Management**: Auto-detects and uses the right package manager (apt, pacman, yum, etc.)
+- **🖥️ Cross-Platform**: Native support for Linux and macOS
+- **📦 Smart Package Management**: Auto-detects and uses the right package manager
+  - **Linux**: apt, pacman, yum, dnf, zypper, snap, flatpak
+  - **macOS**: Homebrew, Homebrew Cask, Mac App Store (mas), MacPorts
 - **🔧 Progressive Error Handling**: Automatically retries, analyzes errors, and suggests solutions
 - **👤 Personalized**: Learns your preferences and system configuration
 - **🛡️ Safe & Secure**: Conservative approach with user confirmation for risky operations
@@ -38,6 +41,7 @@ kira help me set up a development environment
 
 ### From Source
 
+#### Linux
 ```bash
 # Clone the repository
 git clone https://github.com/pragnyanramtha/autopilot.git
@@ -53,21 +57,47 @@ npm run build
 npm install -g .
 ```
 
+#### macOS
+```bash
+# Clone the repository
+git clone https://github.com/pragnyanramtha/autopilot.git
+cd autopilot
+
+# Run macOS setup script (installs Homebrew, Node.js, etc.)
+./scripts/setup-macos.sh
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Install globally (optional)
+npm install -g .
+```
+
 This will install the Kira command:
 - `kira` - AI-powered automation assistant
 
-### 🤖 AI Setup (Optional but Recommended)
+### 🤖 AI Setup (REQUIRED)
 
-For enhanced AI capabilities, get a free Gemini API key:
+Kira requires a free Gemini API key to function. Get yours in 2 minutes:
 
-1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a free API key
-3. Add it to your `.env` file:
+1. **Visit Google AI Studio**: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. **Sign in** with your Google account
+3. **Click "Create API Key"** 
+4. **Copy the generated key**
+5. **Add it to your `.env` file**:
    ```bash
    echo "GEMINI_API_KEY=your_api_key_here" >> .env
    ```
 
-Without an API key, Kira will use built-in command parsing (still very capable!).
+**The Gemini API is FREE** with generous limits:
+- ✅ 15 requests per minute
+- ✅ 1 million tokens per minute  
+- ✅ 1,500 requests per day
+
+**Alternative link**: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
 
 ## Usage
 
@@ -94,24 +124,54 @@ kira check disk space and memory usage
 
 ## Examples
 
-### Email Management
+### Cross-Platform
 ```bash
-kira read my gmail and summarize important emails
+# Install and open applications
+kira install and open firefox
+kira install visual studio code
+
+# System management  
+kira update system and install docker
+kira check disk space and memory usage
+```
+
+### Linux-Specific
+```bash
+# Package management
+kira install git using apt
+kira install discord via snap
+
+# System administration
+kira set up nginx and configure firewall
+```
+
+### macOS-Specific
+```bash
+# Homebrew packages
+kira install git
+kira install --cask visual studio code
+kira install --cask firefox
+
+# Mac App Store apps
+kira install xcode from app store
+kira install pages --mas
+
+# System management
+kira update homebrew and upgrade all packages
+kira install development tools for ios
 ```
 
 ### Development Workflow
 ```bash
 kira use ~/portfolio.pdf to create a beautiful website and deploy it
-```
-
-### System Administration
-```bash
-kira install docker, set up a nginx container, and configure it for my website
+kira set up a react development environment
+kira create a new node project with typescript
 ```
 
 ### Content Creation
 ```bash
 kira download some dark aesthetic wallpapers and set one as my background
+kira organize my downloads folder by file type
 ```
 
 ## How It Works

@@ -1,7 +1,7 @@
 {
   "name": "autopilot",
   "version": "0.1.0",
-  "description": "Kira - AI-powered OS automation for Linux",
+  "description": "Kira - AI-powered OS automation for Linux and macOS",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
@@ -22,6 +22,8 @@
     "ai",
     "automation",
     "linux",
+    "macos",
+    "homebrew",
     "cli",
     "terminal",
     "browser"

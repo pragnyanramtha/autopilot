@@ -9,14 +9,15 @@ echo "🔍 Detecting system information..."
 OS_TYPE="$(uname -s)"
 
 # Get hostname (with fallback)
-HOSTNAME_CMD="hostname"
-if ! command -v hostname >/dev/null 2>&1; then
-  if [ "$OS_TYPE" = "Darwin" ]; then
-    HOSTNAME_CMD="scutil --get ComputerName"
+get_hostname() {
+  if command -v hostname >/dev/null 2>&1; then
+    hostname 2>/dev/null || echo "unknown"
+  elif [ "$OS_TYPE" = "Darwin" ]; then
+    scutil --get ComputerName 2>/dev/null || echo "unknown"
   else
-    HOSTNAME_CMD="cat /proc/sys/kernel/hostname 2>/dev/null || echo 'unknown'"
+    cat /proc/sys/kernel/hostname 2>/dev/null || echo "unknown"
   fi
-fi
+}
 
 # macOS-specific functions
 get_macos_cpu_info() {
@@ -48,7 +49,7 @@ cat << EOF
 {
   "timestamp": "$(date -Iseconds)",
   "system": {
-    "hostname": "$($HOSTNAME_CMD 2>/dev/null || echo 'unknown')",
+    "hostname": "$(get_hostname)",
     "username": "$(whoami)",
     "home_directory": "$HOME",
     "current_directory": "$(pwd)",
@@ -114,7 +115,7 @@ cat << EOF
     "gnome_desktop_session_id": "$GNOME_DESKTOP_SESSION_ID"
   },
   "network": {
-    "hostname_fqdn": "$(hostname -f 2>/dev/null || hostname)",
+    "hostname_fqdn": "$(hostname -f 2>/dev/null || get_hostname)",
     "ip_address": "$(hostname -I | awk '{print $1}' 2>/dev/null || echo 'unknown')",
     "internet_connection": $(ping -c 1 8.8.8.8 >/dev/null 2>&1 && echo 'true' || echo 'false')
   },
