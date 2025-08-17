@@ -217,7 +217,7 @@ export class InitWizard {
   }
 
   private createAIContext(preferences: UserPreferences): string {
-    const isMacOS = this.systemInfo?.system.os_type === 'Darwin';
+    const isMacOS = process.platform === 'darwin';
     const osName = isMacOS ? 'macOS' : 'Linux';
     const distro = isMacOS ? 'macos' : (this.systemInfo?.os.os_release.ID || 'linux');
     const packageManagers = Object.entries(this.systemInfo?.package_managers || {})

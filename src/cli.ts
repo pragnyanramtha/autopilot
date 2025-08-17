@@ -3,6 +3,9 @@
 import * as dotenv from 'dotenv';
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { Banner } from './ui/components/Banner.js';
+import { StatusIndicator } from './ui/components/StatusIndicator.js';
+import { Spinner } from './ui/components/ProgressBar.js';
 
 // Load environment variables
 dotenv.config();
@@ -72,28 +75,29 @@ function checkApiKey(): boolean {
   const apiKey = process.env.GEMINI_API_KEY;
   
   if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === '') {
-    console.log(error('❌ Gemini API key is REQUIRED for Kira to function.'));
-    console.log('');
-    console.log(info('🔑 Get your FREE API key from Google AI Studio:'));
-    console.log('   👉 https://aistudio.google.com/app/apikey');
-    console.log('   👉 https://makersuite.google.com/app/apikey (alternative)');
-    console.log('');
-    console.log(info('📋 Quick setup steps:'));
-    console.log('   1. Visit: https://aistudio.google.com/app/apikey');
-    console.log('   2. Sign in with your Google account');
-    console.log('   3. Click "Create API Key"');
-    console.log('   4. Copy the generated key');
-    console.log('');
-    console.log(info('📝 Add it to your .env file:'));
-    console.log('   echo "GEMINI_API_KEY=your_api_key_here" >> .env');
-    console.log('');
-    console.log(info('💡 Or run: kira init (for interactive setup)'));
-    console.log('');
-    console.log(info('ℹ️  The Gemini API is free with generous limits:'));
-    console.log('   • 15 requests per minute');
-    console.log('   • 1 million tokens per minute');
-    console.log('   • 1,500 requests per day');
-    console.log('');
+    Banner.error(`Missing Gemini API Key
+
+Kira requires a FREE Gemini API key to function.
+
+🔑 Get your API key from Google AI Studio:
+   👉 https://aistudio.google.com/app/apikey
+   👉 https://makersuite.google.com/app/apikey (alternative)
+
+📋 Quick setup steps:
+   1. Visit: https://aistudio.google.com/app/apikey
+   2. Sign in with your Google account
+   3. Click "Create API Key"
+   4. Copy the generated key
+
+📝 Add it to your .env file:
+   echo "GEMINI_API_KEY=your_api_key_here" >> .env
+
+💡 Or run: kira init (for interactive setup)
+
+ℹ️  The Gemini API is free with generous limits:
+   • 15 requests per minute
+   • 1 million tokens per minute
+   • 1,500 requests per day`);
     return false;
   }
   
@@ -113,19 +117,20 @@ async function executeTask(task: string, mode: string, isKiraCommand: boolean): 
   const isInitialized = await profileManager.isInitialized();
   
   if (!isInitialized) {
-    console.log(info('🤖 Kira AI Autopilot'));
-    console.log(warning('⚠️  Kira is not initialized yet.'));
-    console.log('For the best experience, please run: kira init');
-    console.log('This will set up your preferences and system detection.\n');
+    Banner.displayMinimal();
+    StatusIndicator.warning('Kira is not initialized yet.');
+    StatusIndicator.info('For the best experience, please run: kira init');
+    StatusIndicator.info('This will set up your preferences and system detection.');
+    console.log();
   } else {
     const userName = await profileManager.getUserName();
-    console.log(info(`🤖 Kira AI Autopilot - Hello ${userName}!`));
+    Banner.startup(userName, { compact: true });
   }
   
-  console.log(`Task: ${task}`);
+  StatusIndicator.info(`Task: ${task}`);
   
   if (isKiraCommand) {
-    console.log(info('Analyzing and executing task...'));
+    StatusIndicator.loading('Analyzing and executing task...');
   }
   
   try {
@@ -137,83 +142,104 @@ async function executeTask(task: string, mode: string, isKiraCommand: boolean): 
 
 // Parse and plan task function
 async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand: boolean): Promise<void> {
-  console.log(info('🔍 Parsing command...'));
+  const spinner = new Spinner('Parsing command...');
+  spinner.start();
   
-  // Create parser and planner instances
-  const parser = new CommandParser();
-  const planner = new TaskPlanner();
-  
-  // Create command input
-  const input: CommandInput = {
-    mode,
-    task,
-    isAlidoCommand: isKiraCommand
-  };
-  
-  // Parse the command
-  const parsedCmd = await parser.parse(input);
-  
-  console.log(success('✓ Command parsed successfully'));
-  console.log(`  Detected mode: ${parsedCmd.executionMode}`);
-  console.log(`  Required tools: ${parsedCmd.requiredTools.join(', ') || 'none'}`);
-  console.log(`  Complexity: ${parsedCmd.estimatedComplexity}`);
-  console.log(`  Steps: ${parsedCmd.steps.length}`);
-  
-  // Create execution plan
-  console.log(info('📋 Creating execution plan...'));
-  const plan = await planner.createPlan(parsedCmd);
-  
-  console.log(success('✓ Execution plan created'));
-  console.log(`  Risk level: ${plan.riskLevel}`);
-  console.log(`  Requires root: ${plan.requiresRoot}`);
-  console.log(`  Dependencies: ${plan.dependencies.join(', ') || 'none'}`);
-  
-  // Display the execution steps
-  console.log('\n📝 Execution Steps:');
-  plan.steps.forEach((step, i) => {
-    let stepIcon = '🖥️';
-    if (step.type === 'browser') stepIcon = '🌐';
-    else if (step.type === 'file') stepIcon = '📄';
-    else if (step.type === 'wait') stepIcon = '⏳';
+  try {
+    // Create parser and planner instances
+    const parser = new CommandParser();
+    const planner = new TaskPlanner();
     
-    const authIndicator = step.requiresAuth ? ' 🔐' : '';
-    console.log(`  ${i + 1}. ${stepIcon} ${step.command}${authIndicator}`);
-  });
-  
-  // Execute terminal steps (for demonstration)
-  console.log(info('\n🚀 Executing terminal steps...'));
-  
-  const terminalEngine = new TerminalEngine();
-  
-  for (const step of plan.steps) {
-    if (step.type === 'terminal' && step.command) {
-      try {
-        console.log(`\n▶️  Executing: ${step.command}`);
-        const result = await terminalEngine.executeCommand(step.command);
-        
-        if (result.exitCode === 0) {
-          console.log(success(`✅ Success (${result.duration}ms)`));
-          if (result.stdout) {
-            console.log(`   Output: ${result.stdout.substring(0, 200)}${result.stdout.length > 200 ? '...' : ''}`);
+    // Create command input
+    const input: CommandInput = {
+      mode,
+      task,
+      isAlidoCommand: isKiraCommand
+    };
+    
+    // Parse the command
+    const parsedCmd = await parser.parse(input);
+    
+    spinner.succeed('Command parsed successfully');
+    
+    StatusIndicator.info(`Detected mode: ${parsedCmd.executionMode}`, { indent: 2 });
+    StatusIndicator.info(`Required tools: ${parsedCmd.requiredTools.join(', ') || 'none'}`, { indent: 2 });
+    StatusIndicator.info(`Complexity: ${parsedCmd.estimatedComplexity}`, { indent: 2 });
+    StatusIndicator.info(`Steps: ${parsedCmd.steps.length}`, { indent: 2 });
+    
+    // Create execution plan
+    const planSpinner = new Spinner('Creating execution plan...');
+    planSpinner.start();
+    
+    const plan = await planner.createPlan(parsedCmd);
+    
+    planSpinner.succeed('Execution plan created');
+    
+    StatusIndicator.info(`Risk level: ${plan.riskLevel}`, { indent: 2 });
+    StatusIndicator.info(`Requires root: ${plan.requiresRoot}`, { indent: 2 });
+    StatusIndicator.info(`Dependencies: ${plan.dependencies.join(', ') || 'none'}`, { indent: 2 });
+    
+    // Display the execution steps
+    console.log();
+    StatusIndicator.info('Execution Steps:');
+    plan.steps.forEach((step, i) => {
+      let stepIcon = '🖥️';
+      if (step.type === 'browser') stepIcon = '🌐';
+      else if (step.type === 'file') stepIcon = '📄';
+      else if (step.type === 'wait') stepIcon = '⏳';
+      
+      const authIndicator = step.requiresAuth ? ' 🔐' : '';
+      StatusIndicator.info(`${stepIcon} ${step.command}${authIndicator}`, { 
+        prefix: `${i + 1}`,
+        indent: 2 
+      });
+    });
+    
+    // Execute terminal steps (for demonstration)
+    console.log();
+    StatusIndicator.info('Executing terminal steps...');
+    
+    const terminalEngine = new TerminalEngine();
+    
+    for (const step of plan.steps) {
+      if (step.type === 'terminal' && step.command) {
+        try {
+          const execSpinner = new Spinner(`Executing: ${step.command}`);
+          execSpinner.start();
+          
+          const result = await terminalEngine.executeCommand(step.command);
+          
+          if (result.exitCode === 0) {
+            execSpinner.succeed(`Success (${result.duration}ms)`);
+            if (result.stdout) {
+              const output = result.stdout.substring(0, 200);
+              const truncated = result.stdout.length > 200 ? '...' : '';
+              StatusIndicator.info(`Output: ${output}${truncated}`, { indent: 4 });
+            }
+          } else {
+            execSpinner.fail(`Failed with exit code ${result.exitCode}`);
+            if (result.stderr) {
+              const errorOutput = result.stderr.substring(0, 200);
+              const truncated = result.stderr.length > 200 ? '...' : '';
+              StatusIndicator.error(`Error: ${errorOutput}${truncated}`, { indent: 4 });
+            }
           }
-        } else {
-          console.log(error(`❌ Failed with exit code ${result.exitCode}`));
-          if (result.stderr) {
-            console.log(`   Error: ${result.stderr.substring(0, 200)}${result.stderr.length > 200 ? '...' : ''}`);
-          }
+        } catch (err) {
+          StatusIndicator.error(`Execution failed: ${err instanceof Error ? err.message : String(err)}`);
+          StatusIndicator.error('Command execution failed after all retry attempts');
         }
-      } catch (err) {
-        console.log(error(`❌ Execution failed: ${err instanceof Error ? err.message : String(err)}`));
-        
-        // The error handling is now built into executeCommand with progressive retry
-        console.log(error(`💥 Command execution failed after all retry attempts`));
+      } else {
+        StatusIndicator.warning(`Skipping ${step.type} step: ${step.command} (not implemented yet)`);
       }
-    } else {
-      console.log(warning(`⏭️  Skipping ${step.type} step: ${step.command} (not implemented yet)`));
     }
+    
+    console.log();
+    Banner.success('Task execution completed! 🎉');
+    
+  } catch (err) {
+    spinner.fail('Command parsing failed');
+    throw err;
   }
-  
-  console.log(success('\n🎉 Task execution completed!'));
 }
 
 // Handle different command invocations
@@ -224,15 +250,20 @@ if (scriptName?.includes('kira') || process.argv[2] === 'kira') {
   if (args.length > 0) {
     executeTask(args.join(' '), 'auto', true).catch(console.error);
   } else {
-    console.log(error('❌ Please provide a task description'));
-    console.log('\n🚀 Getting started:');
-    console.log('  kira init          # First-time setup (recommended)');
-    console.log('  kira setup         # Check system requirements');
-    console.log('\n💡 Examples:');
-    console.log('  kira install and open firefox');
-    console.log('  kira check disk space');
-    console.log('  kira create a website from my resume');
-    console.log('  kira help me set up development environment');
+    Banner.displayMinimal();
+    StatusIndicator.error('Please provide a task description');
+    
+    console.log();
+    StatusIndicator.info('Getting started:');
+    StatusIndicator.info('kira init          # First-time setup (recommended)', { indent: 2 });
+    StatusIndicator.info('kira setup         # Check system requirements', { indent: 2 });
+    
+    console.log();
+    StatusIndicator.info('Examples:');
+    StatusIndicator.info('kira install and open firefox', { indent: 2 });
+    StatusIndicator.info('kira check disk space', { indent: 2 });
+    StatusIndicator.info('kira create a website from my resume', { indent: 2 });
+    StatusIndicator.info('kira help me set up development environment', { indent: 2 });
   }
 } else {
   // Default command structure
