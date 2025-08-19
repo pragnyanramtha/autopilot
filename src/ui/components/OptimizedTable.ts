@@ -532,15 +532,10 @@ export class OptimizedTable {
       }
 
       // Stream data rows in batches
-      const streamOptions: { batchSize?: number; delay?: number } = { delay: 1 };
-      if (this.options.streamBatchSize) {
-        streamOptions.batchSize = this.options.streamBatchSize;
-      }
-      
       await streamOutput.streamArray(
         sortedRows,
         (row, index) => this.createDataRow(row, index, columnWidths),
-        streamOptions
+        { batchSize: this.options.streamBatchSize, delay: 1 }
       );
 
       // Bottom border
