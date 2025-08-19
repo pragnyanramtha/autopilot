@@ -91,7 +91,7 @@ export class VisualPreferencesManager {
   private watchers: Array<(preferences: VisualPreferences) => void> = [];
 
   private constructor() {
-    this.configPath = path.join(os.homedir(), '.ap', 'visual-preferences.json');
+    this.configPath = path.join(os.homedir(), '.kira', 'visual-preferences.json');
     this.preferences = this.loadPreferences();
     this.syncWithThemeManager();
   }

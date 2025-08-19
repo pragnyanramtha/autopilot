@@ -3,7 +3,6 @@ import { visualPreferences, VisualPreferences } from '../preferences/VisualPrefe
 import { themeManager } from '../themes/ThemeManager.js';
 import { symbols } from '../utils/Symbols.js';
 import { colors } from '../utils/Colors.js';
-import chalk from 'chalk';
 
 /**
  * Adaptive configuration based on terminal capabilities and user preferences
@@ -192,51 +191,28 @@ export class TerminalAdapter {
     if (config.basicSymbols) {
       // Return ASCII-only symbols for basic terminals
       return {
-        // Status symbols
         success: config.useColors ? '✓' : '[OK]',
         error: config.useColors ? '✗' : '[ERROR]',
         warning: config.useColors ? '!' : '[WARN]',
         info: config.useColors ? 'i' : '[INFO]',
-        question: '?',
-        
-        // Progress symbols
-        loading: config.useAnimations ? ['...', '..', '.'] : ['[LOADING]'],
+        loading: config.useAnimations ? '...' : '[LOADING]',
         bullet: '*',
         arrow: '->',
-        arrowRight: '->',
-        arrowLeft: '<-',
-        arrowUp: '^',
-        arrowDown: 'v',
-        
-        // UI symbols
-        checkbox: config.useColors ? '☐' : '[ ]',
-        checkboxChecked: config.useColors ? '☑' : '[x]',
-        radio: '( )',
-        radioSelected: '(*)',
-        
-        // Decorative symbols
+        check: config.useColors ? '✓' : '[x]',
+        cross: config.useColors ? '✗' : '[ ]',
         star: '*',
         heart: '<3',
-        diamond: '<>',
-        circle: 'o',
-        square: '#',
-        
-        // File system symbols
         home: '~',
         folder: '[DIR]',
         file: '[FILE]',
         link: '->',
-        
-        // Directional symbols
         up: '^',
         down: 'v',
         left: '<',
         right: '>',
-        
-        // Animation symbols
         spinner: ['|', '/', '-', '\\'],
-        
-        // Border symbols
+        progressEmpty: '-',
+        progressFull: '=',
         borderHorizontal: '-',
         borderVertical: '|',
         borderTopLeft: '+',
@@ -247,22 +223,7 @@ export class TerminalAdapter {
         borderTop: '+',
         borderBottom: '+',
         borderLeft: '+',
-        borderRight: '+',
-        
-        // Box drawing
-        boxVertical: '|',
-        boxHorizontal: '-',
-        boxTopLeft: '+',
-        boxTopRight: '+',
-        boxBottomLeft: '+',
-        boxBottomRight: '+',
-        boxCross: '+',
-        
-        // Progress bars
-        progressFull: '=',
-        progressEmpty: '-',
-        progressLeft: '[',
-        progressRight: ']'
+        borderRight: '+'
       };
     }
     
@@ -280,35 +241,21 @@ export class TerminalAdapter {
       // Return no-op color functions for terminals without color support
       const noColor = (text: string) => text;
       return {
+        primary: noColor,
+        secondary: noColor,
         success: noColor,
         error: noColor,
         warning: noColor,
         info: noColor,
-        primary: noColor,
-        secondary: noColor,
         muted: noColor,
         accent: noColor,
         highlight: noColor,
-        text: noColor,
-        textSecondary: noColor,
-        textMuted: noColor,
+        code: noColor,
         link: noColor,
-        button: noColor,
-        input: noColor,
-        bold: noColor,
+        bold: (text: string) => text.toUpperCase(), // Use uppercase for emphasis
         dim: noColor,
         italic: noColor,
-        underline: noColor,
-        successBold: noColor,
-        errorBold: noColor,
-        warningBold: noColor,
-        infoBold: noColor,
-        primaryBold: noColor,
-        code: noColor,
-        path: noColor,
-        url: noColor,
-        command: noColor,
-        reset: chalk.reset
+        underline: noColor
       };
     }
     
@@ -318,35 +265,21 @@ export class TerminalAdapter {
     if (config.highContrast) {
       // Return high contrast color variants
       return {
-        success: (text: string) => theme.colors.success(text),
-        error: (text: string) => theme.colors.error(text),
-        warning: (text: string) => theme.colors.warning(text),
-        info: (text: string) => theme.colors.info(text),
-        primary: (text: string) => theme.colors.primary(text),
-        secondary: (text: string) => theme.colors.text(text),
-        muted: (text: string) => theme.colors.textMuted(text),
-        accent: (text: string) => theme.colors.accent(text),
-        highlight: (text: string) => theme.colors.highlight(text),
-        text: (text: string) => theme.colors.text(text),
-        textSecondary: (text: string) => theme.colors.textSecondary(text),
-        textMuted: (text: string) => theme.colors.textMuted(text),
-        link: (text: string) => theme.colors.link(text),
-        button: (text: string) => theme.colors.button(text),
-        input: (text: string) => theme.colors.input(text),
-        bold: (text: string) => theme.styles.bold(text),
-        dim: (text: string) => theme.styles.dim(text),
-        italic: (text: string) => theme.styles.italic(text),
-        underline: (text: string) => theme.styles.underline(text),
-        successBold: (text: string) => theme.colors.success(theme.styles.bold(text)),
-        errorBold: (text: string) => theme.colors.error(theme.styles.bold(text)),
-        warningBold: (text: string) => theme.colors.warning(theme.styles.bold(text)),
-        infoBold: (text: string) => theme.colors.info(theme.styles.bold(text)),
-        primaryBold: (text: string) => theme.colors.primary(theme.styles.bold(text)),
-        code: (text: string) => theme.colors.code(` ${text} `),
-        path: (text: string) => theme.colors.accent(text),
-        url: (text: string) => theme.colors.link(text),
-        command: (text: string) => theme.colors.code(` ${text} `),
-        reset: chalk.reset
+        primary: theme.colors.primary,
+        secondary: theme.colors.text,
+        success: theme.colors.success,
+        error: theme.colors.error,
+        warning: theme.colors.warning,
+        info: theme.colors.info,
+        muted: theme.colors.textMuted,
+        accent: theme.colors.accent,
+        highlight: theme.colors.highlight,
+        code: theme.colors.code,
+        link: theme.colors.link,
+        bold: theme.styles.bold,
+        dim: theme.styles.dim,
+        italic: theme.styles.italic,
+        underline: theme.styles.underline
       };
     }
     
@@ -408,7 +341,7 @@ export class TerminalAdapter {
     
     // Full progress bar for capable terminals
     const ProgressBar = (await import('../components/ProgressBar.js')).ProgressBar;
-    const progressBar = new ProgressBar({ total, ...(message && { message }) });
+    const progressBar = new ProgressBar({ total, message });
     
     return {
       update: (current: number, newMessage?: string) => {
