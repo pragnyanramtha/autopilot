@@ -14,38 +14,40 @@ export class Banner {
   private static readonly VERSION = '0.1.0';
   private static readonly TAGLINE = 'AI-powered OS automation for Linux & macOS';
 
-  // ASCII art for Kira logo
+  // ASCII art for AP logo
   private static readonly ASCII_ART = `
-██╗  ██╗██╗██████╗  █████╗ 
-██║ ██╔╝██║██╔══██╗██╔══██╗
-█████╔╝ ██║██████╔╝███████║
-██╔═██╗ ██║██╔══██╗██╔══██║
-██║  ██╗██║██║  ██║██║  ██║
-╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝`;
+ █████╗ ██████╗ 
+██╔══██╗██╔══██╗
+███████║██████╔╝
+██╔══██║██╔═══╝ 
+██║  ██║██║     
+╚═╝  ╚═╝╚═╝     `;
 
   // Compact ASCII art for smaller displays
   private static readonly ASCII_ART_COMPACT = `
-██╗  ██╗██╗██████╗  █████╗ 
-██║ ██╔╝██║██╔══██╗██╔══██╗
-█████╔╝ ██║██████╔╝███████║
-██╔═██╗ ██║██╔══██╗██╔══██║
-██║  ██╗██║██║  ██║██║  ██║
-╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝`;
+ █████╗ ██████╗ 
+██╔══██╗██╔══██╗
+███████║██████╔╝
+██╔══██║██╔═══╝ 
+██║  ██║██║     
+╚═╝  ╚═╝╚═╝     `;
 
   // Mini ASCII art for very compact displays
   private static readonly ASCII_ART_MINI = `
-██╗  ██╗██╗██████╗  █████╗ 
-██║ ██╔╝██║██╔══██╗██╔══██╗
-█████╔╝ ██║██████╔╝███████║
-██╔═██╗ ██║██╔══██╗██╔══██║
-██║  ██╗██║██║  ██║██║  ██║
-╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝`;
+ █████╗ ██████╗ 
+██╔══██╗██╔══██╗
+███████║██████╔╝
+██╔══██║██╔═══╝ 
+██║  ██║██║     
+╚═╝  ╚═╝╚═╝     `;
 
   // Text-only logo for terminals without Unicode support
   private static readonly TEXT_LOGO = `
- _  _ _ ____  ____ 
- |_/  | |__/  |__|
- | \\_ | |  \\  |  |`;
+  ___   ____  
+ / _ \\ |  _ \\ 
+| |_| || |_) |
+|  _  ||  __/ 
+|_| |_||_|    `;
 
   static display(options: BannerOptions = {}): void {
     const opts = {
@@ -108,7 +110,7 @@ export class Banner {
   }
 
   static displayCompact(): void {
-    const logo = colors.primary('KIRA');
+    const logo = colors.primary('AP');
     const version = colors.muted(`v${this.VERSION}`);
     const platform = colors.muted(this.getPlatformInfo());
     
@@ -116,7 +118,7 @@ export class Banner {
   }
 
   static displayMinimal(): void {
-    const logo = colors.primary('🤖 Kira');
+    const logo = colors.primary('🤖 AP');
     const version = colors.muted(`v${this.VERSION}`);
     
     console.log(`${logo} ${version}`);
@@ -155,7 +157,7 @@ export class Banner {
     this.display(options);
     
     console.log(Layout.spacing(1));
-    console.log(colors.info('Welcome to Kira! 🚀'));
+    console.log(colors.info('Welcome to AP! 🚀'));
     console.log(colors.muted('Your AI-powered automation assistant is ready to help.'));
     console.log(Layout.spacing(1));
   }
@@ -180,7 +182,7 @@ export class Banner {
   static error(message: string): void {
     const errorBox = Layout.box(
       colors.error('⚠ CRITICAL ERROR ⚠') + '\n\n' + message,
-      'KIRA ERROR',
+      'AP ERROR',
       { style: 'double', padding: 2 }
     );
     
@@ -191,7 +193,7 @@ export class Banner {
   static success(message: string): void {
     const successBox = Layout.box(
       colors.success(`${symbols.success} SUCCESS`) + '\n\n' + message,
-      'KIRA',
+      'AP',
       { style: 'rounded', padding: 2 }
     );
     
@@ -202,23 +204,23 @@ export class Banner {
   static info(title: string, message: string): void {
     const infoBox = Layout.box(
       colors.info(`${symbols.info} ${title.toUpperCase()}`) + '\n\n' + message,
-      'KIRA INFO',
+      'AP INFO',
       { style: 'single', padding: 2 }
     );
     
     console.log(Layout.center(infoBox));
   }
 
-  // Display a separator with Kira branding
+  // Display a separator with AP branding
   static separator(label?: string): void {
-    const separatorLabel = label ? `KIRA ${label}` : 'KIRA';
+    const separatorLabel = label ? `AP ${label}` : 'AP';
     console.log(colors.muted(Layout.separator(undefined, undefined, separatorLabel)));
   }
 
   // Display footer
   static footer(): void {
     console.log(Layout.spacing(1));
-    console.log(colors.muted(Layout.center('Thank you for using Kira! 🤖')));
+    console.log(colors.muted(Layout.center('Thank you for using AP! 🤖')));
     console.log(colors.muted(Layout.center('Visit https://github.com/pragnyanramtha/autopilot for more info')));
   }
 }

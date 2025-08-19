@@ -48,7 +48,7 @@ class TestRunner {
           ...process.env,
           NODE_ENV: 'test',
           // Enable performance monitoring for performance tests
-          ...(this.options.performance && { KIRA_PERFORMANCE_MONITORING: 'true' })
+          ...(this.options.performance && { AP_PERFORMANCE_MONITORING: 'true' })
         }
       });
       

@@ -1,6 +1,6 @@
-# Contributing to Autopilot (Kira)
+# Contributing to Autopilot (AP)
 
-Thank you for your interest in contributing to Kira! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to AP! This document provides guidelines and information for contributors.
 
 ## 🚀 Getting Started
 
@@ -42,7 +42,7 @@ Thank you for your interest in contributing to Kira! This document provides guid
    ```bash
    npm run build
    npm test
-   npm run dev kira init  # Test the application
+   npm run dev ap init  # Test the application
    ```
 
 ## 🛠️ Development Workflow
@@ -83,7 +83,7 @@ autopilot/
    npm run lint
    
    # Test manually
-   npm run dev kira your-test-command
+   npm run dev ap your-test-command
    ```
 
 4. **Commit Your Changes**
@@ -142,14 +142,14 @@ npm run test:coverage
 ### Manual Testing
 ```bash
 # Test basic functionality
-npm run dev kira check disk space
-npm run dev kira install git
+npm run dev ap check disk space
+npm run dev ap install git
 
 # Test initialization
-rm -rf ~/.kira && npm run dev init
+rm -rf ~/.ap && npm run dev init
 
 # Test error handling
-npm run dev kira nonexistent-command
+npm run dev ap nonexistent-command
 ```
 
 ## 📝 Code Style
@@ -179,7 +179,7 @@ When reporting bugs, please include:
 1. **Environment Information**
    - OS and distribution
    - Node.js version
-   - Kira version
+   - AP version
    - Terminal and shell
 
 2. **Steps to Reproduce**
@@ -229,4 +229,4 @@ By contributing to this project, you agree that your contributions will be licen
 - **Discussions**: https://github.com/pragnyanramtha/autopilot/discussions
 - **Email**: pragnyanramtha@gmail.com
 
-Thank you for contributing to Kira! 🚀
+Thank you for contributing to AP! 🚀

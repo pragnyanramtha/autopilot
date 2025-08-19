@@ -2,7 +2,7 @@
 
 ## Task Overview
 
-Convert the visual CLI enhancement design into a series of implementation tasks that will create a modern, visually appealing command-line interface for Kira.
+Convert the visual CLI enhancement design into a series of implementation tasks that will create a modern, visually appealing command-line interface for AP.
 
 ## Implementation Tasks
 
@@ -18,7 +18,7 @@ Convert the visual CLI enhancement design into a series of implementation tasks 
 
   - [x] 2.1 Create Banner component with ASCII art and branding
 
-    - Design and implement ASCII art logo for Kira
+    - Design and implement ASCII art logo for AP
     - Create banner display with version information and tagline
     - Add compact mode option for minimal displays
     - Implement responsive banner that adapts to terminal width

@@ -1,4 +1,4 @@
-# Autopilot - Kira AI Assistant for Linux & macOS
+# Autopilot - AP AI Assistant for Linux & macOS
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
@@ -6,7 +6,7 @@
 [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Powered-orange.svg)](https://ai.google.dev/)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/pragnyanramtha/autopilot)
 
-Kira is an intelligent AI automation system that can perform complex tasks across your Linux and macOS systems using natural language commands. It uses advanced AI to understand your intent and execute the appropriate commands safely and efficiently.
+AP is an intelligent AI automation system that can perform complex tasks across your Linux and macOS systems using natural language commands. It uses advanced AI to understand your intent and execute the appropriate commands safely and efficiently.
 
 ## ✨ Features
 
@@ -28,13 +28,13 @@ git clone https://github.com/pragnyanramtha/autopilot.git
 cd autopilot
 npm install && npm run build
 
-# 2. Initialize Kira (first-time setup)
-kira init
+# 2. Initialize AP (first-time setup)
+ap init
 
-# 3. Start using Kira!
-kira check disk space
-kira install git
-kira help me set up a development environment
+# 3. Start using AP!
+ap check disk space
+ap install git
+ap help me set up a development environment
 ```
 
 ## 📦 Installation
@@ -76,12 +76,12 @@ npm run build
 npm install -g .
 ```
 
-This will install the Kira command:
-- `kira` - AI-powered automation assistant
+This will install the AP command:
+- `ap` - AI-powered automation assistant
 
 ### 🤖 AI Setup (REQUIRED)
 
-Kira requires a free Gemini API key to function. Get yours in 2 minutes:
+AP requires a free Gemini API key to function. Get yours in 2 minutes:
 
 1. **Visit Google AI Studio**: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 2. **Sign in** with your Google account
@@ -103,23 +103,23 @@ Kira requires a free Gemini API key to function. Get yours in 2 minutes:
 
 ### Usage
 
-Use `kira` for any task - it intelligently analyzes and executes your commands:
+Use `ap` for any task - it intelligently analyzes and executes your commands:
 
 ```bash
 # Install and open applications
-kira install and open firefox
+ap install and open firefox
 
 # System management
-kira update system and install docker
+ap update system and install docker
 
 # Development tasks
-kira create a portfolio website from ~/resume.pdf
+ap create a portfolio website from ~/resume.pdf
 
 # File operations
-kira create directory named projects and clone my repo
+ap create directory named projects and clone my repo
 
 # System monitoring
-kira check disk space and memory usage
+ap check disk space and memory usage
 ```
 
 ## Examples
@@ -127,56 +127,56 @@ kira check disk space and memory usage
 ### Cross-Platform
 ```bash
 # Install and open applications
-kira install and open firefox
-kira install visual studio code
+ap install and open firefox
+ap install visual studio code
 
 # System management  
-kira update system and install docker
-kira check disk space and memory usage
+ap update system and install docker
+ap check disk space and memory usage
 ```
 
 ### Linux-Specific
 ```bash
 # Package management
-kira install git using apt
-kira install discord via snap
+ap install git using apt
+ap install discord via snap
 
 # System administration
-kira set up nginx and configure firewall
+ap set up nginx and configure firewall
 ```
 
 ### macOS-Specific
 ```bash
 # Homebrew packages
-kira install git
-kira install --cask visual studio code
-kira install --cask firefox
+ap install git
+ap install --cask visual studio code
+ap install --cask firefox
 
 # Mac App Store apps
-kira install xcode from app store
-kira install pages --mas
+ap install xcode from app store
+ap install pages --mas
 
 # System management
-kira update homebrew and upgrade all packages
-kira install development tools for ios
+ap update homebrew and upgrade all packages
+ap install development tools for ios
 ```
 
 ### Development Workflow
 ```bash
-kira use ~/portfolio.pdf to create a beautiful website and deploy it
-kira set up a react development environment
-kira create a new node project with typescript
+ap use ~/portfolio.pdf to create a beautiful website and deploy it
+ap set up a react development environment
+ap create a new node project with typescript
 ```
 
 ### Content Creation
 ```bash
-kira download some dark aesthetic wallpapers and set one as my background
-kira organize my downloads folder by file type
+ap download some dark aesthetic wallpapers and set one as my background
+ap organize my downloads folder by file type
 ```
 
 ## How It Works
 
-1. **AI Analysis**: Kira uses advanced AI to understand your natural language command
+1. **AI Analysis**: AP uses advanced AI to understand your natural language command
 2. **Intelligent Planning**: Breaks down complex tasks into safe, executable steps
 3. **Smart Execution**: Automatically detects your Linux distribution and uses appropriate commands
 4. **Error Recovery**: Intelligently handles failures with distribution-aware solutions
@@ -184,7 +184,7 @@ kira organize my downloads folder by file type
 
 ## Configuration
 
-Kira creates a configuration file at `~/.env` on first run. You can customize:
+AP creates a configuration file at `~/.env` on first run. You can customize:
 
 - Browser settings and timeouts
 - Terminal shell and command timeouts

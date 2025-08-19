@@ -1,15 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { KiraProfile } from '../setup/InitWizard.js';
+import { APProfile } from '../setup/InitWizard.js';
 
 export class ProfileManager {
   private static instance: ProfileManager;
   private profilePath: string;
-  private profile: KiraProfile | null = null;
+  private profile: APProfile | null = null;
 
   private constructor() {
-    this.profilePath = path.join(os.homedir(), '.kira', 'profile.json');
+    this.profilePath = path.join(os.homedir(), '.ap', 'profile.json');
   }
 
   public static getInstance(): ProfileManager {
@@ -19,7 +19,7 @@ export class ProfileManager {
     return ProfileManager.instance;
   }
 
-  public async loadProfile(): Promise<KiraProfile | null> {
+  public async loadProfile(): Promise<APProfile | null> {
     if (this.profile) {
       return this.profile;
     }
@@ -41,7 +41,7 @@ export class ProfileManager {
     const profile = await this.loadProfile();
     
     if (!profile) {
-      return `User Profile: Not initialized. Please run "kira init" to set up personalized assistance.
+      return `User Profile: Not initialized. Please run "ap init" to set up personalized assistance.
 System: Linux (architecture unknown)
 Default behavior: Use conservative automation and provide detailed explanations.`;
     }
@@ -78,7 +78,7 @@ Default behavior: Use conservative automation and provide detailed explanations.
     return fs.existsSync(this.profilePath);
   }
 
-  public async updateProfile(updates: Partial<KiraProfile>): Promise<void> {
+  public async updateProfile(updates: Partial<APProfile>): Promise<void> {
     const profile = await this.loadProfile();
     if (profile) {
       const updatedProfile = { ...profile, ...updates, updated_at: new Date().toISOString() };

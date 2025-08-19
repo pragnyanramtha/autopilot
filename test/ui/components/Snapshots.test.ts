@@ -345,7 +345,7 @@ describe('Visual Component Snapshots', () => {
 
     it('should match static key-value table snapshot', () => {
       const data = {
-        applicationName: 'Kira CLI',
+        applicationName: 'AP CLI',
         version: '0.1.0',
         platform: 'Linux x64',
         nodeVersion: 'v18.17.0',

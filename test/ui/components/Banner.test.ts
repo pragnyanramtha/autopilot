@@ -18,7 +18,7 @@ describe('Banner Component', () => {
       const output = getCapturedLogs();
       
       expect(output.length).toBeGreaterThan(0);
-      expect(output.join('\n')).toContain('KIRA');
+      expect(output.join('\n')).toContain('AP');
     });
 
     it('should display compact banner', () => {
@@ -26,7 +26,7 @@ describe('Banner Component', () => {
       const output = getCapturedLogs();
       
       expect(output.length).toBe(1);
-      expect(output[0]).toContain('KIRA');
+      expect(output[0]).toContain('AP');
       expect(output[0]).toContain('v0.1.0');
     });
 
@@ -35,7 +35,7 @@ describe('Banner Component', () => {
       const output = getCapturedLogs();
       
       expect(output.length).toBe(1);
-      expect(output[0]).toContain('Kira');
+      expect(output[0]).toContain('AP');
       expect(output[0]).toContain('v0.1.0');
     });
 
@@ -47,14 +47,14 @@ describe('Banner Component', () => {
       });
       
       const output = getCapturedLogs();
-      expect(output.join('\n')).toContain('KIRA');
+      expect(output.join('\n')).toContain('AP');
     });
 
     it('should display welcome message', () => {
       Banner.welcome();
       const output = getCapturedLogs();
       
-      expect(output.join('\n')).toContain('Welcome to Kira!');
+      expect(output.join('\n')).toContain('Welcome to AP!');
     });
 
     it('should display startup message with username', () => {
@@ -92,14 +92,14 @@ describe('Banner Component', () => {
       Banner.separator('TEST');
       const output = getCapturedLogs();
       
-      expect(output.join('\n')).toContain('KIRA TEST');
+      expect(output.join('\n')).toContain('AP TEST');
     });
 
     it('should display footer', () => {
       Banner.footer();
       const output = getCapturedLogs();
       
-      expect(output.join('\n')).toContain('Thank you for using Kira!');
+      expect(output.join('\n')).toContain('Thank you for using AP!');
     });
   });
 
@@ -109,7 +109,7 @@ describe('Banner Component', () => {
       const output = getCapturedLogs();
       
       expect(output.length).toBeGreaterThan(0);
-      expect(output.join('\n')).toContain('KIRA');
+      expect(output.join('\n')).toContain('AP');
     });
 
     it('should display optimized compact banner', () => {
@@ -117,7 +117,7 @@ describe('Banner Component', () => {
       const output = getCapturedLogs();
       
       expect(output.length).toBe(1);
-      expect(output[0]).toContain('KIRA');
+      expect(output[0]).toContain('AP');
     });
 
     it('should display optimized minimal banner', () => {
@@ -125,7 +125,7 @@ describe('Banner Component', () => {
       const output = getCapturedLogs();
       
       expect(output.length).toBe(1);
-      expect(output[0]).toContain('Kira');
+      expect(output[0]).toContain('AP');
     });
 
     it('should preload banner components', async () => {
@@ -153,7 +153,7 @@ describe('Banner Component', () => {
       await OptimizedBanner.welcome({ useCache: true });
       const output = getCapturedLogs();
       
-      expect(output.join('\n')).toContain('Welcome to Kira!');
+      expect(output.join('\n')).toContain('Welcome to AP!');
     });
 
     it('should display optimized startup message', async () => {
@@ -188,14 +188,14 @@ describe('Banner Component', () => {
       OptimizedBanner.separator('TEST');
       const output = getCapturedLogs();
       
-      expect(output.join('\n')).toContain('KIRA TEST');
+      expect(output.join('\n')).toContain('AP TEST');
     });
 
     it('should display optimized footer', () => {
       OptimizedBanner.footer();
       const output = getCapturedLogs();
       
-      expect(output.join('\n')).toContain('Thank you for using Kira!');
+      expect(output.join('\n')).toContain('Thank you for using AP!');
     });
 
     it('should clear cache', () => {

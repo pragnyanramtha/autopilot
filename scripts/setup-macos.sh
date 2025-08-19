@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Kira macOS Setup Script
-# This script helps set up Kira on macOS with all necessary dependencies
+# AP macOS Setup Script
+# This script helps set up AP on macOS with all necessary dependencies
 
 set -e
 
-echo "🍎 Kira macOS Setup Script"
+echo "🍎 AP macOS Setup Script"
 echo "=========================="
 echo ""
 
@@ -117,11 +117,11 @@ echo ""
 echo "🚀 Next steps:"
 echo "   1. Get your Gemini API key: https://aistudio.google.com/app/apikey"
 echo "   2. Run: npm install && npm run build"
-echo "   3. Run: kira init"
-echo "   4. Start using Kira!"
+echo "   3. Run: ap init"
+echo "   4. Start using AP!"
 echo ""
 echo "💡 Example commands to try:"
-echo "   kira install visual studio code"
-echo "   kira install firefox --cask"
-echo "   kira install xcode --mas"
-echo "   kira update system"
+echo "   ap install visual studio code"
+echo "   ap install firefox --cask"
+echo "   ap install xcode --mas"
+echo "   ap update system"

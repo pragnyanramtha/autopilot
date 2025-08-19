@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Kira System Detection Script
-# This script gathers comprehensive system information for Kira AI (Linux & macOS)
+# AP System Detection Script
+# This script gathers comprehensive system information for AP AI (Linux & macOS)
 
 echo "🔍 Detecting system information..."
 

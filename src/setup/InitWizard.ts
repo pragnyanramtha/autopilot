@@ -59,7 +59,7 @@ export interface UserPreferences {
   timezone: string;
 }
 
-export interface KiraProfile {
+export interface APProfile {
   version: string;
   created_at: string;
   updated_at: string;
@@ -73,18 +73,18 @@ export class InitWizard {
   private systemInfo: SystemInfo | null = null;
 
   constructor() {
-    this.profilePath = path.join(os.homedir(), '.kira', 'profile.json');
+    this.profilePath = path.join(os.homedir(), '.ap', 'profile.json');
   }
 
   async run(): Promise<void> {
-    console.log(chalk.cyan.bold('\n🚀 Kira Initialization Wizard\n'));
-    console.log('Welcome! Let\'s set up Kira to work perfectly with your system and preferences.\n');
+    console.log(chalk.cyan.bold('\n🚀 AP Initialization Wizard\n'));
+    console.log('Welcome! Let\'s set up AP to work perfectly with your system and preferences.\n');
 
     // Check if already initialized
     if (await this.isAlreadyInitialized()) {
-      const shouldReinit = await this.askYesNo('Kira is already initialized. Do you want to reinitialize?');
+      const shouldReinit = await this.askYesNo('AP is already initialized. Do you want to reinitialize?');
       if (!shouldReinit) {
-        console.log(chalk.green('✅ Kira initialization skipped.'));
+        console.log(chalk.green('✅ AP initialization skipped.'));
         return;
       }
     }
@@ -110,16 +110,16 @@ export class InitWizard {
       console.log(chalk.yellow('\n⚙️  Step 5: Final configuration...'));
       await this.finalSetup();
 
-      console.log(chalk.green.bold('\n🎉 Kira initialization complete!'));
+      console.log(chalk.green.bold('\n🎉 AP initialization complete!'));
       console.log(chalk.cyan('\n📋 What\'s next:'));
-      console.log('• Try: kira check my system');
-      console.log('• Try: kira install my favorite editor');
-      console.log('• Try: kira help me set up a development environment');
-      console.log('• Your preferences are saved in ~/.kira/profile.json');
+      console.log('• Try: ap check my system');
+      console.log('• Try: ap install my favorite editor');
+      console.log('• Try: ap help me set up a development environment');
+      console.log('• Your preferences are saved in ~/.ap/profile.json');
 
     } catch (error) {
       console.error(chalk.red('\n❌ Initialization failed:'), error);
-      console.log(chalk.yellow('You can try running "kira init" again.'));
+      console.log(chalk.yellow('You can try running "ap init" again.'));
     }
   }
 
@@ -187,11 +187,11 @@ export class InitWizard {
   }
 
   private async gatherUserPreferences(): Promise<UserPreferences> {
-    console.log('   Please answer a few questions to personalize Kira:\n');
+    console.log('   Please answer a few questions to personalize AP:\n');
 
     const preferences: UserPreferences = {
       name: this.systemInfo?.system.username || 'user',
-      preferred_name: await this.askQuestion('What should Kira call you?', this.systemInfo?.system.username || 'user'),
+      preferred_name: await this.askQuestion('What should AP call you?', this.systemInfo?.system.username || 'user'),
       text_editor: await this.askChoice('What\'s your preferred text editor?', 
         ['nano', 'vim', 'emacs', 'code', 'other'], 'nano'),
       code_editor: await this.askChoice('What\'s your preferred code editor?', 
@@ -256,7 +256,7 @@ Instructions for AI:
   }
 
   private async saveProfile(preferences: UserPreferences, aiContext: string): Promise<void> {
-    const profile: KiraProfile = {
+    const profile: APProfile = {
       version: '1.0.0',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -265,10 +265,10 @@ Instructions for AI:
       ai_context: aiContext
     };
 
-    // Ensure .kira directory exists
-    const kiraDir = path.dirname(this.profilePath);
-    if (!fs.existsSync(kiraDir)) {
-      fs.mkdirSync(kiraDir, { recursive: true });
+    // Ensure .ap directory exists
+    const apDir = path.dirname(this.profilePath);
+    if (!fs.existsSync(apDir)) {
+      fs.mkdirSync(apDir, { recursive: true });
     }
 
     // Save profile

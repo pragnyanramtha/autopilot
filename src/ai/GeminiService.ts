@@ -31,7 +31,7 @@ export class GeminiService {
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey === '' || apiKey.trim() === '') {
-      console.error('❌ Gemini API key is REQUIRED for Kira to function.');
+      console.error('❌ Gemini API key is REQUIRED for AP to function.');
       console.error('');
       console.error('🔑 Get your FREE API key from Google AI Studio:');
       console.error('   👉 https://aistudio.google.com/app/apikey');
@@ -46,7 +46,7 @@ export class GeminiService {
       console.error('📝 Add it to your .env file:');
       console.error('   echo "GEMINI_API_KEY=your_api_key_here" >> .env');
       console.error('');
-      console.error('💡 Or run: kira init (for interactive setup)');
+      console.error('💡 Or run: ap init (for interactive setup)');
       console.error('');
       console.error('ℹ️  The Gemini API is free with generous limits:');
       console.error('   • 15 requests per minute');
@@ -100,7 +100,7 @@ export class GeminiService {
       const userName = await profileManager.getUserName();
       
       const prompt = `
-You are Kira, an intelligent AI assistant for Linux automation. You have access to the user's profile and system information.
+You are AP, an intelligent AI assistant for Linux automation. You have access to the user's profile and system information.
 
 ${userContext}
 
@@ -176,7 +176,7 @@ Respond only with valid JSON.
       const userName = await profileManager.getUserName();
       
       const prompt = `
-You are Kira, an intelligent AI assistant helping ${userName} with Linux automation. You have access to their system information and preferences.
+You are AP, an intelligent AI assistant helping ${userName} with Linux automation. You have access to their system information and preferences.
 
 ${userContext}
 

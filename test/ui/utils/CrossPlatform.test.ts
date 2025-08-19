@@ -400,7 +400,7 @@ describe('Cross-Platform Compatibility', () => {
         Banner.displayCompact();
         const output = getCapturedLogs();
         expect(output.length).toBe(1);
-        expect(output[0]).toContain('KIRA');
+        expect(output[0]).toContain('AP');
       });
     });
 

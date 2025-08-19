@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design document outlines the implementation approach for enhancing the visual appeal and user experience of the Kira CLI interface. The design focuses on creating a modern, professional, and user-friendly command-line experience while maintaining performance and cross-platform compatibility.
+This design document outlines the implementation approach for enhancing the visual appeal and user experience of the AP CLI interface. The design focuses on creating a modern, professional, and user-friendly command-line experience while maintaining performance and cross-platform compatibility.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ src/ui/
 
 ### Banner Component
 
-The banner component will display the Kira branding and version information:
+The banner component will display the AP branding and version information:
 
 ```typescript
 interface BannerOptions {
