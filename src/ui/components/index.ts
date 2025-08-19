@@ -14,3 +14,24 @@ export { examples, runExample, runAllExamples } from './InteractiveExamples.js';
 export { colors } from '../utils/Colors.js';
 export { symbols } from '../utils/Symbols.js';
 export { Layout } from '../utils/Layout.js';
+
+// Re-export preferences for convenience
+export {
+  visualPreferences,
+  getVisualPreferences,
+  updateVisualPreferences,
+  shouldShowAnimations,
+  shouldShowIcons,
+  shouldUseColors,
+  PreferencesConfig
+} from '../preferences/index.js';
+
+// Re-export terminal capabilities for convenience
+export {
+  terminalCapabilities,
+  terminalAdapter,
+  detectTerminalCapabilities,
+  getAdaptiveConfig,
+  isFeatureSupported,
+  ColorSupport
+} from '../terminal/index.js';
