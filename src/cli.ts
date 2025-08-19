@@ -7,7 +7,7 @@ import { Banner } from './ui/components/Banner.js';
 import { StatusIndicator, StatusType } from './ui/components/StatusIndicator.js';
 import { Spinner, ProgressBar } from './ui/components/ProgressBar.js';
 import { Layout } from './ui/utils/Layout.js';
-import { getThemeColors } from './ui/themes/index.js';
+import { getThemeColors } from './ui/themes/ThemeManager.js';
 
 // Load environment variables
 dotenv.config();
