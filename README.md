@@ -264,7 +264,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-**Pragnya Ramtha** - [@pragnyanramtha](https://github.com/pragnyanramtha)
+**Pragnyan Ramtha** - [@pragnyanramtha](https://github.com/pragnyanramtha)
 
 ## Roadmap
 
