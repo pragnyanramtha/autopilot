@@ -58,10 +58,10 @@ export class GeminiService {
     
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      // Use Gemini 2.5 Pro for enhanced natural language understanding
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+      // Prioritize Gemini 2.5 Flash for speed and efficiency
+      this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       this.isEnabled = true;
-      console.log('🤖 Gemini AI service initialized with 2.5 Pro model');
+      console.log('🤖 Gemini AI service initialized with Flash model');
     } catch (error) {
       console.error('❌ Failed to initialize Gemini AI:', error instanceof Error ? error.message : String(error));
       console.error('');
@@ -99,16 +99,9 @@ export class GeminiService {
       const userContext = await profileManager.getAIContext();
       const userName = await profileManager.getUserName();
       
-      // Get OS information
-      const osContext = await this.getOSContext();
-      
       const prompt = `
-You are AP, an intelligent AI assistant for system automation. You have access to the user's profile and system information.
+You are AP, an intelligent AI assistant for Linux automation. You have access to the user's profile and system information.
 
-SYSTEM CONTEXT:
-${osContext}
-
-USER PROFILE:
 ${userContext}
 
 User Input: "${userInput}"
@@ -145,7 +138,7 @@ Example response format:
 Respond only with valid JSON.
 `;
 
-      const result: any = await this.model.generateContent(prompt);
+      const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
@@ -182,16 +175,9 @@ Respond only with valid JSON.
       const userContext = await profileManager.getAIContext();
       const userName = await profileManager.getUserName();
       
-      // Get OS information
-      const osContext = await this.getOSContext();
-      
       const prompt = `
-You are AP, an intelligent AI assistant helping ${userName} with system automation. You have access to their system information and preferences.
+You are AP, an intelligent AI assistant helping ${userName} with Linux automation. You have access to their system information and preferences.
 
-SYSTEM CONTEXT:
-${osContext}
-
-USER PROFILE:
 ${userContext}
 
 Failed Command: "${command}"
@@ -236,7 +222,7 @@ ALWAYS use bash shell syntax and built-in commands.
 Respond only with valid JSON.
 `;
 
-      const result: any = await this.model.generateContent(prompt);
+      const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
@@ -275,7 +261,7 @@ Provide an improved version that:
 Respond with just the improved bash command, no explanation.
 `;
 
-      const result: any = await this.model.generateContent(prompt);
+      const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text().trim();
 
@@ -291,67 +277,6 @@ Respond with just the improved bash command, no explanation.
 
   isAIEnabled(): boolean {
     return this.isEnabled;
-  }
-
-  /**
-   * Generate a response from Gemini AI for any prompt
-   */
-  async generateResponse(prompt: string): Promise<string> {
-    if (!this.isEnabled || !this.model) {
-      throw new Error('Gemini AI is not enabled or configured');
-    }
-
-    try {
-      const result: any = await this.withTimeout(
-        this.model.generateContent(prompt),
-        15000 // 15 second timeout for system analysis
-      );
-      
-      const response = await result.response;
-      return response.text();
-      
-    } catch (error: any) {
-      if (error.message?.includes('timeout')) {
-        throw new Error('AI request timed out - please try again');
-      }
-      throw new Error(`AI generation failed: ${error.message || 'Unknown error'}`);
-    }
-  }
-
-  /**
-   * Get OS context for prompts
-   */
-  private async getOSContext(): Promise<string> {
-    try {
-      const { FirstLaunchService } = await import('../setup/FirstLaunchService.js');
-      const firstLaunchService = new FirstLaunchService();
-      const config = await firstLaunchService.loadConfiguration();
-      
-      if (config?.osInfo) {
-        const osInfo = config.osInfo;
-        const packageManagers = osInfo.capabilities?.packageManagers?.join(', ') || 'none detected';
-        
-        return `Operating System: ${osInfo.platform} ${osInfo.version} (${osInfo.architecture})
-Available Package Managers: ${packageManagers}
-System Capabilities:
-- Node.js: ${osInfo.capabilities?.hasNodeJS ? 'Available' : 'Not available'}
-- NPM: ${osInfo.capabilities?.hasNPM ? 'Available' : 'Not available'}
-- Bash: ${osInfo.capabilities?.hasBash ? 'Available' : 'Not available'}
-- Git: ${osInfo.capabilities?.hasGit ? 'Available' : 'Not available'}
-
-Platform-specific commands:
-${osInfo.platform === 'macos' ? '- Use "brew" for packages, "open" for launching apps' : ''}
-${osInfo.platform === 'linux' ? '- Use "' + (packageManagers.split(',')[0] || 'apt') + '" for packages' : ''}
-${osInfo.platform === 'windows' ? '- Use "winget" or "choco" for packages' : ''}`;
-      }
-    } catch (error) {
-      console.warn('Could not load OS context:', error);
-    }
-    
-    // Fallback context
-    const platform = process.platform === 'darwin' ? 'macOS' : process.platform === 'win32' ? 'Windows' : 'Linux';
-    return `Operating System: ${platform} (${process.arch})
-Note: Detailed system information not available`;
   }
 
   private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = 8000): Promise<T> {
@@ -409,7 +334,7 @@ Focus on:
 Respond only with valid JSON.
 `;
 
-      const result: any = await proModel.generateContent(prompt);
+      const result = await proModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 

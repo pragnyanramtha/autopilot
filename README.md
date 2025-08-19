@@ -10,7 +10,6 @@ AP is an intelligent AI automation system that can perform complex tasks across 
 
 ## ✨ Features
 
-- **🚀 Automatic Setup**: First-time initialization guides you through configuration
 - **🤖 AI-Powered**: Uses Google Gemini for intelligent command understanding
 - **🖥️ Cross-Platform**: Native support for Linux and macOS
 - **📦 Smart Package Management**: Auto-detects and uses the right package manager
@@ -20,7 +19,6 @@ AP is an intelligent AI automation system that can perform complex tasks across 
 - **👤 Personalized**: Learns your preferences and system configuration
 - **🛡️ Safe & Secure**: Conservative approach with user confirmation for risky operations
 - **🎯 Context Aware**: Remembers your setup and preferences across sessions
-- **📁 File Management**: Built-in file operations for reading, writing, and searching files
 
 ## 🚀 Quick Start
 
@@ -30,8 +28,8 @@ git clone https://github.com/pragnyanramtha/autopilot.git
 cd autopilot
 npm install && npm run build
 
-# 2. First run - AP will guide you through setup automatically
-ap
+# 2. Initialize AP (first-time setup)
+ap init
 
 # 3. Start using AP!
 ap check disk space
@@ -81,14 +79,18 @@ npm install -g .
 This will install the AP command:
 - `ap` - AI-powered automation assistant
 
-### 🤖 AI Setup (AUTOMATIC)
+### 🤖 AI Setup (REQUIRED)
 
-AP will automatically guide you through setting up your FREE Gemini API key on first run:
+AP requires a free Gemini API key to function. Get yours in 2 minutes:
 
-1. **Run AP for the first time**: `ap`
-2. **Follow the interactive setup** - AP will guide you to get your API key
-3. **Visit Google AI Studio**: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-4. **Copy your key** and paste it when prompted
+1. **Visit Google AI Studio**: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. **Sign in** with your Google account
+3. **Click "Create API Key"** 
+4. **Copy the generated key**
+5. **Add it to your `.env` file**:
+   ```bash
+   echo "GEMINI_API_KEY=your_api_key_here" >> .env
+   ```
 
 **The Gemini API is FREE** with generous limits:
 - ✅ 15 requests per minute
@@ -122,17 +124,6 @@ ap check disk space and memory usage
 
 ## Examples
 
-### First Time Usage
-```bash
-# First run - AP guides you through setup automatically
-ap
-
-# After setup, use AP for any task:
-ap install and open firefox
-ap check disk space and memory usage
-ap help me set up a development environment
-```
-
 ### Cross-Platform
 ```bash
 # Install and open applications
@@ -142,20 +133,6 @@ ap install visual studio code
 # System management  
 ap update system and install docker
 ap check disk space and memory usage
-```
-
-### Configuration and Preferences
-```bash
-# Configure your preferences
-ap preferences
-
-# Check system status
-ap status
-
-# File management
-ap file --read README.md
-ap file --write notes.txt --content "My project notes"
-ap file --list ~/projects
 ```
 
 ### Linux-Specific
@@ -252,7 +229,7 @@ make fmt
 ### Project Structure
 
 ```
-autopilot/
+alvioli/
 ├── cmd/                    # Application entry point
 ├── internal/
 │   ├── cli/               # Command-line interface
@@ -287,7 +264,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-**Pragnyan Ramtha** - [@pragnyanramtha](https://github.com/pragnyanramtha)
+**Pragnya Ramtha** - [@pragnyanramtha](https://github.com/pragnyanramtha)
 
 ## Roadmap
 

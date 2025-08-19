@@ -27,8 +27,8 @@ const warning = colors.warning;
 
 // Main program setup
 program
-  .name('kira')
-  .description('Kira - AI-powered OS automation for Linux and macOS')
+  .name('ap')
+  .description('AP - AI-powered OS automation for Linux and macOS')
   .version('0.1.0')
   .option('-v, --verbose', 'Enable verbose output')
   .option('-n, --dry-run', 'Show what would be executed without running')
@@ -46,7 +46,7 @@ program
 // Init command - First-time setup
 program
   .command('init')
-  .description('Initialize Kira with system detection and user preferences')
+  .description('Initialize AP with system detection and user preferences')
   .action(async () => {
     const { InitWizard } = await import('./setup/InitWizard.js');
     const wizard = new InitWizard();
@@ -56,7 +56,7 @@ program
 // Setup command
 program
   .command('setup')
-  .description('Setup Kira configuration and check system requirements')
+  .description('Setup AP configuration and check system requirements')
   .action(async () => {
     const { SetupWizard } = await import('./setup/SetupWizard.js');
     const wizard = new SetupWizard();
@@ -191,7 +191,7 @@ program
       });
 
       console.log();
-      StatusIndicator.divider('Kira Configuration');
+      StatusIndicator.divider('AP Configuration');
 
       // Profile Status
       const profileManager = ProfileManager.getInstance();
@@ -199,12 +199,12 @@ program
       
       if (isInitialized) {
         const userName = await profileManager.getUserName();
-        StatusIndicator.success('Kira Profile: Initialized', {
-          details: `User: ${userName}\nLocation: ~/.kira/profile.json`
+        StatusIndicator.success('AP Profile: Initialized', {
+          details: `User: ${userName}\nLocation: ~/.ap/profile.json`
         });
       } else {
-        StatusIndicator.warning('Kira profile not initialized', {
-          details: 'Run "kira init" to set up your profile'
+        StatusIndicator.warning('AP profile not initialized', {
+          details: 'Run "ap init" to set up your profile'
         });
       }
 
@@ -241,7 +241,7 @@ function checkApiKey(): boolean {
   if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === '') {
     Banner.error(`Missing Gemini API Key
 
-Kira requires a FREE Gemini API key to function.
+AP requires a FREE Gemini API key to function.
 
 🔑 Get your API key from Google AI Studio:
    👉 https://aistudio.google.com/app/apikey

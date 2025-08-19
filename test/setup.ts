@@ -94,7 +94,7 @@ afterEach(() => {
   delete process.env.ACCESSIBILITY_MODE;
   delete process.env.FORCE_HIGH_CONTRAST;
   delete process.env.COLOR_BLIND_FRIENDLY;
-  delete process.env.KIRA_PERFORMANCE_MONITORING;
+  delete process.env.AP_PERFORMANCE_MONITORING;
 });
 
 // Global test utilities

@@ -23,8 +23,8 @@ export class SetupWizard {
     // Display banner
     Banner.display({ showVersion: true, showTagline: true });
     
-    StatusIndicator.info('Starting Kira setup wizard...');
-    console.log('This wizard will help you configure Kira for optimal performance.\n');
+    StatusIndicator.info('Starting AP setup wizard...');
+    console.log('This wizard will help you configure AP for optimal performance.\n');
 
     const steps = [
       'System Detection',
@@ -224,15 +224,15 @@ export class SetupWizard {
     StatusIndicator.success('Setup Complete!');
     
     console.log('\n' + Layout.box(
-      colors.bold('🎉 Kira Setup Complete!\n\n') +
+      colors.bold('🎉 AP Setup Complete!\n\n') +
       colors.primary('📝 Next Steps:\n') +
       '1. Edit .env file and add your Gemini API key for enhanced AI features\n' +
-      '2. Test the installation: kira check disk space\n' +
+      '2. Test the installation: ap check disk space\n' +
       '3. Try some examples:\n' +
-      '   • kira install and open firefox\n' +
-      '   • kira list files\n' +
-      '   • kira create directory named test-folder\n' +
-      '   • kira demo (to see error handling)\n\n' +
+      '   • ap install and open firefox\n' +
+      '   • ap list files\n' +
+      '   • ap create directory named test-folder\n' +
+      '   • ap demo (to see error handling)\n\n' +
       colors.primary('🔧 Configuration:\n') +
       '• Configuration file: .env\n' +
       '• Logs: Check terminal output\n' +
@@ -242,7 +242,7 @@ export class SetupWizard {
       '• GitHub: https://github.com/pragnyanramtha/autopilot\n' +
       '• Issues: https://github.com/pragnyanramtha/autopilot/issues\n' +
       '• API Keys: https://makersuite.google.com/app/apikey\n\n' +
-      colors.success('✨ Kira is ready to automate your workflows!')
+      colors.success('✨ AP is ready to automate your workflows!')
     ));
   }
 }
