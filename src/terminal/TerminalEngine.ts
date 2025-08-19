@@ -18,14 +18,22 @@ export class TerminalEngine {
   }
 
   async executeCommand(command: string): Promise<CommandResult> {
+    const { StatusIndicator } = await import('../ui/components/StatusIndicator.js');
+    
+    StatusIndicator.info(`Preparing to execute: ${command}`, { indent: 2 });
     return await this.executeCommandWithRetry(command, 0);
   }
 
   private async executeCommandWithRetry(command: string, retryCount: number): Promise<CommandResult> {
     const startTime = Date.now();
+    const { StatusIndicator } = await import('../ui/components/StatusIndicator.js');
     
     try {
-      console.log(`🔧 Executing: ${command}${retryCount > 0 ? ` (retry ${retryCount})` : ''}`);
+      if (retryCount > 0) {
+        StatusIndicator.warning(`Retry attempt ${retryCount} for: ${command}`, { indent: 3 });
+      } else {
+        StatusIndicator.info(`Executing: ${command}`, { indent: 3 });
+      }
       
       // Handle special command patterns
       if (command.startsWith('install_package:')) {
@@ -76,7 +84,10 @@ export class TerminalEngine {
   }
 
   private async handleCommandFailure(error: CommandError, retryCount: number): Promise<CommandResult> {
-    console.log(`❌ Command failed: ${error.command}`);
+    const { StatusIndicator } = await import('../ui/components/StatusIndicator.js');
+    const { ErrorDisplay } = await import('../ui/formatters/ErrorDisplay.js');
+    
+    StatusIndicator.error(`Command failed: ${error.command}`, { indent: 3 });
     
     // Fix the error message display
     let errorMessage = '';
@@ -88,12 +99,12 @@ export class TerminalEngine {
       errorMessage = String(error.stderr || 'Unknown error');
     }
     
-    console.log(`   Error: ${errorMessage}`);
-    console.log(`   Exit code: ${error.exitCode}`);
+    StatusIndicator.error(`Error: ${errorMessage}`, { indent: 4 });
+    StatusIndicator.error(`Exit code: ${error.exitCode}`, { indent: 4 });
 
     // Phase 1: Immediate retry (for transient issues)
     if (retryCount === 0 && this.isTransientError(error)) {
-      console.log(`🔄 Phase 1: Immediate retry for transient error`);
+      StatusIndicator.info(`Phase 1: Immediate retry for transient error`, { indent: 4 });
       await this.delay(1000); // 1 second delay
       return await this.executeCommandWithRetry(error.command, retryCount + 1);
     }
@@ -102,8 +113,8 @@ export class TerminalEngine {
     if (retryCount <= 1) {
       const retryStrategy = await this.handleError(error);
       if (retryStrategy.shouldRetry && retryStrategy.alternativeCmd && retryStrategy.alternativeCmd !== error.command) {
-        console.log(`🧠 Phase 2: Smart retry with alternative command`);
-        console.log(`   Trying: ${retryStrategy.alternativeCmd}`);
+        StatusIndicator.info(`Phase 2: Smart retry with alternative command`, { indent: 4 });
+        StatusIndicator.info(`Trying: ${retryStrategy.alternativeCmd}`, { indent: 5 });
         await this.delay(retryStrategy.delaySeconds * 1000);
         return await this.executeCommandWithRetry(retryStrategy.alternativeCmd, retryCount + 1);
       }
@@ -111,21 +122,21 @@ export class TerminalEngine {
 
     // Phase 3: Search for solutions online (AI-enhanced)
     if (retryCount <= 2) {
-      console.log(`🔍 Phase 3: Searching for solutions...`);
+      StatusIndicator.info(`Phase 3: Searching for solutions...`, { indent: 4 });
       
       // Try AI solution first
       if (this.geminiService.isAIEnabled()) {
-        console.log(`🤖 Consulting AI for error solution...`);
+        StatusIndicator.info(`Consulting AI for error solution...`, { indent: 5 });
         const aiSolution = await this.geminiService.findErrorSolution(error.command, error.stderr);
         
         if (aiSolution && aiSolution.confidence > 0.6) {
-          console.log(`💡 AI Solution: ${aiSolution.description}`);
-          console.log(`   Reasoning: ${aiSolution.reasoning}`);
-          console.log(`   Confidence: ${aiSolution.confidence}`);
+          StatusIndicator.success(`AI Solution: ${aiSolution.description}`, { indent: 5 });
+          StatusIndicator.info(`Reasoning: ${aiSolution.reasoning}`, { indent: 6 });
+          StatusIndicator.info(`Confidence: ${Math.round(aiSolution.confidence * 100)}%`, { indent: 6 });
           
           if (aiSolution.commands.length > 0) {
             const solutionCommand = aiSolution.commands[0];
-            console.log(`🔧 Trying AI solution: ${solutionCommand}`);
+            StatusIndicator.info(`Trying AI solution: ${solutionCommand}`, { indent: 5 });
             await this.delay(2000);
             return await this.executeCommandWithRetry(solutionCommand, retryCount + 1);
           }
@@ -137,23 +148,23 @@ export class TerminalEngine {
       
       if (solutions.length > 0) {
         const bestSolution = solutions[0]; // Use the highest confidence solution
-        console.log(`💡 Built-in solution: ${bestSolution.description}`);
-        console.log(`   Source: ${bestSolution.source} (confidence: ${bestSolution.confidence})`);
-        console.log(`   Available commands: ${bestSolution.commands.join(', ')}`);
+        StatusIndicator.success(`Built-in solution: ${bestSolution.description}`, { indent: 5 });
+        StatusIndicator.info(`Source: ${bestSolution.source} (confidence: ${Math.round(bestSolution.confidence * 100)}%)`, { indent: 6 });
+        StatusIndicator.info(`Available commands: ${bestSolution.commands.join(', ')}`, { indent: 6 });
         
         if (bestSolution.commands.length > 0) {
           const solutionCommand = bestSolution.commands[0].replace('<original-command>', error.command);
-          console.log(`🔧 Trying solution: ${solutionCommand}`);
+          StatusIndicator.info(`Trying solution: ${solutionCommand}`, { indent: 5 });
           await this.delay(2000); // 2 second delay
           return await this.executeCommandWithRetry(solutionCommand, retryCount + 1);
         }
       } else {
-        console.log(`🔍 No solutions found for this error`);
+        StatusIndicator.warning(`No solutions found for this error`, { indent: 5 });
       }
     }
 
     // Phase 4: Final fallback - throw the original error
-    console.log(`🛑 All retry attempts exhausted. Command failed permanently.`);
+    StatusIndicator.error(`All retry attempts exhausted. Command failed permanently.`, { indent: 4 });
     throw error;
   }
 
@@ -498,18 +509,25 @@ export class TerminalEngine {
   }
 
   private async handlePackageInstall(command: string): Promise<CommandResult> {
+    const { StatusIndicator } = await import('../ui/components/StatusIndicator.js');
+    const { Spinner } = await import('../ui/components/ProgressBar.js');
+    
     const packageName = command.split(':')[1];
     
     if (!packageName) {
       throw new Error('Package name not specified');
     }
 
-    console.log(`📦 Installing package: ${packageName}`);
+    StatusIndicator.info(`Installing package: ${packageName}`, { indent: 4 });
 
     // Check if already installed
+    const checkSpinner = new Spinner(`Checking if ${packageName} is already installed...`);
+    checkSpinner.start();
+    
     const installCheck = await this.packageManager.isPackageInstalled(packageName);
+    
     if (installCheck.installed) {
-      console.log(`✅ Package ${packageName} is already installed (${installCheck.manager} v${installCheck.version})`);
+      checkSpinner.succeed(`Package ${packageName} is already installed (${installCheck.manager} v${installCheck.version})`);
       return {
         exitCode: 0,
         stdout: `Package ${packageName} already installed`,
@@ -517,11 +535,17 @@ export class TerminalEngine {
         duration: 0
       };
     }
+    
+    checkSpinner.info(`Package ${packageName} not found, proceeding with installation...`);
 
     // Use the enhanced package manager service
+    const installSpinner = new Spinner(`Installing ${packageName}...`);
+    installSpinner.start();
+    
     const result = await this.packageManager.installPackage(packageName);
     
     if (result.success) {
+      installSpinner.succeed(`Successfully installed ${packageName} with ${result.manager}`);
       return {
         exitCode: 0,
         stdout: result.output || `Successfully installed ${packageName} with ${result.manager}`,
@@ -529,18 +553,22 @@ export class TerminalEngine {
         duration: 0
       };
     } else {
+      installSpinner.fail(`Failed to install ${packageName}`);
       throw new Error(result.error || `Failed to install ${packageName}`);
     }
   }
 
   private async handleApplicationLaunch(command: string): Promise<CommandResult> {
+    const { StatusIndicator } = await import('../ui/components/StatusIndicator.js');
+    const { Spinner } = await import('../ui/components/ProgressBar.js');
+    
     const appName = command.split(':')[1];
     
     if (!appName) {
       throw new Error('Application name not specified');
     }
 
-    console.log(`🚀 Launching application: ${appName}`);
+    StatusIndicator.info(`Launching application: ${appName}`, { indent: 4 });
 
     // Try different ways to launch the application
     const launchCommands = [
@@ -550,11 +578,17 @@ export class TerminalEngine {
       `xdg-open ${appName}`
     ];
 
-    for (const launchCmd of launchCommands) {
+    const launchSpinner = new Spinner(`Attempting to launch ${appName}...`);
+    launchSpinner.start();
+
+    for (let i = 0; i < launchCommands.length; i++) {
+      const launchCmd = launchCommands[i];
+      launchSpinner.update(`Trying method ${i + 1}/${launchCommands.length}: ${launchCmd}`);
+      
       try {
         const result = await this.executeGenericCommand(launchCmd);
         if (result.exitCode === 0) {
-          console.log(`✅ Successfully launched ${appName}`);
+          launchSpinner.succeed(`Successfully launched ${appName}`);
           return result;
         }
       } catch (error) {
@@ -562,6 +596,7 @@ export class TerminalEngine {
       }
     }
 
+    launchSpinner.fail(`Failed to launch ${appName}`);
     throw new Error(`Failed to launch ${appName}`);
   }
 

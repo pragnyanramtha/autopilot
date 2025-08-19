@@ -4,8 +4,10 @@ import * as dotenv from 'dotenv';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { Banner } from './ui/components/Banner.js';
-import { StatusIndicator } from './ui/components/StatusIndicator.js';
-import { Spinner } from './ui/components/ProgressBar.js';
+import { StatusIndicator, StatusType } from './ui/components/StatusIndicator.js';
+import { Spinner, ProgressBar } from './ui/components/ProgressBar.js';
+import { Layout } from './ui/utils/Layout.js';
+import { getThemeColors } from './ui/themes/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -16,11 +18,12 @@ import { TerminalEngine } from './terminal/TerminalEngine.js';
 
 const program = new Command();
 
-// Color functions for terminal output
-const success = chalk.green.bold;
-const error = chalk.red.bold;
-const info = chalk.cyan;
-const warning = chalk.yellow;
+// Get theme colors for consistent styling
+const colors = getThemeColors();
+const success = colors.success;
+const error = colors.error;
+const info = colors.info;
+const warning = colors.warning;
 
 // Main program setup
 program
@@ -68,6 +71,111 @@ program
     const { ErrorHandlingDemo } = await import('./terminal/ErrorHandlingDemo.js');
     const demo = new ErrorHandlingDemo();
     await demo.demonstrateErrorHandling();
+  });
+
+// Status command - Show system status with tables
+program
+  .command('status')
+  .description('Display system status and information using formatted tables')
+  .action(async () => {
+    const { Table, formatters } = await import('./ui/components/Table.js');
+    const { ProfileManager } = await import('./profile/ProfileManager.js');
+    
+    Banner.displayMinimal();
+    StatusIndicator.info('Gathering system information...');
+    
+    try {
+      // System Information Table
+      const systemTable = new Table({
+        title: 'System Information',
+        showBorders: true,
+        alternateRowColors: true
+      });
+
+      systemTable.addColumns([
+        { key: 'property', title: 'Property', align: 'left', width: 18 },
+        { key: 'value', title: 'Value', align: 'left' }
+      ]);
+
+      systemTable.addRows([
+        { property: 'Operating System', value: `${process.platform} ${process.arch}` },
+        { property: 'Node.js Version', value: process.version },
+        { property: 'Terminal', value: process.env.TERM || 'unknown' },
+        { property: 'Shell', value: process.env.SHELL || 'unknown' },
+        { property: 'Home Directory', value: process.env.HOME || 'unknown' }
+      ]);
+
+      console.log(systemTable.render());
+      console.log();
+
+      // Profile Status
+      const profileManager = ProfileManager.getInstance();
+      const isInitialized = await profileManager.isInitialized();
+      
+      if (isInitialized) {
+        const userName = await profileManager.getUserName();
+        const profileData = {
+          'User Name': userName,
+          'Profile Status': 'Initialized',
+          'Profile Location': '~/.kira/profile.json'
+        };
+        
+        console.log(Table.keyValue(profileData, 'Kira Profile Status'));
+        console.log();
+      } else {
+        StatusIndicator.warning('Kira profile not initialized. Run "kira init" to set up.');
+        console.log();
+      }
+
+      // API Configuration
+      const apiKey = process.env.GEMINI_API_KEY;
+      const apiStatus = {
+        'Gemini API Key': apiKey && apiKey !== 'your_gemini_api_key_here' ? 
+          '✓ Configured' : '✗ Not configured',
+        'API Status': apiKey && apiKey !== 'your_gemini_api_key_here' ? 
+          'Ready' : 'Setup required'
+      };
+
+      console.log(Table.keyValue(apiStatus, 'AI Configuration'));
+      console.log();
+
+      // Package Manager Status
+      const { PackageManagerService } = await import('./terminal/PackageManager.js');
+      const packageManager = new PackageManagerService();
+      
+      StatusIndicator.info('Checking package managers...');
+      await packageManager.initialize();
+      
+      const availableManagers = packageManager.getAvailableManagers();
+      
+      if (availableManagers.length > 0) {
+        const packageTable = new Table({
+          title: 'Available Package Managers',
+          showBorders: true,
+          showRowNumbers: true,
+          alternateRowColors: true
+        });
+
+        packageTable.addColumns([
+          { key: 'name', title: 'Package Manager', align: 'left' },
+          { key: 'status', title: 'Status', align: 'center', formatter: formatters.status }
+        ]);
+
+        const packageRows = availableManagers.map(manager => ({
+          name: manager,
+          status: 'Available'
+        }));
+
+        packageTable.setData(packageRows);
+        console.log(packageTable.render());
+        console.log();
+      }
+      
+      StatusIndicator.success('System status check completed');
+      
+    } catch (error) {
+      StatusIndicator.error(`Failed to gather system information: ${error instanceof Error ? error.message : String(error)}`);
+    }
   });
 
 // Check API key function
@@ -142,10 +250,18 @@ async function executeTask(task: string, mode: string, isKiraCommand: boolean): 
 
 // Parse and plan task function
 async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand: boolean): Promise<void> {
-  const spinner = new Spinner('Parsing command...');
-  spinner.start();
+  const { MultiStepProgress } = await import('./ui/components/ProgressBar.js');
+  const { CommandOutput } = await import('./ui/formatters/CommandOutput.js');
+  
+  // Create multi-step progress tracker
+  const steps = ['Parse Command', 'Create Plan', 'Execute Steps'];
+  const progress = new MultiStepProgress(steps);
   
   try {
+    // Step 1: Parse the command with enhanced visual feedback
+    const parseSpinner = new Spinner('Analyzing command structure...');
+    parseSpinner.start();
+    
     // Create parser and planner instances
     const parser = new CommandParser();
     const planner = new TaskPlanner();
@@ -157,29 +273,55 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand
       isAlidoCommand: isKiraCommand
     };
     
-    // Parse the command
+    // Parse the command with progress updates
+    parseSpinner.update('Detecting execution mode...');
+    await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause for visual feedback
+    
+    parseSpinner.update('Analyzing command complexity...');
     const parsedCmd = await parser.parse(input);
     
-    spinner.succeed('Command parsed successfully');
+    parseSpinner.succeed('Command analysis complete');
+    progress.nextStep('Command parsed successfully');
     
-    StatusIndicator.info(`Detected mode: ${parsedCmd.executionMode}`, { indent: 2 });
-    StatusIndicator.info(`Required tools: ${parsedCmd.requiredTools.join(', ') || 'none'}`, { indent: 2 });
-    StatusIndicator.info(`Complexity: ${parsedCmd.estimatedComplexity}`, { indent: 2 });
-    StatusIndicator.info(`Steps: ${parsedCmd.steps.length}`, { indent: 2 });
+    // Display parsing results with enhanced formatting
+    console.log();
+    StatusIndicator.divider('Parsing Results');
     
-    // Create execution plan
-    const planSpinner = new Spinner('Creating execution plan...');
+    const parsingResults = [
+      { label: 'Execution Mode', status: StatusType.INFO, value: parsedCmd.executionMode },
+      { label: 'Required Tools', status: StatusType.INFO, value: parsedCmd.requiredTools.join(', ') || 'none' },
+      { label: 'Complexity Score', status: parsedCmd.estimatedComplexity > 50 ? StatusType.WARNING : StatusType.SUCCESS, value: parsedCmd.estimatedComplexity.toString() },
+      { label: 'Steps Identified', status: StatusType.INFO, value: parsedCmd.steps.length.toString() }
+    ];
+    
+    StatusIndicator.summary('Command Analysis', parsingResults);
+    
+    // Step 2: Create execution plan with visual feedback
+    const planSpinner = new Spinner('Building execution strategy...');
     planSpinner.start();
     
+    planSpinner.update('Assessing risks and dependencies...');
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    planSpinner.update('Optimizing execution order...');
     const plan = await planner.createPlan(parsedCmd);
     
-    planSpinner.succeed('Execution plan created');
+    planSpinner.succeed('Execution plan ready');
+    progress.nextStep('Execution plan created');
     
-    StatusIndicator.info(`Risk level: ${plan.riskLevel}`, { indent: 2 });
-    StatusIndicator.info(`Requires root: ${plan.requiresRoot}`, { indent: 2 });
-    StatusIndicator.info(`Dependencies: ${plan.dependencies.join(', ') || 'none'}`, { indent: 2 });
+    // Display plan details with enhanced formatting
+    console.log();
+    StatusIndicator.divider('Execution Plan');
     
-    // Display the execution steps
+    const planResults = [
+      { label: 'Risk Level', status: plan.riskLevel === 'high' ? StatusType.ERROR : plan.riskLevel === 'medium' ? StatusType.WARNING : StatusType.SUCCESS, value: plan.riskLevel },
+      { label: 'Root Access', status: plan.requiresRoot ? StatusType.WARNING : StatusType.SUCCESS, value: plan.requiresRoot ? 'Required' : 'Not required' },
+      { label: 'Dependencies', status: StatusType.INFO, value: plan.dependencies.join(', ') || 'none' }
+    ];
+    
+    StatusIndicator.summary('Plan Overview', planResults);
+    
+    // Display execution steps with enhanced formatting
     console.log();
     StatusIndicator.info('Execution Steps:');
     plan.steps.forEach((step, i) => {
@@ -189,55 +331,123 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand
       else if (step.type === 'wait') stepIcon = '⏳';
       
       const authIndicator = step.requiresAuth ? ' 🔐' : '';
-      StatusIndicator.info(`${stepIcon} ${step.command}${authIndicator}`, { 
-        prefix: `${i + 1}`,
-        indent: 2 
-      });
+      const stepStatus = step.requiresAuth ? StatusType.WARNING : StatusType.INFO;
+      
+      StatusIndicator.step(i + 1, plan.steps.length, `${stepIcon} ${step.command}${authIndicator}`, stepStatus);
     });
     
-    // Execute terminal steps (for demonstration)
+    // Step 3: Execute with real-time progress and enhanced feedback
     console.log();
-    StatusIndicator.info('Executing terminal steps...');
+    StatusIndicator.divider('Execution');
+    progress.nextStep('Starting execution...');
     
     const terminalEngine = new TerminalEngine();
+    let successCount = 0;
+    let failureCount = 0;
     
-    for (const step of plan.steps) {
+    for (let i = 0; i < plan.steps.length; i++) {
+      const step = plan.steps[i];
+      
       if (step.type === 'terminal' && step.command) {
         try {
-          const execSpinner = new Spinner(`Executing: ${step.command}`);
-          execSpinner.start();
+          // Create execution progress bar
+          const execProgress = new ProgressBar({
+            total: 100,
+            message: `Step ${i + 1}/${plan.steps.length}: ${step.command}`,
+            showPercentage: true,
+            style: 'bar'
+          });
           
+          // Simulate progress updates during execution
+          execProgress.update(10, 'Initializing...');
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          execProgress.update(30, 'Executing command...');
           const result = await terminalEngine.executeCommand(step.command);
           
+          execProgress.update(90, 'Processing results...');
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           if (result.exitCode === 0) {
-            execSpinner.succeed(`Success (${result.duration}ms)`);
-            if (result.stdout) {
-              const output = result.stdout.substring(0, 200);
-              const truncated = result.stdout.length > 200 ? '...' : '';
-              StatusIndicator.info(`Output: ${output}${truncated}`, { indent: 4 });
+            execProgress.complete('✓ Success');
+            successCount++;
+            
+            // Display formatted command output
+            if (result.stdout && result.stdout.trim()) {
+              const formattedOutput = CommandOutput.format({
+                command: step.command,
+                output: result.stdout,
+                exitCode: result.exitCode,
+                duration: result.duration
+              }, { 
+                showCommand: false, 
+                maxWidth: 100,
+                highlightSyntax: true 
+              });
+              
+              console.log(Layout.indent(formattedOutput, 2));
             }
           } else {
-            execSpinner.fail(`Failed with exit code ${result.exitCode}`);
-            if (result.stderr) {
-              const errorOutput = result.stderr.substring(0, 200);
-              const truncated = result.stderr.length > 200 ? '...' : '';
-              StatusIndicator.error(`Error: ${errorOutput}${truncated}`, { indent: 4 });
-            }
+            execProgress.fail('✗ Failed');
+            failureCount++;
+            
+            // Display formatted error output
+            const formattedError = CommandOutput.format({
+              command: step.command,
+              output: result.stdout || '',
+              error: result.stderr,
+              exitCode: result.exitCode,
+              duration: result.duration
+            }, { 
+              showCommand: false, 
+              maxWidth: 100 
+            });
+            
+            console.log(Layout.indent(formattedError, 2));
           }
+          
+          console.log(); // Add spacing between steps
+          
         } catch (err) {
-          StatusIndicator.error(`Execution failed: ${err instanceof Error ? err.message : String(err)}`);
-          StatusIndicator.error('Command execution failed after all retry attempts');
+          failureCount++;
+          StatusIndicator.error(`Step ${i + 1} failed: ${err instanceof Error ? err.message : String(err)}`);
+          StatusIndicator.error('Command execution failed after all retry attempts', { indent: 2 });
+          console.log();
         }
       } else {
         StatusIndicator.warning(`Skipping ${step.type} step: ${step.command} (not implemented yet)`);
+        console.log();
       }
     }
     
+    // Final execution summary
+    progress.complete('Execution completed');
     console.log();
-    Banner.success('Task execution completed! 🎉');
+    StatusIndicator.divider('Execution Summary');
+    
+    const executionSummary = [
+      { label: 'Total Steps', status: StatusType.INFO, value: plan.steps.length.toString() },
+      { label: 'Successful', status: StatusType.SUCCESS, value: successCount.toString() },
+      { label: 'Failed', status: failureCount > 0 ? StatusType.ERROR : StatusType.SUCCESS, value: failureCount.toString() },
+      { label: 'Success Rate', status: failureCount === 0 ? StatusType.SUCCESS : successCount > failureCount ? StatusType.WARNING : StatusType.ERROR, value: `${Math.round((successCount / plan.steps.length) * 100)}%` }
+    ];
+    
+    StatusIndicator.summary('Results', executionSummary);
+    
+    if (failureCount === 0) {
+      console.log();
+      Banner.success('Task execution completed successfully! 🎉');
+    } else if (successCount > failureCount) {
+      console.log();
+      StatusIndicator.warning('Task completed with some failures. Check the logs above for details.');
+    } else {
+      console.log();
+      StatusIndicator.error('Task execution failed. Please review the errors above.');
+    }
     
   } catch (err) {
-    spinner.fail('Command parsing failed');
+    progress.complete('Parsing failed');
+    StatusIndicator.error(`Command parsing failed: ${err instanceof Error ? err.message : String(err)}`);
     throw err;
   }
 }

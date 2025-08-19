@@ -1,5 +1,11 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { StatusIndicator, StatusType } from '../ui/components/StatusIndicator.js';
+import { ProgressBar, Spinner } from '../ui/components/ProgressBar.js';
+import { SystemInfo } from '../ui/formatters/SystemInfo.js';
+import { ErrorDisplay } from '../ui/formatters/ErrorDisplay.js';
+import { colors } from '../ui/utils/Colors.js';
+import { symbols } from '../ui/utils/Symbols.js';
 
 const execAsync = promisify(exec);
 
@@ -112,19 +118,29 @@ export class PackageManagerService {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    console.log('🔍 Detecting available package managers...');
+    const spinner = new Spinner('Detecting available package managers...');
+    spinner.start();
+    
+    const detectedManagers: string[] = [];
     
     for (const manager of this.packageManagers) {
+      spinner.update(`Checking ${manager.name}...`);
       if (await manager.isAvailable()) {
         this.availableManagers.push(manager);
-        console.log(`✅ Found: ${manager.name}`);
+        detectedManagers.push(manager.name);
       }
     }
 
+    spinner.stop();
+
     if (this.availableManagers.length === 0) {
-      console.warn('⚠️  No package managers detected!');
+      StatusIndicator.warning('No package managers detected!', {
+        details: 'Consider installing: apt, snap, flatpak, npm, pip, or cargo'
+      });
     } else {
-      console.log(`📦 Available package managers: ${this.availableManagers.map(m => m.name).join(', ')}`);
+      StatusIndicator.success(`Found ${this.availableManagers.length} package manager(s)`, {
+        details: detectedManagers.join(', ')
+      });
     }
 
     this.initialized = true;
@@ -134,20 +150,33 @@ export class PackageManagerService {
     await this.initialize();
 
     if (this.availableManagers.length === 0) {
+      StatusIndicator.error('No package managers available');
       return { success: false, error: 'No package managers available' };
     }
 
     // Try each package manager in order of preference
     const preferredOrder = this.getPreferredOrder();
+    const progressBar = new ProgressBar({
+      total: preferredOrder.length,
+      message: `Installing ${packageName}...`,
+      showPercentage: false,
+      showNumbers: true
+    });
     
-    for (const manager of preferredOrder) {
+    for (let i = 0; i < preferredOrder.length; i++) {
+      const manager = preferredOrder[i];
+      
       try {
-        console.log(`📦 Trying to install ${packageName} with ${manager.name}...`);
+        progressBar.update(i, `Trying ${manager.name}...`);
         
         const installCmd = manager.installCommand(packageName);
         const { stdout, stderr } = await execAsync(installCmd, { timeout: 300000 });
         
-        console.log(`✅ Successfully installed ${packageName} with ${manager.name}`);
+        progressBar.complete(`Successfully installed ${packageName} with ${manager.name}`);
+        StatusIndicator.success(`Package ${packageName} installed successfully`, {
+          details: `Using ${manager.name} package manager`
+        });
+        
         return { 
           success: true, 
           manager: manager.name, 
@@ -155,10 +184,25 @@ export class PackageManagerService {
         };
         
       } catch (error: any) {
-        console.log(`❌ Failed to install ${packageName} with ${manager.name}: ${error.message}`);
+        StatusIndicator.warning(`Failed with ${manager.name}`, {
+          details: error.message
+        });
         
         // If this is the last manager, return the error
         if (manager === preferredOrder[preferredOrder.length - 1]) {
+          progressBar.fail(`All package managers failed for ${packageName}`);
+          
+          ErrorDisplay.show(error, {
+            title: 'Package Installation Failed',
+            message: `Unable to install ${packageName} with any available package manager`,
+            suggestions: [
+              'Check if the package name is correct',
+              'Verify your internet connection',
+              'Try installing manually with your preferred package manager',
+              'Check if you have sufficient permissions'
+            ]
+          });
+          
           return { 
             success: false, 
             error: error.message,
@@ -267,21 +311,149 @@ export class PackageManagerService {
   async updatePackageLists(): Promise<void> {
     await this.initialize();
 
-    console.log('🔄 Updating package lists...');
+    if (this.availableManagers.length === 0) {
+      StatusIndicator.warning('No package managers available to update');
+      return;
+    }
+
+    StatusIndicator.info('Updating package lists...');
     
-    for (const manager of this.availableManagers) {
+    const progressBar = new ProgressBar({
+      total: this.availableManagers.length,
+      message: 'Updating package managers...',
+      showPercentage: true,
+      showNumbers: true
+    });
+    
+    const results: Array<{ manager: string; success: boolean; error?: string }> = [];
+    
+    for (let i = 0; i < this.availableManagers.length; i++) {
+      const manager = this.availableManagers[i];
+      
       try {
-        console.log(`   Updating ${manager.name}...`);
+        progressBar.update(i, `Updating ${manager.name}...`);
         await execAsync(manager.updateCommand, { timeout: 120000 });
-        console.log(`   ✅ ${manager.name} updated`);
-      } catch (error) {
-        console.log(`   ❌ Failed to update ${manager.name}`);
+        
+        results.push({ manager: manager.name, success: true });
+        StatusIndicator.success(`${manager.name} updated successfully`);
+        
+      } catch (error: any) {
+        results.push({ 
+          manager: manager.name, 
+          success: false, 
+          error: error.message 
+        });
+        StatusIndicator.warning(`Failed to update ${manager.name}`, {
+          details: error.message
+        });
       }
+    }
+    
+    progressBar.complete('Package list updates completed');
+    
+    // Display summary
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+    
+    if (failed === 0) {
+      StatusIndicator.success(`All ${successful} package managers updated successfully`);
+    } else {
+      StatusIndicator.warning(`${successful} succeeded, ${failed} failed`, {
+        details: `Failed: ${results.filter(r => !r.success).map(r => r.manager).join(', ')}`
+      });
     }
   }
 
   getAvailableManagers(): string[] {
     return this.availableManagers.map(m => m.name);
+  }
+
+  /**
+   * Display package manager status with visual indicators
+   */
+  async displayStatus(): Promise<void> {
+    await this.initialize();
+
+    const packageManagerData: Record<string, boolean> = {};
+    
+    // Create status data for all package managers
+    for (const manager of this.packageManagers) {
+      packageManagerData[manager.name] = this.availableManagers.some(am => am.name === manager.name);
+    }
+
+    // Use SystemInfo formatter to display package managers
+    const systemData = { package_managers: packageManagerData };
+    const formatted = SystemInfo.format(systemData, { 
+      sections: ['packages'], 
+      compact: false, 
+      showIcons: true 
+    });
+    
+    console.log(formatted);
+  }
+
+  /**
+   * Display installation progress for multiple packages
+   */
+  async installMultiplePackages(packages: string[]): Promise<Array<{ package: string; success: boolean; manager?: string; error?: string }>> {
+    await this.initialize();
+
+    if (this.availableManagers.length === 0) {
+      StatusIndicator.error('No package managers available');
+      return packages.map(pkg => ({ package: pkg, success: false, error: 'No package managers available' }));
+    }
+
+    StatusIndicator.info(`Installing ${packages.length} packages...`);
+    
+    const overallProgress = new ProgressBar({
+      total: packages.length,
+      message: 'Installing packages...',
+      showPercentage: true,
+      showNumbers: true
+    });
+
+    const results: Array<{ package: string; success: boolean; manager?: string; error?: string }> = [];
+
+    for (let i = 0; i < packages.length; i++) {
+      const packageName = packages[i];
+      overallProgress.update(i, `Installing ${packageName}...`);
+      
+      const result = await this.installPackage(packageName);
+      results.push({
+        package: packageName,
+        success: result.success,
+        manager: result.manager,
+        error: result.error
+      });
+    }
+
+    overallProgress.complete('Package installation completed');
+
+    // Display summary
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+
+    StatusIndicator.summary('Installation Summary', [
+      { 
+        label: `Successful installations`, 
+        status: successful > 0 ? StatusType.SUCCESS : StatusType.INFO,
+        value: successful.toString()
+      },
+      { 
+        label: `Failed installations`, 
+        status: failed > 0 ? StatusType.ERROR : StatusType.SUCCESS,
+        value: failed.toString()
+      }
+    ]);
+
+    if (failed > 0) {
+      const failedPackages = results.filter(r => !r.success);
+      StatusIndicator.error('Failed packages:', {
+        details: failedPackages.map(r => `${r.package}: ${r.error}`).join('\n')
+      });
+    }
+
+    return results;
   }
 
   private async commandExists(command: string): Promise<boolean> {

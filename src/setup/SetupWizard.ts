@@ -2,33 +2,78 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { PackageManagerService } from '../terminal/PackageManager.js';
+import { SystemDetection } from '../terminal/SystemDetection.js';
 import { GeminiService } from '../ai/GeminiService.js';
+import { StatusIndicator, StatusType } from '../ui/components/StatusIndicator.js';
+import { ProgressBar, MultiStepProgress } from '../ui/components/ProgressBar.js';
+import { Banner } from '../ui/components/Banner.js';
+import { colors } from '../ui/utils/Colors.js';
+import { Layout } from '../ui/utils/Layout.js';
 
 export class SetupWizard {
   private packageManager: PackageManagerService;
+  private systemDetection: SystemDetection;
 
   constructor() {
     this.packageManager = new PackageManagerService();
+    this.systemDetection = new SystemDetection();
   }
 
   async run(): Promise<void> {
-    console.log(chalk.cyan.bold('\n🚀 Kira Autopilot Setup Wizard\n'));
+    // Display banner
+    Banner.display({ showVersion: true, showTagline: true });
+    
+    StatusIndicator.info('Starting Kira setup wizard...');
     console.log('This wizard will help you configure Kira for optimal performance.\n');
 
-    // Check system requirements
-    await this.checkSystemRequirements();
+    const steps = [
+      'System Detection',
+      'System Requirements Check', 
+      'Package Manager Detection',
+      'AI Configuration Check',
+      'Environment Setup',
+      'Final Configuration'
+    ];
 
-    // Check package managers
-    await this.checkPackageManagers();
+    const progress = new MultiStepProgress(steps);
 
-    // Check AI configuration
-    await this.checkAIConfiguration();
+    try {
+      // Step 1: System Detection
+      progress.nextStep('Running comprehensive system detection...');
+      await this.runSystemDetection();
+      progress.completeStep();
 
-    // Create .env file if it doesn't exist
-    await this.createEnvFile();
+      // Step 2: Check system requirements
+      progress.nextStep('Checking system requirements...');
+      await this.checkSystemRequirements();
+      progress.completeStep();
 
-    // Final recommendations
-    this.showFinalRecommendations();
+      // Step 3: Check package managers
+      progress.nextStep('Analyzing package managers...');
+      await this.checkPackageManagers();
+      progress.completeStep();
+
+      // Step 4: Check AI configuration
+      progress.nextStep('Verifying AI configuration...');
+      await this.checkAIConfiguration();
+      progress.completeStep();
+
+      // Step 5: Create .env file if it doesn't exist
+      progress.nextStep('Setting up environment configuration...');
+      await this.createEnvFile();
+      progress.completeStep();
+
+      // Step 6: Final recommendations
+      progress.nextStep('Generating recommendations...');
+      this.showFinalRecommendations();
+      progress.complete('Setup wizard completed successfully!');
+
+    } catch (error: any) {
+      StatusIndicator.error('Setup wizard failed', {
+        details: error.message
+      });
+      throw error;
+    }
   }
 
   private async checkSystemRequirements(): Promise<void> {

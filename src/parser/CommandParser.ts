@@ -84,17 +84,23 @@ export class CommandParser {
   };
 
   async parse(input: CommandInput): Promise<ParsedCommand> {
+    // Enhanced parsing with visual feedback
+    const { StatusIndicator } = await import('../ui/components/StatusIndicator.js');
+    
     // Always use AI-enhanced parsing with intelligent error handling
     if (this.geminiService.isAIEnabled()) {
       // Determine if this is a complex command that needs Pro model
       const isComplex = this.isComplexCommand(input.task);
+      
+      StatusIndicator.info(`Using AI analysis (${isComplex ? 'Pro' : 'Flash'} model)`, { indent: 2 });
       
       const aiAnalysis = isComplex 
         ? await this.geminiService.analyzeComplexCommand(input.task)
         : await this.geminiService.analyzeCommand(input.task);
         
       if (aiAnalysis && aiAnalysis.confidence > 0.6) {
-        console.log(`🤖 AI Analysis (${isComplex ? 'Pro' : 'Flash'}): ${aiAnalysis.explanation}`);
+        StatusIndicator.success(`AI confidence: ${Math.round(aiAnalysis.confidence * 100)}%`, { indent: 2 });
+        StatusIndicator.info(`Analysis: ${aiAnalysis.explanation}`, { indent: 2 });
         
         const steps: TaskStep[] = aiAnalysis.suggestedCommands.map((cmd, i) => ({
           id: `ai_step_${i + 1}`,
@@ -109,11 +115,13 @@ export class CommandParser {
           requiredTools: this.identifyRequiredTools(input.task),
           estimatedComplexity: this.estimateComplexityFromAI(aiAnalysis)
         };
+      } else {
+        StatusIndicator.warning(`AI confidence too low (${Math.round((aiAnalysis?.confidence || 0) * 100)}%), using fallback`, { indent: 2 });
       }
     }
 
     // Fallback to built-in parsing
-    console.log('🔧 Using built-in command parsing');
+    StatusIndicator.info('Using built-in command parsing', { indent: 2 });
     
     // Normalize the task string
     const task = input.task.toLowerCase().trim();
@@ -122,12 +130,15 @@ export class CommandParser {
     const executionMode = 'terminal' as ExecutionMode;
     
     // Break down the task into steps
+    StatusIndicator.info('Breaking down task into steps...', { indent: 2 });
     const steps = await this.breakdownTask(task, executionMode);
     
     // Identify required tools
+    StatusIndicator.info('Identifying required tools...', { indent: 2 });
     const requiredTools = this.identifyRequiredTools(task);
     
     // Estimate complexity
+    StatusIndicator.info('Calculating complexity score...', { indent: 2 });
     const complexity = this.estimateComplexity(steps, requiredTools);
     
     return {
