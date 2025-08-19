@@ -73,40 +73,125 @@ program
     await demo.demonstrateErrorHandling();
   });
 
-// Status command - Show system status with tables
+// Package management command
+program
+  .command('package')
+  .description('Package management operations with visual progress')
+  .option('-i, --install <packages...>', 'Install packages')
+  .option('-u, --update', 'Update package lists')
+  .option('-s, --status', 'Show package manager status')
+  .action(async (options) => {
+    const { PackageManagerService } = await import('./terminal/PackageManager.js');
+    
+    Banner.displayMinimal();
+    
+    try {
+      const packageManager = new PackageManagerService();
+      
+      if (options.status) {
+        StatusIndicator.info('Displaying package manager status...');
+        await packageManager.displayStatus();
+        return;
+      }
+      
+      if (options.update) {
+        StatusIndicator.info('Updating package lists...');
+        await packageManager.updatePackageLists();
+        return;
+      }
+      
+      if (options.install && options.install.length > 0) {
+        StatusIndicator.info(`Installing ${options.install.length} package(s)...`);
+        await packageManager.installMultiplePackages(options.install);
+        return;
+      }
+      
+      // Default: show status
+      await packageManager.displayStatus();
+      
+    } catch (error) {
+      StatusIndicator.error(`Package management failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  });
+
+// System detection command
+program
+  .command('detect')
+  .description('Run comprehensive system detection')
+  .option('-v, --verbose', 'Enable verbose output')
+  .option('-s, --sections <sections>', 'Comma-separated list of sections (system,hardware,os,packages,tools,network)')
+  .option('--script', 'Use detection script (faster)')
+  .action(async (options) => {
+    const { SystemDetection } = await import('./terminal/SystemDetection.js');
+    
+    Banner.displayMinimal();
+    
+    try {
+      const systemDetection = new SystemDetection();
+      const sections = options.sections ? 
+        options.sections.split(',').map((s: string) => s.trim()) : 
+        undefined;
+
+      if (options.script) {
+        await systemDetection.detectWithScript({ 
+          verbose: options.verbose, 
+          showProgress: true,
+          sections 
+        });
+      } else {
+        await systemDetection.detect({ 
+          verbose: options.verbose, 
+          showProgress: true,
+          sections 
+        });
+      }
+
+      // Display results
+      systemDetection.displaySystemInfo({ 
+        compact: false,
+        sections 
+      });
+      
+    } catch (error) {
+      StatusIndicator.error(`System detection failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  });
+
+// Status command - Show system status with enhanced visual formatting
 program
   .command('status')
-  .description('Display system status and information using formatted tables')
-  .action(async () => {
-    const { Table, formatters } = await import('./ui/components/Table.js');
+  .description('Display comprehensive system status and information')
+  .option('-c, --compact', 'Display compact view')
+  .option('-s, --sections <sections>', 'Comma-separated list of sections to display (system,hardware,os,packages,tools,network)')
+  .action(async (options) => {
+    const { SystemDetection } = await import('./terminal/SystemDetection.js');
+    const { PackageManagerService } = await import('./terminal/PackageManager.js');
     const { ProfileManager } = await import('./profile/ProfileManager.js');
     
     Banner.displayMinimal();
-    StatusIndicator.info('Gathering system information...');
     
     try {
-      // System Information Table
-      const systemTable = new Table({
-        title: 'System Information',
-        showBorders: true,
-        alternateRowColors: true
+      // Parse sections option
+      const sections = options.sections ? 
+        options.sections.split(',').map((s: string) => s.trim()) : 
+        ['system', 'hardware', 'os', 'packages', 'tools', 'network'];
+
+      // Run comprehensive system detection
+      const systemDetection = new SystemDetection();
+      await systemDetection.detectWithScript({ 
+        verbose: false, 
+        showProgress: true,
+        sections 
       });
 
-      systemTable.addColumns([
-        { key: 'property', title: 'Property', align: 'left', width: 18 },
-        { key: 'value', title: 'Value', align: 'left' }
-      ]);
+      // Display system information with enhanced formatting
+      systemDetection.displaySystemInfo({ 
+        compact: options.compact,
+        sections 
+      });
 
-      systemTable.addRows([
-        { property: 'Operating System', value: `${process.platform} ${process.arch}` },
-        { property: 'Node.js Version', value: process.version },
-        { property: 'Terminal', value: process.env.TERM || 'unknown' },
-        { property: 'Shell', value: process.env.SHELL || 'unknown' },
-        { property: 'Home Directory', value: process.env.HOME || 'unknown' }
-      ]);
-
-      console.log(systemTable.render());
       console.log();
+      StatusIndicator.divider('Kira Configuration');
 
       // Profile Status
       const profileManager = ProfileManager.getInstance();
@@ -114,62 +199,33 @@ program
       
       if (isInitialized) {
         const userName = await profileManager.getUserName();
-        const profileData = {
-          'User Name': userName,
-          'Profile Status': 'Initialized',
-          'Profile Location': '~/.kira/profile.json'
-        };
-        
-        console.log(Table.keyValue(profileData, 'Kira Profile Status'));
-        console.log();
+        StatusIndicator.success('Kira Profile: Initialized', {
+          details: `User: ${userName}\nLocation: ~/.kira/profile.json`
+        });
       } else {
-        StatusIndicator.warning('Kira profile not initialized. Run "kira init" to set up.');
-        console.log();
+        StatusIndicator.warning('Kira profile not initialized', {
+          details: 'Run "kira init" to set up your profile'
+        });
       }
 
       // API Configuration
       const apiKey = process.env.GEMINI_API_KEY;
-      const apiStatus = {
-        'Gemini API Key': apiKey && apiKey !== 'your_gemini_api_key_here' ? 
-          '✓ Configured' : '✗ Not configured',
-        'API Status': apiKey && apiKey !== 'your_gemini_api_key_here' ? 
-          'Ready' : 'Setup required'
-      };
-
-      console.log(Table.keyValue(apiStatus, 'AI Configuration'));
-      console.log();
-
-      // Package Manager Status
-      const { PackageManagerService } = await import('./terminal/PackageManager.js');
-      const packageManager = new PackageManagerService();
-      
-      StatusIndicator.info('Checking package managers...');
-      await packageManager.initialize();
-      
-      const availableManagers = packageManager.getAvailableManagers();
-      
-      if (availableManagers.length > 0) {
-        const packageTable = new Table({
-          title: 'Available Package Managers',
-          showBorders: true,
-          showRowNumbers: true,
-          alternateRowColors: true
+      if (apiKey && apiKey !== 'your_gemini_api_key_here') {
+        StatusIndicator.success('Gemini AI: Configured and ready', {
+          details: 'Enhanced natural language processing enabled'
         });
-
-        packageTable.addColumns([
-          { key: 'name', title: 'Package Manager', align: 'left' },
-          { key: 'status', title: 'Status', align: 'center', formatter: formatters.status }
-        ]);
-
-        const packageRows = availableManagers.map(manager => ({
-          name: manager,
-          status: 'Available'
-        }));
-
-        packageTable.setData(packageRows);
-        console.log(packageTable.render());
-        console.log();
+      } else {
+        StatusIndicator.warning('Gemini AI: Not configured', {
+          details: 'Add GEMINI_API_KEY to .env for enhanced AI features'
+        });
       }
+
+      // Package Manager Status with enhanced display
+      console.log();
+      StatusIndicator.divider('Package Management');
+      
+      const packageManager = new PackageManagerService();
+      await packageManager.displayStatus();
       
       StatusIndicator.success('System status check completed');
       
