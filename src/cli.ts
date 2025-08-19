@@ -7,9 +7,7 @@ import { Banner } from './ui/components/Banner.js';
 import { StatusIndicator, StatusType } from './ui/components/StatusIndicator.js';
 import { Spinner, ProgressBar } from './ui/components/ProgressBar.js';
 import { Layout } from './ui/utils/Layout.js';
-import { getThemeColors } from './ui/themes/ThemeManager.js';
-import { FirstLaunchService } from './setup/FirstLaunchService.js';
-import { DirectPromptingEngine, AutomationPlan } from './ai/DirectPromptingEngine.js';
+import { getThemeColors } from './ui/themes/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -27,137 +25,42 @@ const error = colors.error;
 const info = colors.info;
 const warning = colors.warning;
 
-// Initialize first-launch service
-const firstLaunchService = new FirstLaunchService();
-
 // Main program setup
 program
-  .name('ap')
-  .description('AP - AI-powered autopilot system for seamless automation')
+  .name('kira')
+  .description('Kira - AI-powered OS automation for Linux and macOS')
   .version('0.1.0')
   .option('-v, --verbose', 'Enable verbose output')
   .option('-n, --dry-run', 'Show what would be executed without running')
   .option('-c, --config <path>', 'Config file path')
-  .argument('[task...]', 'Natural language task description')
+  .argument('[task...]', 'Task description')
   .action(async (taskArgs: string[]) => {
-    // Handle first-launch setup
-    await handleFirstLaunch();
-    
     if (taskArgs.length === 0) {
-      // Enter direct prompting mode
-      await enterDirectPromptingMode();
+      program.help();
       return;
     }
-    
     const task = taskArgs.join(' ');
-    await executeDirectCommand(task);
+    await executeTask(task, 'auto', true);
   });
 
-// File management command
+// Init command - First-time setup
 program
-  .command('file')
-  .description('File management operations')
-  .option('-r, --read <path>', 'Read file content')
-  .option('-w, --write <path>', 'Write content to file (use with --content)')
-  .option('-a, --append <path>', 'Append content to file (use with --content)')
-  .option('-c, --content <text>', 'Content to write or append')
-  .option('-l, --list <path>', 'List directory contents')
-  .option('-i, --info <path>', 'Get file information')
-  .option('-s, --search <pattern>', 'Search for files (use with --in)')
-  .option('--in <directory>', 'Directory to search in')
-  .action(async (options) => {
-    const { FileManager } = await import('./utils/FileManager.js');
-    
-    Banner.displayMinimal();
-    
-    try {
-      if (options.read) {
-        const result = FileManager.readFile(options.read);
-        if (result.success) {
-          StatusIndicator.success(result.message);
-          console.log('\n' + Layout.box(result.data));
-        } else {
-          StatusIndicator.error(result.message);
-        }
-      }
-      
-      else if (options.write) {
-        if (!options.content) {
-          StatusIndicator.error('Content is required for write operation. Use --content "your text"');
-          return;
-        }
-        const result = FileManager.writeFile(options.write, options.content, { createDir: true });
-        StatusIndicator[result.success ? 'success' : 'error'](result.message);
-      }
-      
-      else if (options.append) {
-        if (!options.content) {
-          StatusIndicator.error('Content is required for append operation. Use --content "your text"');
-          return;
-        }
-        const result = FileManager.appendFile(options.append, options.content, { createDir: true });
-        StatusIndicator[result.success ? 'success' : 'error'](result.message);
-      }
-      
-      else if (options.list) {
-        const result = FileManager.listDirectory(options.list);
-        if (result.success) {
-          StatusIndicator.success(result.message);
-          console.log();
-          result.data.files.forEach((file: any) => {
-            const icon = file.isDirectory ? '📁' : '📄';
-            const size = file.isFile ? ` (${file.size} bytes)` : '';
-            StatusIndicator.info(`${icon} ${file.name}${size}`, { indent: 2 });
-          });
-        } else {
-          StatusIndicator.error(result.message);
-        }
-      }
-      
-      else if (options.info) {
-        const result = FileManager.getFileInfo(options.info);
-        if (result.success) {
-          StatusIndicator.success(result.message);
-          const info = result.data;
-          console.log();
-          StatusIndicator.info(`Type: ${info.isFile ? 'File' : 'Directory'}`, { indent: 2 });
-          StatusIndicator.info(`Size: ${info.size} bytes`, { indent: 2 });
-          StatusIndicator.info(`Created: ${info.created}`, { indent: 2 });
-          StatusIndicator.info(`Modified: ${info.modified}`, { indent: 2 });
-        } else {
-          StatusIndicator.error(result.message);
-        }
-      }
-      
-      else if (options.search) {
-        const searchDir = options.in || process.cwd();
-        const result = FileManager.searchFiles(searchDir, options.search);
-        if (result.success) {
-          StatusIndicator.success(`${result.message} - Found ${result.data.count} matches`);
-          if (result.data.matches.length > 0) {
-            console.log();
-            result.data.matches.forEach((match: string) => {
-              StatusIndicator.info(`📄 ${match}`, { indent: 2 });
-            });
-          }
-        } else {
-          StatusIndicator.error(result.message);
-        }
-      }
-      
-      else {
-        StatusIndicator.info('File management operations:');
-        StatusIndicator.info('ap file --read <path>                    # Read file', { indent: 2 });
-        StatusIndicator.info('ap file --write <path> --content "text"  # Write file', { indent: 2 });
-        StatusIndicator.info('ap file --append <path> --content "text" # Append to file', { indent: 2 });
-        StatusIndicator.info('ap file --list <directory>               # List directory', { indent: 2 });
-        StatusIndicator.info('ap file --info <path>                    # File info', { indent: 2 });
-        StatusIndicator.info('ap file --search <pattern> --in <dir>    # Search files', { indent: 2 });
-      }
-      
-    } catch (error) {
-      StatusIndicator.error(`File operation failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
+  .command('init')
+  .description('Initialize Kira with system detection and user preferences')
+  .action(async () => {
+    const { InitWizard } = await import('./setup/InitWizard.js');
+    const wizard = new InitWizard();
+    await wizard.run();
+  });
+
+// Setup command
+program
+  .command('setup')
+  .description('Setup Kira configuration and check system requirements')
+  .action(async () => {
+    const { SetupWizard } = await import('./setup/SetupWizard.js');
+    const wizard = new SetupWizard();
+    await wizard.run();
   });
 
 // Demo command
@@ -170,156 +73,103 @@ program
     await demo.demonstrateErrorHandling();
   });
 
-// Package management command
-program
-  .command('package')
-  .description('Package management operations with visual progress')
-  .option('-i, --install <packages...>', 'Install packages')
-  .option('-u, --update', 'Update package lists')
-  .option('-s, --status', 'Show package manager status')
-  .action(async (options) => {
-    const { PackageManagerService } = await import('./terminal/PackageManager.js');
-    
-    Banner.displayMinimal();
-    
-    try {
-      const packageManager = new PackageManagerService();
-      
-      if (options.status) {
-        StatusIndicator.info('Displaying package manager status...');
-        await packageManager.displayStatus();
-        return;
-      }
-      
-      if (options.update) {
-        StatusIndicator.info('Updating package lists...');
-        await packageManager.updatePackageLists();
-        return;
-      }
-      
-      if (options.install && options.install.length > 0) {
-        StatusIndicator.info(`Installing ${options.install.length} package(s)...`);
-        await packageManager.installMultiplePackages(options.install);
-        return;
-      }
-      
-      // Default: show status
-      await packageManager.displayStatus();
-      
-    } catch (error) {
-      StatusIndicator.error(`Package management failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  });
-
-// System detection command
-program
-  .command('detect')
-  .description('Run comprehensive system detection')
-  .option('-v, --verbose', 'Enable verbose output')
-  .option('-s, --sections <sections>', 'Comma-separated list of sections (system,hardware,os,packages,tools,network)')
-  .option('--script', 'Use detection script (faster)')
-  .action(async (options) => {
-    const { SystemDetection } = await import('./terminal/SystemDetection.js');
-    
-    Banner.displayMinimal();
-    
-    try {
-      const systemDetection = new SystemDetection();
-      const sections = options.sections ? 
-        options.sections.split(',').map((s: string) => s.trim()) : 
-        undefined;
-
-      if (options.script) {
-        await systemDetection.detectWithScript({ 
-          verbose: options.verbose, 
-          showProgress: true,
-          sections 
-        });
-      } else {
-        await systemDetection.detect({ 
-          verbose: options.verbose, 
-          showProgress: true,
-          sections 
-        });
-      }
-
-      // Display results
-      systemDetection.displaySystemInfo({ 
-        compact: false,
-        sections 
-      });
-      
-    } catch (error) {
-      StatusIndicator.error(`System detection failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  });
-
-// Status command - Show system status with enhanced visual formatting
+// Status command - Show system status with tables
 program
   .command('status')
-  .description('Display comprehensive system status and information')
-  .option('-c, --compact', 'Display compact view')
-  .option('-s, --sections <sections>', 'Comma-separated list of sections to display (system,hardware,os,packages,tools,network)')
-  .action(async (options) => {
-    const { SystemDetection } = await import('./terminal/SystemDetection.js');
-    const { PackageManagerService } = await import('./terminal/PackageManager.js');
+  .description('Display system status and information using formatted tables')
+  .action(async () => {
+    const { Table, formatters } = await import('./ui/components/Table.js');
     const { ProfileManager } = await import('./profile/ProfileManager.js');
     
     Banner.displayMinimal();
+    StatusIndicator.info('Gathering system information...');
     
     try {
-      // Parse sections option
-      const sections = options.sections ? 
-        options.sections.split(',').map((s: string) => s.trim()) : 
-        ['system', 'hardware', 'os', 'packages', 'tools', 'network'];
-
-      // Run comprehensive system detection
-      const systemDetection = new SystemDetection();
-      await systemDetection.detectWithScript({ 
-        verbose: false, 
-        showProgress: true,
-        sections 
+      // System Information Table
+      const systemTable = new Table({
+        title: 'System Information',
+        showBorders: true,
+        alternateRowColors: true
       });
 
-      // Display system information with enhanced formatting
-      systemDetection.displaySystemInfo({ 
-        compact: options.compact,
-        sections 
-      });
+      systemTable.addColumns([
+        { key: 'property', title: 'Property', align: 'left', width: 18 },
+        { key: 'value', title: 'Value', align: 'left' }
+      ]);
 
+      systemTable.addRows([
+        { property: 'Operating System', value: `${process.platform} ${process.arch}` },
+        { property: 'Node.js Version', value: process.version },
+        { property: 'Terminal', value: process.env.TERM || 'unknown' },
+        { property: 'Shell', value: process.env.SHELL || 'unknown' },
+        { property: 'Home Directory', value: process.env.HOME || 'unknown' }
+      ]);
+
+      console.log(systemTable.render());
       console.log();
-      StatusIndicator.divider('AP Configuration');
 
-      // Configuration Status
-      const config = await firstLaunchService.loadConfiguration();
+      // Profile Status
+      const profileManager = ProfileManager.getInstance();
+      const isInitialized = await profileManager.isInitialized();
       
-      if (config) {
-        StatusIndicator.success('AP Autopilot: Configured', {
-          details: `OS: ${config.osInfo.platform} ${config.osInfo.version}\nSetup: ${config.setupComplete ? 'Complete' : 'Incomplete'}`
-        });
+      if (isInitialized) {
+        const userName = await profileManager.getUserName();
+        const profileData = {
+          'User Name': userName,
+          'Profile Status': 'Initialized',
+          'Profile Location': '~/.kira/profile.json'
+        };
+        
+        console.log(Table.keyValue(profileData, 'Kira Profile Status'));
+        console.log();
       } else {
-        StatusIndicator.warning('AP configuration not found', {
-          details: 'Configuration will be created on first run'
-        });
+        StatusIndicator.warning('Kira profile not initialized. Run "kira init" to set up.');
+        console.log();
       }
 
       // API Configuration
-      if (firstLaunchService.isApiKeyConfigured()) {
-        StatusIndicator.success('Gemini 2.5 Pro: Configured and ready', {
-          details: 'Enhanced natural language processing enabled'
-        });
-      } else {
-        StatusIndicator.warning('Gemini AI: Not configured', {
-          details: 'Delete ~/.ap/autopilot-config.json to restart setup'
-        });
-      }
+      const apiKey = process.env.GEMINI_API_KEY;
+      const apiStatus = {
+        'Gemini API Key': apiKey && apiKey !== 'your_gemini_api_key_here' ? 
+          '✓ Configured' : '✗ Not configured',
+        'API Status': apiKey && apiKey !== 'your_gemini_api_key_here' ? 
+          'Ready' : 'Setup required'
+      };
 
-      // Package Manager Status with enhanced display
+      console.log(Table.keyValue(apiStatus, 'AI Configuration'));
       console.log();
-      StatusIndicator.divider('Package Management');
-      
+
+      // Package Manager Status
+      const { PackageManagerService } = await import('./terminal/PackageManager.js');
       const packageManager = new PackageManagerService();
-      await packageManager.displayStatus();
+      
+      StatusIndicator.info('Checking package managers...');
+      await packageManager.initialize();
+      
+      const availableManagers = packageManager.getAvailableManagers();
+      
+      if (availableManagers.length > 0) {
+        const packageTable = new Table({
+          title: 'Available Package Managers',
+          showBorders: true,
+          showRowNumbers: true,
+          alternateRowColors: true
+        });
+
+        packageTable.addColumns([
+          { key: 'name', title: 'Package Manager', align: 'left' },
+          { key: 'status', title: 'Status', align: 'center', formatter: formatters.status }
+        ]);
+
+        const packageRows = availableManagers.map(manager => ({
+          name: manager,
+          status: 'Available'
+        }));
+
+        packageTable.setData(packageRows);
+        console.log(packageTable.render());
+        console.log();
+      }
       
       StatusIndicator.success('System status check completed');
       
@@ -328,31 +178,18 @@ program
     }
   });
 
-// Handle first-launch setup
-async function handleFirstLaunch(): Promise<void> {
-  // Check if this is the first launch
-  if (firstLaunchService.isFirstLaunch()) {
-    try {
-      await firstLaunchService.runFirstLaunchSetup();
-      // Reload environment variables after API key setup
-      dotenv.config();
-    } catch (error) {
-      StatusIndicator.error('First-launch setup failed', {
-        details: error instanceof Error ? error.message : String(error)
-      });
-      process.exit(1);
-    }
-    return;
-  }
-
-  // Check if API key is configured
-  if (!firstLaunchService.isApiKeyConfigured()) {
+// Check API key function
+function checkApiKey(): boolean {
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === '') {
     Banner.error(`Missing Gemini API Key
 
-AP Autopilot System requires a FREE Gemini API key to function.
+Kira requires a FREE Gemini API key to function.
 
 🔑 Get your API key from Google AI Studio:
    👉 https://aistudio.google.com/app/apikey
+   👉 https://makersuite.google.com/app/apikey (alternative)
 
 📋 Quick setup steps:
    1. Visit: https://aistudio.google.com/app/apikey
@@ -363,306 +200,56 @@ AP Autopilot System requires a FREE Gemini API key to function.
 📝 Add it to your .env file:
    echo "GEMINI_API_KEY=your_api_key_here" >> .env
 
-💡 Or delete ~/.ap/autopilot-config.json to restart setup
+💡 Or run: kira init (for interactive setup)
 
 ℹ️  The Gemini API is free with generous limits:
    • 15 requests per minute
    • 1 million tokens per minute
    • 1,500 requests per day`);
+    return false;
+  }
+  
+  return true;
+}
+
+// Main task execution function
+async function executeTask(task: string, mode: string, isKiraCommand: boolean): Promise<void> {
+  // Check API key first
+  if (!checkApiKey()) {
     process.exit(1);
   }
-}
-
-// Enter direct prompting mode with enhanced AI integration
-async function enterDirectPromptingMode(): Promise<void> {
-  const config = await firstLaunchService.loadConfiguration();
-  const osInfo = config?.osInfo;
   
-  Banner.startup('Autopilot', { compact: true });
+  // Check if user has initialized Kira
+  const { ProfileManager } = await import('./profile/ProfileManager.js');
+  const profileManager = ProfileManager.getInstance();
+  const isInitialized = await profileManager.isInitialized();
   
-  console.log(chalk.cyan.bold('\n🤖 AP Autopilot System - Enhanced Direct Prompting Mode\n'));
-  console.log(`System: ${osInfo?.platform} ${osInfo?.version} (${osInfo?.architecture})`);
-  console.log(`AI Model: Gemini 2.5 Pro with context-aware processing`);
-  console.log(chalk.gray('Type your commands in natural language. Press Ctrl+C to exit.\n'));
-  
-  console.log(chalk.yellow('Enhanced Features:'));
-  console.log('  • Context-aware command understanding');
-  console.log('  • Multi-step task decomposition');
-  console.log('  • Intelligent error recovery');
-  console.log('  • Learning from conversation history\n');
-  
-  console.log(chalk.yellow('Example Commands:'));
-  console.log('  • "install firefox and open it"');
-  console.log('  • "create a development environment for React"');
-  console.log('  • "check system performance and optimize if needed"');
-  console.log('  • "help me troubleshoot the last error"\n');
-
-  // Initialize the enhanced prompting engine
-  const promptingEngine = new DirectPromptingEngine();
-  await promptingEngine.initialize();
-  
-  StatusIndicator.success('Enhanced AI prompting engine initialized');
-  console.log();
-
-  const { createInterface } = await import('readline');
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    prompt: chalk.cyan('ap> ')
-  });
-
-  rl.prompt();
-
-  rl.on('line', async (input) => {
-    const command = input.trim();
-    
-    if (command === '') {
-      rl.prompt();
-      return;
-    }
-
-    if (command.toLowerCase() === 'exit' || command.toLowerCase() === 'quit') {
-      console.log(chalk.green('Goodbye! 👋'));
-      rl.close();
-      return;
-    }
-
-    // Handle special commands
-    if (command.toLowerCase() === 'help' || command.toLowerCase() === '?') {
-      displayDirectPromptingHelp();
-      rl.prompt();
-      return;
-    }
-
-    if (command.toLowerCase() === 'history') {
-      displayCommandHistory(promptingEngine);
-      rl.prompt();
-      return;
-    }
-
-    try {
-      await executeDirectCommandWithEngine(command, promptingEngine);
-    } catch (error) {
-      StatusIndicator.error('Command execution failed', {
-        details: error instanceof Error ? error.message : String(error)
-      });
-      
-      // Provide contextual help for errors
-      try {
-        const help = await promptingEngine.getContextualHelp(error instanceof Error ? error.message : String(error));
-        if (help.length > 0) {
-          console.log(chalk.yellow('\n💡 AI Suggestions:'));
-          help.forEach((suggestion, index) => {
-            console.log(`   ${index + 1}. ${suggestion}`);
-          });
-        }
-      } catch (helpError) {
-        console.log(chalk.gray('Unable to provide contextual help at this time.'));
-      }
-    }
-
-    console.log(); // Add spacing
-    rl.prompt();
-  });
-
-  rl.on('close', () => {
-    console.log(chalk.green('\nAutopilot session ended. Goodbye! 👋'));
-    process.exit(0);
-  });
-}
-
-// Display help for direct prompting mode
-function displayDirectPromptingHelp(): void {
-  console.log(chalk.cyan('\n📖 Direct Prompting Help\n'));
-  
-  console.log(chalk.yellow('Special Commands:'));
-  console.log('  help, ?     - Show this help message');
-  console.log('  history     - Show recent command history');
-  console.log('  exit, quit  - Exit the prompting mode\n');
-  
-  console.log(chalk.yellow('Natural Language Examples:'));
-  console.log('  System Management:');
-  console.log('    • "check disk space and memory usage"');
-  console.log('    • "update system packages"');
-  console.log('    • "install docker and configure it"\n');
-  
-  console.log('  Development:');
-  console.log('    • "set up a Node.js project with TypeScript"');
-  console.log('    • "create a React app and start development server"');
-  console.log('    • "clone my repository and install dependencies"\n');
-  
-  console.log('  File Operations:');
-  console.log('    • "create a backup of my documents folder"');
-  console.log('    • "find all Python files in the current directory"');
-  console.log('    • "compress the project folder into a zip file"\n');
-  
-  console.log(chalk.gray('The AI will break down complex tasks into manageable steps and execute them safely.'));
-}
-
-// Display command history
-function displayCommandHistory(engine: DirectPromptingEngine): void {
-  console.log(chalk.cyan('\n📜 Recent Command History\n'));
-  
-  // Access conversation history (this would need to be exposed by the engine)
-  console.log(chalk.gray('Command history tracking is active. Recent commands are used for context-aware processing.'));
-  console.log(chalk.gray('This helps the AI understand your workflow and provide better suggestions.'));
-}
-
-// Execute direct command using new prompting engine
-async function executeDirectCommand(command: string): Promise<void> {
-  const promptingEngine = new DirectPromptingEngine();
-  await promptingEngine.initialize();
-  await executeDirectCommandWithEngine(command, promptingEngine);
-}
-
-// Execute direct command with provided engine instance
-async function executeDirectCommandWithEngine(command: string, promptingEngine: DirectPromptingEngine): Promise<void> {
-  try {
-    StatusIndicator.info(`Processing: "${command}"`);
-    
-    // Process the command with enhanced AI
-    const plan = await promptingEngine.processCommand(command);
-    
-    // Show enhanced execution plan
-    console.log(chalk.cyan('\n📋 Enhanced Execution Plan:'));
-    console.log(`Intent: ${plan.intent.action} ${plan.intent.target}`);
-    console.log(`Category: ${plan.intent.category} | Complexity: ${plan.intent.complexity}`);
-    console.log(`Confidence: ${Math.round(plan.intent.confidence * 100)}%`);
-    console.log(`Risk Level: ${plan.riskLevel}`);
-    console.log(`Steps: ${plan.steps.length}`);
-    
-    if (plan.contextualInfo) {
-      console.log(`Context: ${plan.contextualInfo}`);
-    }
-    
-    if (plan.estimatedDuration) {
-      console.log(`Estimated Duration: ${Math.round(plan.estimatedDuration / 1000)}s`);
-    }
-    
-    // Show detailed steps
-    if (plan.steps.length > 0) {
-      console.log(chalk.cyan('\n📝 Execution Steps:'));
-      plan.steps.forEach((step, index) => {
-        const stepIcon = step.type === 'browser' ? '🌐' : step.type === 'system' ? '⚙️' : '🖥️';
-        const authIcon = step.requiresAuth ? ' 🔐' : '';
-        console.log(`  ${index + 1}. ${stepIcon} ${step.description}${authIcon}`);
-        
-        if (step.fallbackActions && step.fallbackActions.length > 0) {
-          console.log(chalk.gray(`     Fallbacks: ${step.fallbackActions.join(', ')}`));
-        }
-      });
-    }
-    
-    if (plan.requiresConfirmation) {
-      const { createInterface } = await import('readline');
-      const rl = createInterface({
-        input: process.stdin,
-        output: process.stdout
-      });
-
-      const confirmed = await new Promise<boolean>((resolve) => {
-        rl.question(chalk.yellow('\nThis action requires confirmation. Continue? (y/N): '), (answer) => {
-          rl.close();
-          resolve(answer.toLowerCase().startsWith('y'));
-        });
-      });
-
-      if (!confirmed) {
-        StatusIndicator.warning('Command execution cancelled by user');
-        return;
-      }
-    }
-    
-    // Execute the plan with enhanced feedback
-    console.log(chalk.cyan('\n🚀 Executing Automation Plan...\n'));
-    const result = await promptingEngine.executeTask(plan);
-    
-    if (result.success) {
-      StatusIndicator.success('Command executed successfully');
-      
-      // Show execution summary
-      const successfulSteps = result.stepResults.filter(r => r.success).length;
-      const failedSteps = result.stepResults.filter(r => !r.success).length;
-      
-      console.log(chalk.green(`✓ Completed ${successfulSteps}/${result.stepResults.length} steps`));
-      console.log(chalk.gray(`⏱️  Total execution time: ${Math.round(result.duration / 1000)}s`));
-      
-      if (result.contextLearned && result.contextLearned.length > 0) {
-        console.log(chalk.blue(`🧠 Learned: ${result.contextLearned.join(', ')}`));
-      }
-      
-      if (result.suggestions && result.suggestions.length > 0) {
-        console.log(chalk.yellow('\n💡 AI Suggestions for next time:'));
-        result.suggestions.forEach((suggestion, index) => {
-          console.log(`   ${index + 1}. ${suggestion}`);
-        });
-      }
-      
-    } else {
-      StatusIndicator.error('Command execution failed');
-      
-      if (result.error) {
-        console.log(chalk.red(`❌ Error: ${result.error}`));
-      }
-      
-      // Show step-by-step results
-      if (result.stepResults.length > 0) {
-        console.log(chalk.cyan('\n📊 Step Results:'));
-        result.stepResults.forEach((stepResult, index) => {
-          const status = stepResult.success ? chalk.green('✓') : chalk.red('✗');
-          const duration = Math.round(stepResult.duration / 1000);
-          console.log(`  ${status} Step ${index + 1}: ${duration}s`);
-          
-          if (!stepResult.success && stepResult.error) {
-            console.log(chalk.red(`    Error: ${stepResult.error}`));
-          }
-          
-          if (stepResult.retryCount && stepResult.retryCount > 0) {
-            console.log(chalk.yellow(`    Retries: ${stepResult.retryCount}`));
-          }
-        });
-      }
-      
-      // Provide enhanced contextual help
-      if (result.error) {
-        const help = await promptingEngine.getContextualHelp(result.error);
-        if (help.length > 0) {
-          console.log(chalk.yellow('\n🔧 AI-Powered Troubleshooting Suggestions:'));
-          help.forEach((suggestion, index) => {
-            console.log(`   ${index + 1}. ${suggestion}`);
-          });
-        }
-      }
-    }
-    
-  } catch (error) {
-    StatusIndicator.error('Failed to process command', {
-      details: error instanceof Error ? error.message : String(error)
-    });
-    
-    // Try to provide help even for processing errors
-    try {
-      const help = await promptingEngine.getContextualHelp(error instanceof Error ? error.message : String(error));
-      if (help.length > 0) {
-        console.log(chalk.yellow('\n💡 Troubleshooting Suggestions:'));
-        help.forEach((suggestion, index) => {
-          console.log(`   ${index + 1}. ${suggestion}`);
-        });
-      }
-    } catch (helpError) {
-      console.log(chalk.gray('Unable to provide contextual help at this time.'));
-    }
+  if (!isInitialized) {
+    Banner.displayMinimal();
+    StatusIndicator.warning('Kira is not initialized yet.');
+    StatusIndicator.info('For the best experience, please run: kira init');
+    StatusIndicator.info('This will set up your preferences and system detection.');
+    console.log();
+  } else {
+    const userName = await profileManager.getUserName();
+    Banner.startup(userName, { compact: true });
   }
-}
-
-// Legacy task execution function (kept for compatibility with existing commands)
-async function executeTask(task: string, mode: string, isApCommand: boolean): Promise<void> {
-  // For legacy compatibility, redirect to new direct command execution
-  await executeDirectCommand(task);
+  
+  StatusIndicator.info(`Task: ${task}`);
+  
+  if (isKiraCommand) {
+    StatusIndicator.loading('Analyzing and executing task...');
+  }
+  
+  try {
+    await parseAndPlanTask(task, mode as ExecutionMode, isKiraCommand);
+  } catch (err) {
+    console.log(error(`❌ Error: ${err instanceof Error ? err.message : String(err)}`));
+  }
 }
 
 // Parse and plan task function
-async function parseAndPlanTask(task: string, mode: ExecutionMode, isApCommand: boolean): Promise<void> {
+async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand: boolean): Promise<void> {
   const { MultiStepProgress } = await import('./ui/components/ProgressBar.js');
   const { CommandOutput } = await import('./ui/formatters/CommandOutput.js');
   
@@ -683,7 +270,7 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isApCommand: 
     const input: CommandInput = {
       mode,
       task,
-      isAlidoCommand: isApCommand
+      isAlidoCommand: isKiraCommand
     };
     
     // Parse the command with progress updates
@@ -867,19 +454,26 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isApCommand: 
 
 // Handle different command invocations
 const scriptName = process.argv[1];
-if (scriptName?.includes('ap') || process.argv[2] === 'ap') {
-  // Called as 'ap' - treat everything after as a single command
-  const args = process.argv.slice(scriptName?.includes('ap') ? 2 : 3);
+if (scriptName?.includes('kira') || process.argv[2] === 'kira') {
+  // Called as 'kira' - treat everything after as a single command
+  const args = process.argv.slice(scriptName?.includes('kira') ? 2 : 3);
   if (args.length > 0) {
-    // Handle first launch, then execute command
-    handleFirstLaunch().then(() => {
-      return executeDirectCommand(args.join(' '));
-    }).catch(console.error);
+    executeTask(args.join(' '), 'auto', true).catch(console.error);
   } else {
-    // Handle first launch, then enter direct prompting mode
-    handleFirstLaunch().then(() => {
-      return enterDirectPromptingMode();
-    }).catch(console.error);
+    Banner.displayMinimal();
+    StatusIndicator.error('Please provide a task description');
+    
+    console.log();
+    StatusIndicator.info('Getting started:');
+    StatusIndicator.info('kira init          # First-time setup (recommended)', { indent: 2 });
+    StatusIndicator.info('kira setup         # Check system requirements', { indent: 2 });
+    
+    console.log();
+    StatusIndicator.info('Examples:');
+    StatusIndicator.info('kira install and open firefox', { indent: 2 });
+    StatusIndicator.info('kira check disk space', { indent: 2 });
+    StatusIndicator.info('kira create a website from my resume', { indent: 2 });
+    StatusIndicator.info('kira help me set up development environment', { indent: 2 });
   }
 } else {
   // Default command structure

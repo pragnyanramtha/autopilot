@@ -120,8 +120,7 @@ export class SystemInfo {
       lines.push(Layout.separator('─', 30));
     }
 
-    const table = new Table();
-    table.addColumns([
+    const table = new Table([
       { header: 'Property', key: 'property', width: 15, align: 'left' },
       { header: 'Value', key: 'value', width: 35, align: 'left' }
     ]);
@@ -160,8 +159,7 @@ export class SystemInfo {
       lines.push(Layout.separator('─', 30));
     }
 
-    const table = new Table();
-    table.addColumns([
+    const table = new Table([
       { header: 'Component', key: 'component', width: 15, align: 'left' },
       { header: 'Details', key: 'details', width: 35, align: 'left' }
     ]);
@@ -199,8 +197,7 @@ export class SystemInfo {
       lines.push(Layout.separator('─', 30));
     }
 
-    const table = new Table();
-    table.addColumns([
+    const table = new Table([
       { header: 'Property', key: 'property', width: 15, align: 'left' },
       { header: 'Value', key: 'value', width: 35, align: 'left' }
     ]);
@@ -327,8 +324,7 @@ export class SystemInfo {
       lines.push(Layout.separator('─', 30));
     }
 
-    const table = new Table();
-    table.addColumns([
+    const table = new Table([
       { header: 'Property', key: 'property', width: 15, align: 'left' },
       { header: 'Value', key: 'value', width: 35, align: 'left' }
     ]);
@@ -344,8 +340,8 @@ export class SystemInfo {
       const statusIcon = status ? symbols.success : symbols.error;
       const statusColor = status ? colors.success : colors.error;
       const statusText = status ? 'Connected' : 'Disconnected';
-      table.addRow({
-        property: 'Internet',
+      table.addRow({ 
+        property: 'Internet', 
         value: `${statusColor(statusIcon)} ${statusColor(statusText)}`
       });
     }

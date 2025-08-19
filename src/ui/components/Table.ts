@@ -4,8 +4,7 @@ import { Layout } from '../utils/Layout.js';
 
 export interface TableColumn {
   key: string;
-  title?: string;
-  header?: string; // Legacy support
+  title: string;
   width?: number;
   align?: 'left' | 'center' | 'right';
   formatter?: (value: any) => string;
@@ -42,36 +41,16 @@ export class Table {
   private options: TableOptions;
   private style: TableStyle;
 
-  constructor(optionsOrColumns: TableOptions | TableColumn[] = {}) {
-    // Handle legacy usage where columns array was passed directly
-    if (Array.isArray(optionsOrColumns)) {
-      this.columns = optionsOrColumns.map(col => ({
-        key: col.key || col.title?.toLowerCase() || col.header?.toLowerCase() || '',
-        title: col.header || col.title || col.key || '',
-        width: col.width,
-        align: col.align || 'left',
-        formatter: col.formatter,
-        sortable: col.sortable
-      }));
-      this.options = {
-        showHeaders: true,
-        showBorders: true,
-        showRowNumbers: false,
-        alternateRowColors: false,
-        compact: false,
-        sortDirection: 'asc'
-      };
-    } else {
-      this.options = {
-        showHeaders: true,
-        showBorders: true,
-        showRowNumbers: false,
-        alternateRowColors: false,
-        compact: false,
-        sortDirection: 'asc',
-        ...optionsOrColumns
-      };
-    }
+  constructor(options: TableOptions = {}) {
+    this.options = {
+      showHeaders: true,
+      showBorders: true,
+      showRowNumbers: false,
+      alternateRowColors: false,
+      compact: false,
+      sortDirection: 'asc',
+      ...options
+    };
 
     this.style = {
       headerColor: colors.primaryBold,
@@ -123,17 +102,17 @@ export class Table {
     const terminalWidth = Layout.getTerminalWidth();
     const maxTableWidth = this.options.maxWidth || terminalWidth - 4;
     const columnWidths = new Map<string, number>();
-
+    
     // Calculate minimum widths based on content
     for (const column of this.columns) {
-      let maxWidth = (column.title || column.header || column.key || '').length;
-
+      let maxWidth = column.title.length;
+      
       // Check all row values for this column
       for (const row of this.rows) {
         const value = this.formatCellValue(row[column.key], column);
         maxWidth = Math.max(maxWidth, value.length);
       }
-
+      
       // Use specified width or calculated width
       const width = column.width || maxWidth;
       columnWidths.set(column.key, width);
@@ -205,9 +184,9 @@ export class Table {
     for (let i = 0; i < this.columns.length; i++) {
       const column = this.columns[i];
       const width = columnWidths.get(column.key) || 10;
-
+      
       border += symbols.boxHorizontal.repeat(width + 2);
-
+      
       if (i < this.columns.length - 1) {
         if (type === 'top') {
           border += symbols.boxHorizontal;
@@ -252,14 +231,14 @@ export class Table {
     for (let i = 0; i < this.columns.length; i++) {
       const column = this.columns[i];
       const width = columnWidths.get(column.key) || 10;
-
+      
       if (this.options.showBorders) {
         row += this.style.borderColor(symbols.boxVertical) + ' ';
       } else if (i > 0) {
         row += ' ';
       }
 
-      const headerText = this.alignText(column.title || column.header || column.key || '', width, column.align);
+      const headerText = this.alignText(column.title, width, column.align);
       row += this.style.headerColor(headerText);
 
       if (this.options.showBorders) {
@@ -295,7 +274,7 @@ export class Table {
     for (let i = 0; i < this.columns.length; i++) {
       const column = this.columns[i];
       const width = columnWidths.get(column.key) || 10;
-
+      
       if (this.options.showBorders) {
         row += this.style.borderColor(symbols.boxVertical) + ' ';
       } else if (i > 0) {
@@ -382,7 +361,7 @@ export class Table {
     // Header row
     if (this.options.showHeaders) {
       lines.push(this.createHeaderRow(columnWidths));
-
+      
       if (this.options.showBorders) {
         lines.push(this.createBorder('middle', columnWidths));
       }
@@ -424,10 +403,10 @@ export class Table {
   }
 
   static keyValue(data: Record<string, any>, title?: string): string {
-    const table = new Table({
+    const table = new Table({ 
       ...(title && { title }),
       compact: true,
-      showBorders: false
+      showBorders: false 
     });
 
     table.addColumns([
@@ -445,7 +424,7 @@ export class Table {
   }
 
   static list(items: string[], title?: string, numbered: boolean = false): string {
-    const table = new Table({
+    const table = new Table({ 
       ...(title && { title }),
       compact: true,
       showBorders: false,

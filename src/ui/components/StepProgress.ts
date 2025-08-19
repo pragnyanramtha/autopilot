@@ -165,8 +165,8 @@ export class StepProgress {
       completed,
       total,
       percentage,
-      ...(currentStep && { currentStep }),
-      ...(estimatedTimeRemaining && { estimatedTimeRemaining })
+      currentStep,
+      estimatedTimeRemaining
     };
   }
 

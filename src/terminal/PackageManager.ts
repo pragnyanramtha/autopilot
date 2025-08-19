@@ -422,8 +422,8 @@ export class PackageManagerService {
       results.push({
         package: packageName,
         success: result.success,
-        ...(result.manager && { manager: result.manager }),
-        ...(result.error && { error: result.error })
+        manager: result.manager,
+        error: result.error
       });
     }
 

@@ -23,8 +23,8 @@ export class SetupWizard {
     // Display banner
     Banner.display({ showVersion: true, showTagline: true });
     
-    StatusIndicator.info('Starting AP setup wizard...');
-    console.log('This wizard will help you configure AP for optimal performance.\n');
+    StatusIndicator.info('Starting Kira setup wizard...');
+    console.log('This wizard will help you configure Kira for optimal performance.\n');
 
     const steps = [
       'System Detection',
@@ -76,22 +76,8 @@ export class SetupWizard {
     }
   }
 
-  private async runSystemDetection(): Promise<void> {
-    try {
-      await this.systemDetection.detectWithScript({ verbose: false, showProgress: true });
-      StatusIndicator.success('System detection completed');
-      
-      // Display summary
-      this.systemDetection.displaySummary();
-      
-    } catch (error: any) {
-      StatusIndicator.warning('System detection failed, using fallback method');
-      await this.systemDetection.detect({ verbose: false, showProgress: true });
-    }
-  }
-
   private async checkSystemRequirements(): Promise<void> {
-    StatusIndicator.info('Checking system requirements...');
+    console.log(chalk.yellow('📋 Checking System Requirements...\n'));
 
     const requirements = [
       { name: 'Node.js', command: 'node --version', required: true },
@@ -103,8 +89,6 @@ export class SetupWizard {
       { name: 'docker', command: 'docker --version', required: false }
     ];
 
-    const results: Array<{ name: string; status: StatusType; version?: string; required: boolean }> = [];
-
     for (const req of requirements) {
       try {
         const { exec } = await import('child_process');
@@ -114,79 +98,45 @@ export class SetupWizard {
         const { stdout } = await execAsync(req.command, { timeout: 5000 });
         const version = stdout.split('\n')[0];
         
-        results.push({
-          name: req.name,
-          status: StatusType.SUCCESS,
-          version,
-          required: req.required
-        });
-        
+        console.log(`✅ ${req.name}: ${version}`);
       } catch (error) {
-        results.push({
-          name: req.name,
-          status: req.required ? StatusType.ERROR : StatusType.WARNING,
-          required: req.required
-        });
+        if (req.required) {
+          console.log(`❌ ${req.name}: Not found (REQUIRED)`);
+        } else {
+          console.log(`⚠️  ${req.name}: Not found (optional)`);
+        }
       }
     }
 
-    // Display results
-    const requiredMissing = results.filter(r => r.required && r.status === StatusType.ERROR);
-    const optionalMissing = results.filter(r => !r.required && r.status === StatusType.WARNING);
-    const available = results.filter(r => r.status === StatusType.SUCCESS);
-
-    StatusIndicator.summary('System Requirements', 
-      results.map(r => {
-        const base = {
-          label: `${r.name}${r.required ? ' (required)' : ''}`,
-          status: r.status,
-        };
-        return r.version ? { ...base, value: r.version.substring(0, 20) } : base;
-      })
-    );
-
-    if (requiredMissing.length > 0) {
-      StatusIndicator.error(`Missing required dependencies: ${requiredMissing.map(r => r.name).join(', ')}`);
-    } else {
-      StatusIndicator.success('All required dependencies are available');
-    }
-
-    if (optionalMissing.length > 0) {
-      StatusIndicator.info(`Optional tools not found: ${optionalMissing.map(r => r.name).join(', ')}`);
-    }
+    console.log('');
   }
 
   private async checkPackageManagers(): Promise<void> {
-    StatusIndicator.info('Analyzing package managers...');
+    console.log(chalk.yellow('📦 Checking Package Managers...\n'));
 
-    await this.packageManager.displayStatus();
-    
+    await this.packageManager.initialize();
     const available = this.packageManager.getAvailableManagers();
 
     if (available.length === 0) {
-      StatusIndicator.error('No package managers found!', {
-        details: 'Please install at least one: apt, snap, flatpak, npm, pip, or cargo'
-      });
+      console.log('❌ No package managers found!');
+      console.log('   Please install at least one: apt, snap, flatpak, npm, pip, or cargo\n');
     } else {
-      StatusIndicator.success(`Found ${available.length} package manager(s)`, {
-        details: available.join(', ')
-      });
+      console.log(`✅ Found ${available.length} package manager(s): ${available.join(', ')}\n`);
     }
   }
 
   private async checkAIConfiguration(): Promise<void> {
-    StatusIndicator.info('Checking AI configuration...');
+    console.log(chalk.yellow('🤖 Checking AI Configuration...\n'));
 
     const geminiService = new GeminiService();
     
     if (geminiService.isAIEnabled()) {
-      StatusIndicator.success('Gemini AI: Configured and ready', {
-        details: 'Enhanced natural language processing enabled'
-      });
+      console.log('✅ Gemini AI: Configured and ready');
+      console.log('   Enhanced natural language processing enabled\n');
     } else {
-      StatusIndicator.warning('Gemini AI: Not configured', {
-        details: 'Add your GEMINI_API_KEY to .env for enhanced AI features\nGet your API key from: https://makersuite.google.com/app/apikey'
-      });
+      console.log('⚠️  Gemini AI: Not configured');
+      console.log('   Add your GEMINI_API_KEY to .env for enhanced AI features');
+      console.log('   Get your API key from: https://makersuite.google.com/app/apikey\n');
     }
   }
 
@@ -194,57 +144,54 @@ export class SetupWizard {
     const envPath = '.env';
     const envExamplePath = '.env.example';
 
-    StatusIndicator.info('Setting up environment configuration...');
-
     if (fs.existsSync(envPath)) {
-      StatusIndicator.success('.env file already exists', {
-        details: 'Edit .env to customize your configuration'
-      });
+      console.log(chalk.yellow('📄 Configuration File...\n'));
+      console.log('✅ .env file already exists');
+      console.log('   Edit .env to customize your configuration\n');
       return;
     }
 
     if (fs.existsSync(envExamplePath)) {
+      console.log(chalk.yellow('📄 Creating Configuration File...\n'));
+      
       try {
         const exampleContent = fs.readFileSync(envExamplePath, 'utf8');
         fs.writeFileSync(envPath, exampleContent);
-        StatusIndicator.success('Created .env file from .env.example', {
-          details: 'Please edit .env and add your API keys'
-        });
-      } catch (error: any) {
-        StatusIndicator.error('Failed to create .env file', {
-          details: 'Please manually copy .env.example to .env'
-        });
+        console.log('✅ Created .env file from .env.example');
+        console.log('   Please edit .env and add your API keys\n');
+      } catch (error) {
+        console.log('❌ Failed to create .env file');
+        console.log('   Please manually copy .env.example to .env\n');
       }
     } else {
-      StatusIndicator.warning('.env.example not found', {
-        details: 'Please create a .env file with your configuration'
-      });
+      console.log('⚠️  .env.example not found');
+      console.log('   Please create a .env file with your configuration\n');
     }
   }
 
   private showFinalRecommendations(): void {
-    StatusIndicator.success('Setup Complete!');
+    console.log(chalk.green.bold('🎉 Setup Complete!\n'));
     
-    console.log('\n' + Layout.box(
-      colors.bold('🎉 AP Setup Complete!\n\n') +
-      colors.primary('📝 Next Steps:\n') +
-      '1. Edit .env file and add your Gemini API key for enhanced AI features\n' +
-      '2. Test the installation: ap check disk space\n' +
-      '3. Try some examples:\n' +
-      '   • ap install and open firefox\n' +
-      '   • ap list files\n' +
-      '   • ap create directory named test-folder\n' +
-      '   • ap demo (to see error handling)\n\n' +
-      colors.primary('🔧 Configuration:\n') +
-      '• Configuration file: .env\n' +
-      '• Logs: Check terminal output\n' +
-      '• Package managers: Automatically detected\n' +
-      '• Browser: Uses system default browser\n\n' +
-      colors.primary('📚 Documentation:\n') +
-      '• GitHub: https://github.com/pragnyanramtha/autopilot\n' +
-      '• Issues: https://github.com/pragnyanramtha/autopilot/issues\n' +
-      '• API Keys: https://makersuite.google.com/app/apikey\n\n' +
-      colors.success('✨ AP is ready to automate your workflows!')
-    ));
+    console.log(chalk.cyan('📝 Next Steps:\n'));
+    console.log('1. Edit .env file and add your Gemini API key for enhanced AI features');
+    console.log('2. Test the installation: kira check disk space');
+    console.log('3. Try some examples:');
+    console.log('   • kira install and open firefox');
+    console.log('   • kira list files');
+    console.log('   • kira create directory named test-folder');
+    console.log('   • kira demo (to see error handling)');
+    
+    console.log(chalk.cyan('\n🔧 Configuration:\n'));
+    console.log('• Configuration file: .env');
+    console.log('• Logs: Check terminal output');
+    console.log('• Package managers: Automatically detected');
+    console.log('• Browser: Uses system default browser');
+    
+    console.log(chalk.cyan('\n📚 Documentation:\n'));
+    console.log('• GitHub: https://github.com/pragnyanramtha/autopilot');
+    console.log('• Issues: https://github.com/pragnyanramtha/autopilot/issues');
+    console.log('• API Keys: https://makersuite.google.com/app/apikey');
+    
+    console.log(chalk.green('\n✨ Kira is ready to automate your Linux workflows!\n'));
   }
 }

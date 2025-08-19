@@ -30,34 +30,6 @@ export interface SymbolSet {
   circle: string;
   square: string;
   
-  // File system symbols
-  home: string;
-  folder: string;
-  file: string;
-  link: string;
-  
-  // Directional symbols
-  up: string;
-  down: string;
-  left: string;
-  right: string;
-  
-  // Animation symbols
-  spinner: string[];
-  
-  // Border symbols
-  borderHorizontal: string;
-  borderVertical: string;
-  borderTopLeft: string;
-  borderTopRight: string;
-  borderBottomLeft: string;
-  borderBottomRight: string;
-  borderCross: string;
-  borderTop: string;
-  borderBottom: string;
-  borderLeft: string;
-  borderRight: string;
-  
   // Box drawing
   boxVertical: string;
   boxHorizontal: string;
@@ -104,34 +76,6 @@ export const unicodeSymbols: SymbolSet = {
   diamond: '♦',
   circle: '●',
   square: '■',
-  
-  // File system symbols
-  home: '~',
-  folder: '📁',
-  file: '📄',
-  link: '🔗',
-  
-  // Directional symbols
-  up: '↑',
-  down: '↓',
-  left: '←',
-  right: '→',
-  
-  // Animation symbols
-  spinner: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
-  
-  // Border symbols
-  borderHorizontal: '─',
-  borderVertical: '│',
-  borderTopLeft: '┌',
-  borderTopRight: '┐',
-  borderBottomLeft: '└',
-  borderBottomRight: '┘',
-  borderCross: '┼',
-  borderTop: '┬',
-  borderBottom: '┴',
-  borderLeft: '├',
-  borderRight: '┤',
   
   // Box drawing
   boxVertical: '│',
@@ -180,34 +124,6 @@ export const asciiSymbols: SymbolSet = {
   circle: 'o',
   square: '#',
   
-  // File system symbols
-  home: '~',
-  folder: '[DIR]',
-  file: '[FILE]',
-  link: '->',
-  
-  // Directional symbols
-  up: '^',
-  down: 'v',
-  left: '<',
-  right: '>',
-  
-  // Animation symbols
-  spinner: ['|', '/', '-', '\\'],
-  
-  // Border symbols
-  borderHorizontal: '-',
-  borderVertical: '|',
-  borderTopLeft: '+',
-  borderTopRight: '+',
-  borderBottomLeft: '+',
-  borderBottomRight: '+',
-  borderCross: '+',
-  borderTop: '+',
-  borderBottom: '+',
-  borderLeft: '+',
-  borderRight: '+',
-  
   // Box drawing
   boxVertical: '|',
   boxHorizontal: '-',
@@ -229,8 +145,7 @@ export const windowsSymbols: SymbolSet = {
   ...asciiSymbols,
   success: '√',
   error: '×',
-  loading: ['.', '..', '...'],
-  spinner: ['.', '..', '...']
+  loading: ['.', '..', '...']
 };
 
 // High contrast symbols for accessibility
@@ -263,34 +178,6 @@ export const highContrastSymbols: SymbolSet = {
   diamond: '<>',
   circle: '(o)',
   square: '[#]',
-  
-  // File system symbols
-  home: '[HOME]',
-  folder: '[FOLDER]',
-  file: '[FILE]',
-  link: '[LINK]',
-  
-  // Directional symbols
-  up: '[UP]',
-  down: '[DOWN]',
-  left: '[LEFT]',
-  right: '[RIGHT]',
-  
-  // Animation symbols
-  spinner: ['[.]', '[..]', '[...]', '[....]'],
-  
-  // Border symbols
-  borderHorizontal: '-',
-  borderVertical: '|',
-  borderTopLeft: '+',
-  borderTopRight: '+',
-  borderBottomLeft: '+',
-  borderBottomRight: '+',
-  borderCross: '+',
-  borderTop: '+',
-  borderBottom: '+',
-  borderLeft: '+',
-  borderRight: '+',
   
   // Box drawing - use clear ASCII
   boxVertical: '|',
@@ -338,34 +225,6 @@ export const screenReaderSymbols: SymbolSet = {
   diamond: 'DIAMOND',
   circle: 'CIRCLE',
   square: 'SQUARE',
-  
-  // File system symbols
-  home: 'HOME',
-  folder: 'FOLDER',
-  file: 'FILE',
-  link: 'LINK',
-  
-  // Directional symbols
-  up: 'UP',
-  down: 'DOWN',
-  left: 'LEFT',
-  right: 'RIGHT',
-  
-  // Animation symbols
-  spinner: ['LOADING', 'LOADING.', 'LOADING..', 'LOADING...'],
-  
-  // Border symbols
-  borderHorizontal: 'HORIZONTAL',
-  borderVertical: 'VERTICAL',
-  borderTopLeft: 'TOP-LEFT',
-  borderTopRight: 'TOP-RIGHT',
-  borderBottomLeft: 'BOTTOM-LEFT',
-  borderBottomRight: 'BOTTOM-RIGHT',
-  borderCross: 'CROSS',
-  borderTop: 'TOP',
-  borderBottom: 'BOTTOM',
-  borderLeft: 'LEFT',
-  borderRight: 'RIGHT',
   
   // Box drawing
   boxVertical: 'VERTICAL',
