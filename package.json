@@ -1,0 +1,82 @@
+{
+  "name": "@pragnyanramtha/autopilot",
+  "version": "1.0.1",
+  "description": "AP - AI-powered OS automation for Linux and macOS",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "ap": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts ap",
+    "start": "node dist/cli.js",
+    "test": "tsx test/run-tests.ts",
+    "test:watch": "tsx test/run-tests.ts --watch",
+    "test:coverage": "tsx test/run-tests.ts --coverage",
+    "test:performance": "tsx test/run-tests.ts --performance",
+    "test:cross-platform": "tsx test/run-tests.ts --cross-platform",
+    "test:snapshots": "tsx test/run-tests.ts --pattern 'Snapshot'",
+    "test:update-snapshots": "tsx test/run-tests.ts --update-snapshots",
+    "test:components": "tsx test/run-tests.ts --pattern 'Banner|StatusIndicator|Table|ProgressBar'",
+    "test:utils": "tsx test/run-tests.ts --pattern 'Performance|Colors|Symbols|Layout'",
+    "test:ci": "tsx test/run-tests.ts --coverage --bail",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf dist/",
+    "install-global": "npm run build && npm link",
+    "update-deps": "./scripts/update-deps.sh"
+  },
+  "keywords": [
+    "ai",
+    "automation",
+    "linux",
+    "macos",
+    "homebrew",
+    "cli",
+    "terminal",
+    "browser"
+  ],
+  "author": "Pragnyan Ramtha <pragnyanramtha@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pragnyanramtha/autopilot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pragnyanramtha/autopilot/issues"
+  },
+  "homepage": "https://github.com/pragnyanramtha/autopilot#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "axios": "^1.7.7",
+    "chalk": "^5.3.0",
+    "cheerio": "^1.0.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.6.1",
+    "genai": "^0.0.18",
+    "generative-ai": "^0.1.4",
+    "inquirer": "^12.0.0",
+    "ora": "^8.1.0",
+    "pdf-parse": "^1.1.1",
+    "puppeteer": "^24.16.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/jest": "^29.5.13",
+    "@types/node": "^22.7.4",
+    "@types/pdf-parse": "^1.1.4",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint": "^9.12.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.1",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
