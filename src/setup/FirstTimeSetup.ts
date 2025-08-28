@@ -316,21 +316,13 @@ export class FirstTimeSetup {
       console.log(chalk.gray('You may be prompted for your password.\n'));
       
       // Run Homebrew installation
-      const { spawn } = await import('child_process');
-      const child = spawn(installCommand, [], { shell: true, stdio: 'inherit' });
-
-      await new Promise((resolve, reject) => {
-        child.on('close', (code) => {
-          if (code === 0) {
-            resolve(undefined);
-          } else {
-            reject(new Error(`Homebrew installation failed with code ${code}`));
-          }
-        });
-        child.on('error', (err) => {
-          reject(err);
-        });
+      const { stdout, stderr } = await execAsync(installCommand, { 
+        timeout: 300000, // 5 minutes timeout
+        stdio: 'inherit'
       });
+      
+      if (stdout) console.log(stdout);
+      if (stderr) console.log(stderr);
       
       StatusIndicator.success('Homebrew installation completed!');
       

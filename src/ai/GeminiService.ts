@@ -279,6 +279,31 @@ Respond with just the improved bash command, no explanation.
     return this.isEnabled;
   }
 
+  /**
+   * Generate a response from Gemini AI for any prompt
+   */
+  async generateResponse(prompt: string): Promise<string> {
+    if (!this.isEnabled || !this.model) {
+      throw new Error('Gemini AI is not enabled or configured');
+    }
+
+    try {
+      const result = await this.withTimeout(
+        this.model.generateContent(prompt),
+        15000 // 15 second timeout for system analysis
+      );
+      
+      const response = await result.response;
+      return response.text();
+      
+    } catch (error: any) {
+      if (error.message?.includes('timeout')) {
+        throw new Error('AI request timed out - please try again');
+      }
+      throw new Error(`AI generation failed: ${error.message || 'Unknown error'}`);
+    }
+  }
+
   private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = 8000): Promise<T> {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error(`AI request timeout after ${timeoutMs}ms`)), timeoutMs);

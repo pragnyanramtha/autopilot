@@ -8,6 +8,7 @@ import { StatusIndicator, StatusType } from './ui/components/StatusIndicator.js'
 import { Spinner, ProgressBar } from './ui/components/ProgressBar.js';
 import { Layout } from './ui/utils/Layout.js';
 import { getThemeColors } from './ui/themes/ThemeManager.js';
+import { FirstTimeSetup } from './setup/FirstTimeSetup.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +26,9 @@ const error = colors.error;
 const info = colors.info;
 const warning = colors.warning;
 
+// Initialize first-time setup checker
+const firstTimeSetup = new FirstTimeSetup();
+
 // Main program setup
 program
   .name('ap')
@@ -35,6 +39,9 @@ program
   .option('-c, --config <path>', 'Config file path')
   .argument('[task...]', 'Task description')
   .action(async (taskArgs: string[]) => {
+    // Check for first-time setup
+    await handleInitialization();
+    
     if (taskArgs.length === 0) {
       program.help();
       return;
@@ -61,6 +68,129 @@ program
     const { SetupWizard } = await import('./setup/SetupWizard.js');
     const wizard = new SetupWizard();
     await wizard.run();
+  });
+
+// Preferences command
+program
+  .command('preferences')
+  .alias('prefs')
+  .description('Configure AP preferences and settings')
+  .action(async () => {
+    try {
+      await firstTimeSetup.runPreferencesSetup();
+    } catch (error) {
+      StatusIndicator.error('Preferences setup failed', {
+        details: error instanceof Error ? error.message : String(error)
+      });
+      process.exit(1);
+    }
+  });
+
+// File management command
+program
+  .command('file')
+  .description('File management operations')
+  .option('-r, --read <path>', 'Read file content')
+  .option('-w, --write <path>', 'Write content to file (use with --content)')
+  .option('-a, --append <path>', 'Append content to file (use with --content)')
+  .option('-c, --content <text>', 'Content to write or append')
+  .option('-l, --list <path>', 'List directory contents')
+  .option('-i, --info <path>', 'Get file information')
+  .option('-s, --search <pattern>', 'Search for files (use with --in)')
+  .option('--in <directory>', 'Directory to search in')
+  .action(async (options) => {
+    const { FileManager } = await import('./utils/FileManager.js');
+    
+    Banner.displayMinimal();
+    
+    try {
+      if (options.read) {
+        const result = FileManager.readFile(options.read);
+        if (result.success) {
+          StatusIndicator.success(result.message);
+          console.log('\n' + Layout.box(result.data));
+        } else {
+          StatusIndicator.error(result.message);
+        }
+      }
+      
+      else if (options.write) {
+        if (!options.content) {
+          StatusIndicator.error('Content is required for write operation. Use --content "your text"');
+          return;
+        }
+        const result = FileManager.writeFile(options.write, options.content, { createDir: true });
+        StatusIndicator[result.success ? 'success' : 'error'](result.message);
+      }
+      
+      else if (options.append) {
+        if (!options.content) {
+          StatusIndicator.error('Content is required for append operation. Use --content "your text"');
+          return;
+        }
+        const result = FileManager.appendFile(options.append, options.content, { createDir: true });
+        StatusIndicator[result.success ? 'success' : 'error'](result.message);
+      }
+      
+      else if (options.list) {
+        const result = FileManager.listDirectory(options.list);
+        if (result.success) {
+          StatusIndicator.success(result.message);
+          console.log();
+          result.data.files.forEach((file: any) => {
+            const icon = file.isDirectory ? '📁' : '📄';
+            const size = file.isFile ? ` (${file.size} bytes)` : '';
+            StatusIndicator.info(`${icon} ${file.name}${size}`, { indent: 2 });
+          });
+        } else {
+          StatusIndicator.error(result.message);
+        }
+      }
+      
+      else if (options.info) {
+        const result = FileManager.getFileInfo(options.info);
+        if (result.success) {
+          StatusIndicator.success(result.message);
+          const info = result.data;
+          console.log();
+          StatusIndicator.info(`Type: ${info.isFile ? 'File' : 'Directory'}`, { indent: 2 });
+          StatusIndicator.info(`Size: ${info.size} bytes`, { indent: 2 });
+          StatusIndicator.info(`Created: ${info.created}`, { indent: 2 });
+          StatusIndicator.info(`Modified: ${info.modified}`, { indent: 2 });
+        } else {
+          StatusIndicator.error(result.message);
+        }
+      }
+      
+      else if (options.search) {
+        const searchDir = options.in || process.cwd();
+        const result = FileManager.searchFiles(searchDir, options.search);
+        if (result.success) {
+          StatusIndicator.success(`${result.message} - Found ${result.data.count} matches`);
+          if (result.data.matches.length > 0) {
+            console.log();
+            result.data.matches.forEach((match: string) => {
+              StatusIndicator.info(`📄 ${match}`, { indent: 2 });
+            });
+          }
+        } else {
+          StatusIndicator.error(result.message);
+        }
+      }
+      
+      else {
+        StatusIndicator.info('File management operations:');
+        StatusIndicator.info('ap file --read <path>                    # Read file', { indent: 2 });
+        StatusIndicator.info('ap file --write <path> --content "text"  # Write file', { indent: 2 });
+        StatusIndicator.info('ap file --append <path> --content "text" # Append to file', { indent: 2 });
+        StatusIndicator.info('ap file --list <directory>               # List directory', { indent: 2 });
+        StatusIndicator.info('ap file --info <path>                    # File info', { indent: 2 });
+        StatusIndicator.info('ap file --search <pattern> --in <dir>    # Search files', { indent: 2 });
+      }
+      
+    } catch (error) {
+      StatusIndicator.error(`File operation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   });
 
 // Demo command
@@ -193,30 +323,28 @@ program
       console.log();
       StatusIndicator.divider('AP Configuration');
 
-      // Profile Status
-      const profileManager = ProfileManager.getInstance();
-      const isInitialized = await profileManager.isInitialized();
+      // Configuration Status
+      const config = await firstTimeSetup.loadConfig();
+      const configStatus = firstTimeSetup.getConfigStatus();
       
-      if (isInitialized) {
-        const userName = await profileManager.getUserName();
-        StatusIndicator.success('AP Profile: Initialized', {
-          details: `User: ${userName}\nLocation: ~/.ap/profile.json`
+      if (config) {
+        StatusIndicator.success('AP Configuration: Initialized', {
+          details: `User: ${config.userPreferences.name}\nLocation: ${configStatus.configPath}`
         });
       } else {
-        StatusIndicator.warning('AP profile not initialized', {
-          details: 'Run "ap init" to set up your profile'
+        StatusIndicator.warning('AP configuration not found', {
+          details: 'Configuration will be created on first run'
         });
       }
 
       // API Configuration
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (apiKey && apiKey !== 'your_gemini_api_key_here') {
+      if (configStatus.apiKeyConfigured) {
         StatusIndicator.success('Gemini AI: Configured and ready', {
           details: 'Enhanced natural language processing enabled'
         });
       } else {
         StatusIndicator.warning('Gemini AI: Not configured', {
-          details: 'Add GEMINI_API_KEY to .env for enhanced AI features'
+          details: 'Run "ap preferences" to configure your API key'
         });
       }
 
@@ -233,6 +361,68 @@ program
       StatusIndicator.error(`Failed to gather system information: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
+
+// Handle initialization flow
+async function handleInitialization(): Promise<void> {
+  const configStatus = firstTimeSetup.getConfigStatus();
+  
+  // First time running AP
+  if (configStatus.isFirstTime) {
+    try {
+      await firstTimeSetup.runFirstTimeSetup();
+      // Reload environment variables after API key setup
+      dotenv.config();
+    } catch (error) {
+      StatusIndicator.error('First-time setup failed', {
+        details: error instanceof Error ? error.message : String(error)
+      });
+      process.exit(1);
+    }
+    return;
+  }
+
+  // Check if API key is configured
+  if (!configStatus.apiKeyConfigured) {
+    Banner.error(`Missing Gemini API Key
+
+AP requires a FREE Gemini API key to function.
+
+🔑 Get your API key from Google AI Studio:
+   👉 https://aistudio.google.com/app/apikey
+   👉 https://makersuite.google.com/app/apikey (alternative)
+
+📋 Quick setup steps:
+   1. Visit: https://aistudio.google.com/app/apikey
+   2. Sign in with your Google account
+   3. Click "Create API Key"
+   4. Copy the generated key
+
+📝 Add it to your .env file:
+   echo "GEMINI_API_KEY=your_api_key_here" >> .env
+
+💡 Or run: ap preferences (for interactive setup)
+
+ℹ️  The Gemini API is free with generous limits:
+   • 15 requests per minute
+   • 1 million tokens per minute
+   • 1,500 requests per day`);
+    process.exit(1);
+  }
+
+  // Show preferences setup on second run (if not already configured)
+  const config = await firstTimeSetup.loadConfig();
+  if (config && !config.userPreferences.name) {
+    console.log(chalk.cyan('\n⚙️  Welcome back! Let\'s set up your preferences.'));
+    console.log(chalk.gray('(You can skip this by pressing Ctrl+C and run "ap preferences" later)\n'));
+    
+    try {
+      await firstTimeSetup.runPreferencesSetup();
+    } catch (error) {
+      // Allow user to skip preferences setup
+      StatusIndicator.warning('Preferences setup skipped');
+    }
+  }
+}
 
 // Check API key function
 function checkApiKey(): boolean {
@@ -269,43 +459,29 @@ AP requires a FREE Gemini API key to function.
 }
 
 // Main task execution function
-async function executeTask(task: string, mode: string, isKiraCommand: boolean): Promise<void> {
-  // Check API key first
-  if (!checkApiKey()) {
-    process.exit(1);
-  }
+async function executeTask(task: string, mode: string, isApCommand: boolean): Promise<void> {
+  // Load user configuration
+  const config = await firstTimeSetup.loadConfig();
+  const userName = config?.userPreferences.name || 'user';
   
-  // Check if user has initialized Kira
-  const { ProfileManager } = await import('./profile/ProfileManager.js');
-  const profileManager = ProfileManager.getInstance();
-  const isInitialized = await profileManager.isInitialized();
-  
-  if (!isInitialized) {
-    Banner.displayMinimal();
-    StatusIndicator.warning('Kira is not initialized yet.');
-    StatusIndicator.info('For the best experience, please run: kira init');
-    StatusIndicator.info('This will set up your preferences and system detection.');
-    console.log();
-  } else {
-    const userName = await profileManager.getUserName();
-    Banner.startup(userName, { compact: true });
-  }
+  // Show banner with user name
+  Banner.startup(userName, { compact: true });
   
   StatusIndicator.info(`Task: ${task}`);
   
-  if (isKiraCommand) {
+  if (isApCommand) {
     StatusIndicator.loading('Analyzing and executing task...');
   }
   
   try {
-    await parseAndPlanTask(task, mode as ExecutionMode, isKiraCommand);
+    await parseAndPlanTask(task, mode as ExecutionMode, isApCommand);
   } catch (err) {
     console.log(error(`❌ Error: ${err instanceof Error ? err.message : String(err)}`));
   }
 }
 
 // Parse and plan task function
-async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand: boolean): Promise<void> {
+async function parseAndPlanTask(task: string, mode: ExecutionMode, isApCommand: boolean): Promise<void> {
   const { MultiStepProgress } = await import('./ui/components/ProgressBar.js');
   const { CommandOutput } = await import('./ui/formatters/CommandOutput.js');
   
@@ -326,7 +502,7 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand
     const input: CommandInput = {
       mode,
       task,
-      isAlidoCommand: isKiraCommand
+      isAlidoCommand: isApCommand
     };
     
     // Parse the command with progress updates
@@ -510,26 +686,30 @@ async function parseAndPlanTask(task: string, mode: ExecutionMode, isKiraCommand
 
 // Handle different command invocations
 const scriptName = process.argv[1];
-if (scriptName?.includes('kira') || process.argv[2] === 'kira') {
-  // Called as 'kira' - treat everything after as a single command
-  const args = process.argv.slice(scriptName?.includes('kira') ? 2 : 3);
+if (scriptName?.includes('ap') || process.argv[2] === 'ap') {
+  // Called as 'ap' - treat everything after as a single command
+  const args = process.argv.slice(scriptName?.includes('ap') ? 2 : 3);
   if (args.length > 0) {
     executeTask(args.join(' '), 'auto', true).catch(console.error);
   } else {
-    Banner.displayMinimal();
-    StatusIndicator.error('Please provide a task description');
-    
-    console.log();
-    StatusIndicator.info('Getting started:');
-    StatusIndicator.info('kira init          # First-time setup (recommended)', { indent: 2 });
-    StatusIndicator.info('kira setup         # Check system requirements', { indent: 2 });
-    
-    console.log();
-    StatusIndicator.info('Examples:');
-    StatusIndicator.info('kira install and open firefox', { indent: 2 });
-    StatusIndicator.info('kira check disk space', { indent: 2 });
-    StatusIndicator.info('kira create a website from my resume', { indent: 2 });
-    StatusIndicator.info('kira help me set up development environment', { indent: 2 });
+    // Handle initialization before showing help
+    handleInitialization().then(() => {
+      Banner.displayMinimal();
+      StatusIndicator.error('Please provide a task description');
+      
+      console.log();
+      StatusIndicator.info('Getting started:');
+      StatusIndicator.info('ap preferences     # Configure your preferences', { indent: 2 });
+      StatusIndicator.info('ap setup          # Check system requirements', { indent: 2 });
+      StatusIndicator.info('ap status         # Show system status', { indent: 2 });
+      
+      console.log();
+      StatusIndicator.info('Examples:');
+      StatusIndicator.info('ap install and open firefox', { indent: 2 });
+      StatusIndicator.info('ap check disk space', { indent: 2 });
+      StatusIndicator.info('ap create a website from my resume', { indent: 2 });
+      StatusIndicator.info('ap help me set up development environment', { indent: 2 });
+    }).catch(console.error);
   }
 } else {
   // Default command structure
