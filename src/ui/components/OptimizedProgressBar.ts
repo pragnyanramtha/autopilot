@@ -421,7 +421,7 @@ export class OptimizedSpinner {
 export class OptimizedMultiStepProgress {
   private steps: Array<{ name: string; completed: boolean; current?: boolean }> = [];
   private currentStepIndex: number = 0;
-  private streamOutput: StreamingOutput;
+  private streamOutput: StreamingOutput | null = null;
 
   constructor(steps: string[], useStreaming: boolean = false) {
     this.steps = steps.map((name, index) => ({

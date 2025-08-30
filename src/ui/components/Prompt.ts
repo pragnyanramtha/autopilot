@@ -119,7 +119,7 @@ export class Prompt {
   async confirm(options: ConfirmOptions): Promise<boolean> {
     const { message, default: defaultValue = false, prefix } = options;
     
-    const promptPrefix = prefix || this.theme.colors.question(symbols.question);
+    const promptPrefix = prefix || this.theme.colors.info(symbols.question);
     const styledMessage = `${promptPrefix} ${this.theme.colors.text(message)}`;
     
     try {
@@ -277,7 +277,11 @@ export async function input(message: string, options?: Partial<PromptOptions>): 
  */
 export async function confirm(message: string, defaultValue?: boolean): Promise<boolean> {
   const prompt = new Prompt();
-  return await prompt.confirm({ message, default: defaultValue });
+  const options: ConfirmOptions = { message };
+  if (defaultValue !== undefined) {
+    options.default = defaultValue;
+  }
+  return await prompt.confirm(options);
 }
 
 /**

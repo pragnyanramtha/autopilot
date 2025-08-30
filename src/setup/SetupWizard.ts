@@ -136,11 +136,13 @@ export class SetupWizard {
     const available = results.filter(r => r.status === StatusType.SUCCESS);
 
     StatusIndicator.summary('System Requirements', 
-      results.map(r => ({
-        label: `${r.name}${r.required ? ' (required)' : ''}`,
-        status: r.status,
-        value: r.version ? r.version.substring(0, 20) : undefined
-      }))
+      results.map(r => {
+        const base = {
+          label: `${r.name}${r.required ? ' (required)' : ''}`,
+          status: r.status,
+        };
+        return r.version ? { ...base, value: r.version.substring(0, 20) } : base;
+      })
     );
 
     if (requiredMissing.length > 0) {

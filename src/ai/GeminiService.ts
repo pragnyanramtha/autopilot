@@ -138,7 +138,7 @@ Example response format:
 Respond only with valid JSON.
 `;
 
-      const result = await this.model.generateContent(prompt);
+      const result: any = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
@@ -222,7 +222,7 @@ ALWAYS use bash shell syntax and built-in commands.
 Respond only with valid JSON.
 `;
 
-      const result = await this.model.generateContent(prompt);
+      const result: any = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
@@ -261,7 +261,7 @@ Provide an improved version that:
 Respond with just the improved bash command, no explanation.
 `;
 
-      const result = await this.model.generateContent(prompt);
+      const result: any = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text().trim();
 
@@ -288,7 +288,7 @@ Respond with just the improved bash command, no explanation.
     }
 
     try {
-      const result = await this.withTimeout(
+      const result: any = await this.withTimeout(
         this.model.generateContent(prompt),
         15000 // 15 second timeout for system analysis
       );
@@ -359,7 +359,7 @@ Focus on:
 Respond only with valid JSON.
 `;
 
-      const result = await proModel.generateContent(prompt);
+      const result: any = await proModel.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 

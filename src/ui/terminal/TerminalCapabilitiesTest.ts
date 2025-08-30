@@ -184,7 +184,8 @@ export class TerminalCapabilitiesTest {
   private static displayAdaptiveConfig(config: any): void {
     console.log(chalk.yellow.bold('\n⚙️ Adaptive Configuration\n'));
     
-    const configTable = new Table([
+    const configTable = new Table();
+    configTable.addColumns([
       { header: 'Setting', key: 'setting', width: 25 },
       { header: 'Value', key: 'value', width: 20 },
       { header: 'Reason', key: 'reason', width: 55 }
@@ -321,7 +322,8 @@ export class TerminalCapabilitiesTest {
       'LANG', 'LC_ALL', 'LC_CTYPE'
     ];
     
-    const envTable = new Table([
+    const envTable = new Table();
+    envTable.addColumns([
       { header: 'Variable', key: 'variable', width: 25 },
       { header: 'Value', key: 'value', width: 55 }
     ]);

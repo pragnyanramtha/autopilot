@@ -106,7 +106,8 @@ export class PreferencesConfig {
     
     // Visual elements section
     console.log(chalk.yellow.bold('\nVisual Elements:'));
-    const elementsTable = new Table([
+    const elementsTable = new Table();
+    elementsTable.addColumns([
       { header: 'Setting', key: 'setting', width: 20 },
       { header: 'Value', key: 'value', width: 30 },
       { header: 'Description', key: 'description', width: 40 }
@@ -134,7 +135,8 @@ export class PreferencesConfig {
     
     // Accessibility section
     console.log(chalk.yellow.bold('\nAccessibility:'));
-    const accessibilityTable = new Table([
+    const accessibilityTable = new Table();
+    accessibilityTable.addColumns([
       { header: 'Setting', key: 'setting', width: 20 },
       { header: 'Value', key: 'value', width: 30 },
       { header: 'Description', key: 'description', width: 40 }
