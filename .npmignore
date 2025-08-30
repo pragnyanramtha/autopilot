@@ -54,19 +54,6 @@ tsconfig.json
 jest.config.js
 eslint.config.js
 
-# Documentation files (keep README.md)
-CONTRIBUTING.md
-ENHANCED_IMPLEMENTATION.md
-IMPLEMENTATION_SUMMARY.md
-INITIALIZATION_GUIDE.md
-MACOS_SUPPORT.md
-MIGRATION.md
-VISUAL_ENHANCEMENTS_SUMMARY.md
-
-# Build and development files
-Makefile
-scripts/
-
 # Optional npm cache directory
 .npm
 

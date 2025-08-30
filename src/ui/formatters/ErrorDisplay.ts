@@ -15,7 +15,7 @@ export enum ErrorType {
 
 export interface ErrorDisplayOptions {
   title?: string;
-  message: string;
+  message?: string;
   details?: string;
   suggestions?: string[];
   showHelp?: boolean;
@@ -59,7 +59,11 @@ export class ErrorDisplay {
     console.log(colors.muted(Layout.separator('─', 50)));
 
     // Display main error message
-    console.log(colors.bold(message));
+    if (message) {
+      console.log(colors.bold(message));
+    } else {
+      console.log(colors.bold(error.message));
+    }
 
     // Display error details if provided
     if (details) {
@@ -140,14 +144,17 @@ export class ErrorDisplay {
         suggestions.push('Check system logs for more information');
     }
 
-    this.show(error, {
+    const options: ErrorDisplayOptions = {
       title: 'System Error',
       message: error.message,
-      details: error.path ? `Path: ${error.path}` : undefined,
       suggestions,
       type: ErrorType.SYSTEM,
       showHelp: true
-    });
+    };
+    if (error.path) {
+      options.details = `Path: ${error.path}`;
+    }
+    this.show(error, options);
   }
 
   /**
