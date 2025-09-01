@@ -9,7 +9,7 @@ import { Spinner, ProgressBar } from './ui/components/ProgressBar.js';
 import { Layout } from './ui/utils/Layout.js';
 import { getThemeColors } from './ui/themes/ThemeManager.js';
 import { FirstLaunchService } from './setup/FirstLaunchService.js';
-import { DirectPromptingEngine } from './ai/DirectPromptingEngine.js';
+import { DirectPromptingEngine, AutomationPlan } from './ai/DirectPromptingEngine.js';
 
 // Load environment variables
 dotenv.config();
