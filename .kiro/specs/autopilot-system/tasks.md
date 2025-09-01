@@ -8,7 +8,7 @@
   - Update CLI entry point to use new first-launch flow instead of existing init system
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [x] 2. Implement direct prompting engine with Gemini 2.5 Pro integration
+- [-] 2. Implement direct prompting engine with Gemini 2.5 Pro integration
   - Create DirectPromptingEngine class that processes natural language commands
   - Integrate with existing CommandParser and TaskPlanner to enhance command interpretation
   - Implement Gemini 2.5 Pro API client with proper model specification and error handling

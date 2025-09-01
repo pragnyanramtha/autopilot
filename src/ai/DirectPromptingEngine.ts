@@ -4,7 +4,7 @@ import { TaskPlanner } from '../planner/TaskPlanner.js';
 import { StatusIndicator } from '../ui/components/StatusIndicator.js';
 import { CommandInput, ExecutionMode } from '../types/interfaces.js';
 
-export interface AutomationPlan {
+export interface ExecutionPlan {
   intent: TaskIntent;
   steps: AutomationStep[];
   requiredServices: string[];
@@ -115,7 +115,7 @@ export class DirectPromptingEngine {
   /**
    * Process natural language command using Gemini 2.5 Pro with context-aware understanding
    */
-  public async processCommand(input: string): Promise<AutomationPlan> {
+  public async processCommand(input: string): Promise<ExecutionPlan> {
     StatusIndicator.info('Processing natural language command with Gemini 2.5 Pro...');
 
     try {
@@ -147,8 +147,8 @@ export class DirectPromptingEngine {
       // Create execution plan using existing planner with AI enhancements
       const plan = await this.taskPlanner.createPlan(parsedCommand);
 
-      // Convert to our enhanced automation plan format
-      const automationPlan: AutomationPlan = {
+      // Convert to our enhanced execution plan format
+      const executionPlan: ExecutionPlan = {
         intent,
         steps: this.convertToAutomationSteps(plan.steps, decomposition),
         requiredServices: this.determineRequiredServices(plan),
@@ -167,7 +167,7 @@ export class DirectPromptingEngine {
       });
 
       StatusIndicator.success('Command processed successfully with enhanced AI analysis');
-      return automationPlan;
+      return executionPlan;
 
     } catch (error) {
       StatusIndicator.error('Failed to process command', {
@@ -417,7 +417,7 @@ Respond only with the JSON object.`;
   /**
    * Execute the automation plan
    */
-  public async executeTask(plan: AutomationPlan): Promise<ExecutionResult> {
+  public async executeTask(plan: ExecutionPlan): Promise<ExecutionResult> {
     const startTime = Date.now();
     const stepResults: StepResult[] = [];
 
