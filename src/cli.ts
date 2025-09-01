@@ -8,7 +8,8 @@ import { StatusIndicator, StatusType } from './ui/components/StatusIndicator.js'
 import { Spinner, ProgressBar } from './ui/components/ProgressBar.js';
 import { Layout } from './ui/utils/Layout.js';
 import { getThemeColors } from './ui/themes/ThemeManager.js';
-import { FirstTimeSetup } from './setup/FirstTimeSetup.js';
+import { FirstLaunchService } from './setup/FirstLaunchService.js';
+import { DirectPromptingEngine } from './ai/DirectPromptingEngine.js';
 
 // Load environment variables
 dotenv.config();
@@ -26,64 +27,30 @@ const error = colors.error;
 const info = colors.info;
 const warning = colors.warning;
 
-// Initialize first-time setup checker
-const firstTimeSetup = new FirstTimeSetup();
+// Initialize first-launch service
+const firstLaunchService = new FirstLaunchService();
 
 // Main program setup
 program
   .name('ap')
-  .description('AP - AI-powered OS automation for Linux and macOS')
+  .description('AP - AI-powered autopilot system for seamless automation')
   .version('0.1.0')
   .option('-v, --verbose', 'Enable verbose output')
   .option('-n, --dry-run', 'Show what would be executed without running')
   .option('-c, --config <path>', 'Config file path')
-  .argument('[task...]', 'Task description')
+  .argument('[task...]', 'Natural language task description')
   .action(async (taskArgs: string[]) => {
-    // Check for first-time setup
-    await handleInitialization();
+    // Handle first-launch setup
+    await handleFirstLaunch();
     
     if (taskArgs.length === 0) {
-      program.help();
+      // Enter direct prompting mode
+      await enterDirectPromptingMode();
       return;
     }
+    
     const task = taskArgs.join(' ');
-    await executeTask(task, 'auto', true);
-  });
-
-// Init command - First-time setup
-program
-  .command('init')
-  .description('Initialize AP with system detection and user preferences')
-  .action(async () => {
-    const { InitWizard } = await import('./setup/InitWizard.js');
-    const wizard = new InitWizard();
-    await wizard.run();
-  });
-
-// Setup command
-program
-  .command('setup')
-  .description('Setup AP configuration and check system requirements')
-  .action(async () => {
-    const { SetupWizard } = await import('./setup/SetupWizard.js');
-    const wizard = new SetupWizard();
-    await wizard.run();
-  });
-
-// Preferences command
-program
-  .command('preferences')
-  .alias('prefs')
-  .description('Configure AP preferences and settings')
-  .action(async () => {
-    try {
-      await firstTimeSetup.runPreferencesSetup();
-    } catch (error) {
-      StatusIndicator.error('Preferences setup failed', {
-        details: error instanceof Error ? error.message : String(error)
-      });
-      process.exit(1);
-    }
+    await executeDirectCommand(task);
   });
 
 // File management command
@@ -324,12 +291,11 @@ program
       StatusIndicator.divider('AP Configuration');
 
       // Configuration Status
-      const config = await firstTimeSetup.loadConfig();
-      const configStatus = firstTimeSetup.getConfigStatus();
+      const config = await firstLaunchService.loadConfiguration();
       
       if (config) {
-        StatusIndicator.success('AP Configuration: Initialized', {
-          details: `User: ${config.userPreferences.name}\nLocation: ${configStatus.configPath}`
+        StatusIndicator.success('AP Autopilot: Configured', {
+          details: `OS: ${config.osInfo.platform} ${config.osInfo.version}\nSetup: ${config.setupComplete ? 'Complete' : 'Incomplete'}`
         });
       } else {
         StatusIndicator.warning('AP configuration not found', {
@@ -338,13 +304,13 @@ program
       }
 
       // API Configuration
-      if (configStatus.apiKeyConfigured) {
-        StatusIndicator.success('Gemini AI: Configured and ready', {
+      if (firstLaunchService.isApiKeyConfigured()) {
+        StatusIndicator.success('Gemini 2.5 Pro: Configured and ready', {
           details: 'Enhanced natural language processing enabled'
         });
       } else {
         StatusIndicator.warning('Gemini AI: Not configured', {
-          details: 'Run "ap preferences" to configure your API key'
+          details: 'Delete ~/.ap/autopilot-config.json to restart setup'
         });
       }
 
@@ -362,18 +328,16 @@ program
     }
   });
 
-// Handle initialization flow
-async function handleInitialization(): Promise<void> {
-  const configStatus = firstTimeSetup.getConfigStatus();
-  
-  // First time running AP
-  if (configStatus.isFirstTime) {
+// Handle first-launch setup
+async function handleFirstLaunch(): Promise<void> {
+  // Check if this is the first launch
+  if (firstLaunchService.isFirstLaunch()) {
     try {
-      await firstTimeSetup.runFirstTimeSetup();
+      await firstLaunchService.runFirstLaunchSetup();
       // Reload environment variables after API key setup
       dotenv.config();
     } catch (error) {
-      StatusIndicator.error('First-time setup failed', {
+      StatusIndicator.error('First-launch setup failed', {
         details: error instanceof Error ? error.message : String(error)
       });
       process.exit(1);
@@ -382,14 +346,13 @@ async function handleInitialization(): Promise<void> {
   }
 
   // Check if API key is configured
-  if (!configStatus.apiKeyConfigured) {
+  if (!firstLaunchService.isApiKeyConfigured()) {
     Banner.error(`Missing Gemini API Key
 
-AP requires a FREE Gemini API key to function.
+AP Autopilot System requires a FREE Gemini API key to function.
 
 🔑 Get your API key from Google AI Studio:
    👉 https://aistudio.google.com/app/apikey
-   👉 https://makersuite.google.com/app/apikey (alternative)
 
 📋 Quick setup steps:
    1. Visit: https://aistudio.google.com/app/apikey
@@ -400,7 +363,7 @@ AP requires a FREE Gemini API key to function.
 📝 Add it to your .env file:
    echo "GEMINI_API_KEY=your_api_key_here" >> .env
 
-💡 Or run: ap preferences (for interactive setup)
+💡 Or delete ~/.ap/autopilot-config.json to restart setup
 
 ℹ️  The Gemini API is free with generous limits:
    • 15 requests per minute
@@ -408,76 +371,294 @@ AP requires a FREE Gemini API key to function.
    • 1,500 requests per day`);
     process.exit(1);
   }
+}
 
-  // Show preferences setup on second run (if not already configured)
-  const config = await firstTimeSetup.loadConfig();
-  if (config && !config.userPreferences.name) {
-    console.log(chalk.cyan('\n⚙️  Welcome back! Let\'s set up your preferences.'));
-    console.log(chalk.gray('(You can skip this by pressing Ctrl+C and run "ap preferences" later)\n'));
+// Enter direct prompting mode with enhanced AI integration
+async function enterDirectPromptingMode(): Promise<void> {
+  const config = await firstLaunchService.loadConfiguration();
+  const osInfo = config?.osInfo;
+  
+  Banner.startup('Autopilot', { compact: true });
+  
+  console.log(chalk.cyan.bold('\n🤖 AP Autopilot System - Enhanced Direct Prompting Mode\n'));
+  console.log(`System: ${osInfo?.platform} ${osInfo?.version} (${osInfo?.architecture})`);
+  console.log(`AI Model: Gemini 2.5 Pro with context-aware processing`);
+  console.log(chalk.gray('Type your commands in natural language. Press Ctrl+C to exit.\n'));
+  
+  console.log(chalk.yellow('Enhanced Features:'));
+  console.log('  • Context-aware command understanding');
+  console.log('  • Multi-step task decomposition');
+  console.log('  • Intelligent error recovery');
+  console.log('  • Learning from conversation history\n');
+  
+  console.log(chalk.yellow('Example Commands:'));
+  console.log('  • "install firefox and open it"');
+  console.log('  • "create a development environment for React"');
+  console.log('  • "check system performance and optimize if needed"');
+  console.log('  • "help me troubleshoot the last error"\n');
+
+  // Initialize the enhanced prompting engine
+  const promptingEngine = new DirectPromptingEngine();
+  await promptingEngine.initialize();
+  
+  StatusIndicator.success('Enhanced AI prompting engine initialized');
+  console.log();
+
+  const { createInterface } = await import('readline');
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: chalk.cyan('ap> ')
+  });
+
+  rl.prompt();
+
+  rl.on('line', async (input) => {
+    const command = input.trim();
     
+    if (command === '') {
+      rl.prompt();
+      return;
+    }
+
+    if (command.toLowerCase() === 'exit' || command.toLowerCase() === 'quit') {
+      console.log(chalk.green('Goodbye! 👋'));
+      rl.close();
+      return;
+    }
+
+    // Handle special commands
+    if (command.toLowerCase() === 'help' || command.toLowerCase() === '?') {
+      displayDirectPromptingHelp();
+      rl.prompt();
+      return;
+    }
+
+    if (command.toLowerCase() === 'history') {
+      displayCommandHistory(promptingEngine);
+      rl.prompt();
+      return;
+    }
+
     try {
-      await firstTimeSetup.runPreferencesSetup();
+      await executeDirectCommandWithEngine(command, promptingEngine);
     } catch (error) {
-      // Allow user to skip preferences setup
-      StatusIndicator.warning('Preferences setup skipped');
+      StatusIndicator.error('Command execution failed', {
+        details: error instanceof Error ? error.message : String(error)
+      });
+      
+      // Provide contextual help for errors
+      try {
+        const help = await promptingEngine.getContextualHelp(error instanceof Error ? error.message : String(error));
+        if (help.length > 0) {
+          console.log(chalk.yellow('\n💡 AI Suggestions:'));
+          help.forEach((suggestion, index) => {
+            console.log(`   ${index + 1}. ${suggestion}`);
+          });
+        }
+      } catch (helpError) {
+        console.log(chalk.gray('Unable to provide contextual help at this time.'));
+      }
+    }
+
+    console.log(); // Add spacing
+    rl.prompt();
+  });
+
+  rl.on('close', () => {
+    console.log(chalk.green('\nAutopilot session ended. Goodbye! 👋'));
+    process.exit(0);
+  });
+}
+
+// Display help for direct prompting mode
+function displayDirectPromptingHelp(): void {
+  console.log(chalk.cyan('\n📖 Direct Prompting Help\n'));
+  
+  console.log(chalk.yellow('Special Commands:'));
+  console.log('  help, ?     - Show this help message');
+  console.log('  history     - Show recent command history');
+  console.log('  exit, quit  - Exit the prompting mode\n');
+  
+  console.log(chalk.yellow('Natural Language Examples:'));
+  console.log('  System Management:');
+  console.log('    • "check disk space and memory usage"');
+  console.log('    • "update system packages"');
+  console.log('    • "install docker and configure it"\n');
+  
+  console.log('  Development:');
+  console.log('    • "set up a Node.js project with TypeScript"');
+  console.log('    • "create a React app and start development server"');
+  console.log('    • "clone my repository and install dependencies"\n');
+  
+  console.log('  File Operations:');
+  console.log('    • "create a backup of my documents folder"');
+  console.log('    • "find all Python files in the current directory"');
+  console.log('    • "compress the project folder into a zip file"\n');
+  
+  console.log(chalk.gray('The AI will break down complex tasks into manageable steps and execute them safely.'));
+}
+
+// Display command history
+function displayCommandHistory(engine: DirectPromptingEngine): void {
+  console.log(chalk.cyan('\n📜 Recent Command History\n'));
+  
+  // Access conversation history (this would need to be exposed by the engine)
+  console.log(chalk.gray('Command history tracking is active. Recent commands are used for context-aware processing.'));
+  console.log(chalk.gray('This helps the AI understand your workflow and provide better suggestions.'));
+}
+
+// Execute direct command using new prompting engine
+async function executeDirectCommand(command: string): Promise<void> {
+  const promptingEngine = new DirectPromptingEngine();
+  await promptingEngine.initialize();
+  await executeDirectCommandWithEngine(command, promptingEngine);
+}
+
+// Execute direct command with provided engine instance
+async function executeDirectCommandWithEngine(command: string, promptingEngine: DirectPromptingEngine): Promise<void> {
+  try {
+    StatusIndicator.info(`Processing: "${command}"`);
+    
+    // Process the command with enhanced AI
+    const plan = await promptingEngine.processCommand(command);
+    
+    // Show enhanced execution plan
+    console.log(chalk.cyan('\n📋 Enhanced Execution Plan:'));
+    console.log(`Intent: ${plan.intent.action} ${plan.intent.target}`);
+    console.log(`Category: ${plan.intent.category} | Complexity: ${plan.intent.complexity}`);
+    console.log(`Confidence: ${Math.round(plan.intent.confidence * 100)}%`);
+    console.log(`Risk Level: ${plan.riskLevel}`);
+    console.log(`Steps: ${plan.steps.length}`);
+    
+    if (plan.contextualInfo) {
+      console.log(`Context: ${plan.contextualInfo}`);
+    }
+    
+    if (plan.estimatedDuration) {
+      console.log(`Estimated Duration: ${Math.round(plan.estimatedDuration / 1000)}s`);
+    }
+    
+    // Show detailed steps
+    if (plan.steps.length > 0) {
+      console.log(chalk.cyan('\n📝 Execution Steps:'));
+      plan.steps.forEach((step, index) => {
+        const stepIcon = step.type === 'browser' ? '🌐' : step.type === 'system' ? '⚙️' : '🖥️';
+        const authIcon = step.requiresAuth ? ' 🔐' : '';
+        console.log(`  ${index + 1}. ${stepIcon} ${step.description}${authIcon}`);
+        
+        if (step.fallbackActions && step.fallbackActions.length > 0) {
+          console.log(chalk.gray(`     Fallbacks: ${step.fallbackActions.join(', ')}`));
+        }
+      });
+    }
+    
+    if (plan.requiresConfirmation) {
+      const { createInterface } = await import('readline');
+      const rl = createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+
+      const confirmed = await new Promise<boolean>((resolve) => {
+        rl.question(chalk.yellow('\nThis action requires confirmation. Continue? (y/N): '), (answer) => {
+          rl.close();
+          resolve(answer.toLowerCase().startsWith('y'));
+        });
+      });
+
+      if (!confirmed) {
+        StatusIndicator.warning('Command execution cancelled by user');
+        return;
+      }
+    }
+    
+    // Execute the plan with enhanced feedback
+    console.log(chalk.cyan('\n🚀 Executing Automation Plan...\n'));
+    const result = await promptingEngine.executeTask(plan);
+    
+    if (result.success) {
+      StatusIndicator.success('Command executed successfully');
+      
+      // Show execution summary
+      const successfulSteps = result.stepResults.filter(r => r.success).length;
+      const failedSteps = result.stepResults.filter(r => !r.success).length;
+      
+      console.log(chalk.green(`✓ Completed ${successfulSteps}/${result.stepResults.length} steps`));
+      console.log(chalk.gray(`⏱️  Total execution time: ${Math.round(result.duration / 1000)}s`));
+      
+      if (result.contextLearned && result.contextLearned.length > 0) {
+        console.log(chalk.blue(`🧠 Learned: ${result.contextLearned.join(', ')}`));
+      }
+      
+      if (result.suggestions && result.suggestions.length > 0) {
+        console.log(chalk.yellow('\n💡 AI Suggestions for next time:'));
+        result.suggestions.forEach((suggestion, index) => {
+          console.log(`   ${index + 1}. ${suggestion}`);
+        });
+      }
+      
+    } else {
+      StatusIndicator.error('Command execution failed');
+      
+      if (result.error) {
+        console.log(chalk.red(`❌ Error: ${result.error}`));
+      }
+      
+      // Show step-by-step results
+      if (result.stepResults.length > 0) {
+        console.log(chalk.cyan('\n📊 Step Results:'));
+        result.stepResults.forEach((stepResult, index) => {
+          const status = stepResult.success ? chalk.green('✓') : chalk.red('✗');
+          const duration = Math.round(stepResult.duration / 1000);
+          console.log(`  ${status} Step ${index + 1}: ${duration}s`);
+          
+          if (!stepResult.success && stepResult.error) {
+            console.log(chalk.red(`    Error: ${stepResult.error}`));
+          }
+          
+          if (stepResult.retryCount && stepResult.retryCount > 0) {
+            console.log(chalk.yellow(`    Retries: ${stepResult.retryCount}`));
+          }
+        });
+      }
+      
+      // Provide enhanced contextual help
+      if (result.error) {
+        const help = await promptingEngine.getContextualHelp(result.error);
+        if (help.length > 0) {
+          console.log(chalk.yellow('\n🔧 AI-Powered Troubleshooting Suggestions:'));
+          help.forEach((suggestion, index) => {
+            console.log(`   ${index + 1}. ${suggestion}`);
+          });
+        }
+      }
+    }
+    
+  } catch (error) {
+    StatusIndicator.error('Failed to process command', {
+      details: error instanceof Error ? error.message : String(error)
+    });
+    
+    // Try to provide help even for processing errors
+    try {
+      const help = await promptingEngine.getContextualHelp(error instanceof Error ? error.message : String(error));
+      if (help.length > 0) {
+        console.log(chalk.yellow('\n💡 Troubleshooting Suggestions:'));
+        help.forEach((suggestion, index) => {
+          console.log(`   ${index + 1}. ${suggestion}`);
+        });
+      }
+    } catch (helpError) {
+      console.log(chalk.gray('Unable to provide contextual help at this time.'));
     }
   }
 }
 
-// Check API key function
-function checkApiKey(): boolean {
-  const apiKey = process.env.GEMINI_API_KEY;
-  
-  if (!apiKey || apiKey === 'your_gemini_api_key_here' || apiKey.trim() === '') {
-    Banner.error(`Missing Gemini API Key
-
-AP requires a FREE Gemini API key to function.
-
-🔑 Get your API key from Google AI Studio:
-   👉 https://aistudio.google.com/app/apikey
-   👉 https://makersuite.google.com/app/apikey (alternative)
-
-📋 Quick setup steps:
-   1. Visit: https://aistudio.google.com/app/apikey
-   2. Sign in with your Google account
-   3. Click "Create API Key"
-   4. Copy the generated key
-
-📝 Add it to your .env file:
-   echo "GEMINI_API_KEY=your_api_key_here" >> .env
-
-💡 Or run: kira init (for interactive setup)
-
-ℹ️  The Gemini API is free with generous limits:
-   • 15 requests per minute
-   • 1 million tokens per minute
-   • 1,500 requests per day`);
-    return false;
-  }
-  
-  return true;
-}
-
-// Main task execution function
+// Legacy task execution function (kept for compatibility with existing commands)
 async function executeTask(task: string, mode: string, isApCommand: boolean): Promise<void> {
-  // Load user configuration
-  const config = await firstTimeSetup.loadConfig();
-  const userName = config?.userPreferences.name || 'user';
-  
-  // Show banner with user name
-  Banner.startup(userName, { compact: true });
-  
-  StatusIndicator.info(`Task: ${task}`);
-  
-  if (isApCommand) {
-    StatusIndicator.loading('Analyzing and executing task...');
-  }
-  
-  try {
-    await parseAndPlanTask(task, mode as ExecutionMode, isApCommand);
-  } catch (err) {
-    console.log(error(`❌ Error: ${err instanceof Error ? err.message : String(err)}`));
-  }
+  // For legacy compatibility, redirect to new direct command execution
+  await executeDirectCommand(task);
 }
 
 // Parse and plan task function
@@ -690,25 +871,14 @@ if (scriptName?.includes('ap') || process.argv[2] === 'ap') {
   // Called as 'ap' - treat everything after as a single command
   const args = process.argv.slice(scriptName?.includes('ap') ? 2 : 3);
   if (args.length > 0) {
-    executeTask(args.join(' '), 'auto', true).catch(console.error);
+    // Handle first launch, then execute command
+    handleFirstLaunch().then(() => {
+      return executeDirectCommand(args.join(' '));
+    }).catch(console.error);
   } else {
-    // Handle initialization before showing help
-    handleInitialization().then(() => {
-      Banner.displayMinimal();
-      StatusIndicator.error('Please provide a task description');
-      
-      console.log();
-      StatusIndicator.info('Getting started:');
-      StatusIndicator.info('ap preferences     # Configure your preferences', { indent: 2 });
-      StatusIndicator.info('ap setup          # Check system requirements', { indent: 2 });
-      StatusIndicator.info('ap status         # Show system status', { indent: 2 });
-      
-      console.log();
-      StatusIndicator.info('Examples:');
-      StatusIndicator.info('ap install and open firefox', { indent: 2 });
-      StatusIndicator.info('ap check disk space', { indent: 2 });
-      StatusIndicator.info('ap create a website from my resume', { indent: 2 });
-      StatusIndicator.info('ap help me set up development environment', { indent: 2 });
+    // Handle first launch, then enter direct prompting mode
+    handleFirstLaunch().then(() => {
+      return enterDirectPromptingMode();
     }).catch(console.error);
   }
 } else {
