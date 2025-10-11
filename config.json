@@ -1,6 +1,6 @@
 {
   "gemini": {
-    "api_key": "AIzaSyAUbRJYQVyQzB240azNeY7gYD5QLaZp71s",
+    "api_key": "",
     "model": "gemini-2.5-flash",
     "temperature": 0.7
   },

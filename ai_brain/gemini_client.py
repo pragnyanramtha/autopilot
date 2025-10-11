@@ -268,8 +268,8 @@ Complex: "Write an article about AI and post to X" ->
         
         Args:
             topic: The topic to write about
-            content_type: Type of content (article, post, email, etc.)
-            parameters: Additional parameters (length, style, tone, etc.)
+            content_type: Type of content (article, post, email, tweet, etc.)
+            parameters: Additional parameters (length, style, tone, context, goal, etc.)
             
         Returns:
             Generated content as string
@@ -278,14 +278,50 @@ Complex: "Write an article about AI and post to X" ->
         length = params.get('length', 'medium')
         style = params.get('style', 'informative')
         tone = params.get('tone', 'professional')
+        context = params.get('context', '')
+        goal = params.get('goal', '')
         
-        length_guide = {
-            'short': '1-2 paragraphs (100-200 words)',
-            'medium': '3-5 paragraphs (300-500 words)',
-            'long': '6-10 paragraphs (600-1000 words)'
-        }
+        # Special handling for tweets
+        if content_type == 'tweet':
+            prompt = f"""Create an engaging tweet about: {topic}
+
+Requirements:
+- Maximum 280 characters
+- Style: {style}
+- Goal: {goal if goal else 'maximize engagement'}
+- Include relevant hashtags (2-3 max)
+- Make it attention-grabbing
+- Use questions, calls-to-action, or interesting facts
+- Be concise and impactful
+
+{f'Context: {context}' if context else ''}
+
+Return ONLY the tweet text, no quotes or additional commentary."""
         
-        prompt = f"""Write a {length} {content_type} about: {topic}
+        elif content_type in ['post', 'social']:
+            prompt = f"""Create an engaging social media post about: {topic}
+
+Requirements:
+- Keep it concise (under 300 characters)
+- Style: {style}
+- Goal: {goal if goal else 'maximize engagement'}
+- Include relevant hashtags
+- Make it shareable and engaging
+- Use emojis if appropriate
+
+{f'Context: {context}' if context else ''}
+
+Return ONLY the post text, no additional commentary."""
+        
+        else:
+            # Article or longer content
+            length_guide = {
+                'short': '1-2 paragraphs (100-200 words)',
+                'medium': '3-5 paragraphs (300-500 words)',
+                'long': '6-10 paragraphs (600-1000 words)'
+            }
+            
+            prompt = f"""Write a {length} {content_type} about: {topic}
 
 Requirements:
 - Length: {length_guide.get(length, 'medium length')}
@@ -293,13 +329,22 @@ Requirements:
 - Tone: {tone}
 - Make it engaging and well-structured
 - Include relevant examples or insights
-- For social media posts, keep it concise and impactful
+
+{f'Context: {context}' if context else ''}
+{f'Goal: {goal}' if goal else ''}
 
 Return ONLY the content, no additional commentary."""
         
         try:
             response = self.model.generate_content(prompt)
-            return response.text.strip()
+            content = response.text.strip()
+            
+            # Clean up any markdown formatting or quotes
+            content = content.replace('```', '').replace('**', '').strip()
+            if content.startswith('"') and content.endswith('"'):
+                content = content[1:-1]
+            
+            return content
         except Exception as e:
             return f"Error generating content: {str(e)}"
     
