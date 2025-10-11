@@ -9,6 +9,9 @@ The AI Automation Assistant bridges the gap between natural language and system-
 ### Key Features
 
 - **Natural Language Processing**: Give commands in plain English
+- **Complex Multi-Step Workflows**: Handle sophisticated tasks like "research, write, and post"
+- **Content Generation**: AI-powered content creation using Gemini
+- **Web Research**: Automatic topic research and information gathering
 - **Screen Vision**: AI can see and understand your screen
 - **Intelligent Workflow Generation**: Automatically creates step-by-step execution plans
 - **Safe Execution**: Dry-run mode, confirmations, and emergency stop
@@ -178,12 +181,23 @@ Launch Notepad
 Open File Explorer
 ```
 
-#### Complex Tasks
+#### Simple Web Tasks
 ```
 Search for Python tutorials
 Fill out the form with my information
 Navigate to the settings page
 ```
+
+#### 🆕 Complex Multi-Step Workflows
+```
+Write an article about AI and post to X
+Research Python best practices and create a summary
+Go to example.com, login, and fill the contact form
+Generate a blog post about machine learning
+Search for latest tech news and summarize the results
+```
+
+**New!** The AI Brain now intelligently breaks down complex commands into sub-tasks, generates content when needed, performs research, and coordinates multi-platform workflows. See [QUICK_START_COMPLEX_COMMANDS.md](QUICK_START_COMPLEX_COMMANDS.md) for details.
 
 ### Workflow Execution
 
@@ -456,7 +470,22 @@ For issues, questions, or contributions:
 
 ## Changelog
 
-### Version 1.0.0 (Current)
+### Version 1.1.0 (Current) - Complex Workflow Support
+
+- 🆕 **Complex multi-step workflow support**
+- 🆕 **AI-powered content generation**
+- 🆕 **Automatic topic research**
+- 🆕 **Enhanced command parsing for complex tasks**
+- 🆕 **Support for web automation workflows**
+- 🆕 **Social media posting workflows**
+- 🆕 **Form filling and navigation**
+- Improved workflow validation
+- Better error handling and user feedback
+- Extended documentation with quick start guides
+
+See [COMPLEX_WORKFLOW_ENHANCEMENT.md](COMPLEX_WORKFLOW_ENHANCEMENT.md) for technical details.
+
+### Version 1.0.0
 
 - Initial release
 - Natural language command processing
