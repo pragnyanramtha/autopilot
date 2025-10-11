@@ -4,3 +4,5 @@ mss
 pillow
 rich
 python-dotenv
+SpeechRecognition
+PyAudio
