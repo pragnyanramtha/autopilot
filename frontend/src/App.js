@@ -33,7 +33,9 @@ function App() {
 
   const handleSend = () => {
     if (input.trim()) {
-      socket.emit('terminal_input', { input });
+      const command = input.trim();
+      setOutput((prevOutput) => prevOutput + `> ${command}\n`);
+      socket.emit('terminal_input', { input: command });
       setInput('');
     }
   };

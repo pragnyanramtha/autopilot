@@ -37,45 +37,8 @@ class AutomationCLI:
         """Initialize the CLI."""
         self.console = Console()
         self.ai_brain_process: Optional[subprocess.Popen] = None
+        self.automation_engine_process: Optional[subprocess.Popen] = None
         self.running = False
-
-    def _print_banner(self):
-        """Print the application banner."""
-        if os.getenv('NO_RICH'):
-            return
-        banner = """
-[bold cyan]╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║        AI AUTOMATION ASSISTANT - Control Center          ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝[/bold cyan]
-"""
-        self.console.print(banner)
-    
-    def _print_main_menu(self):
-        """Print the main menu."""
-        menu = """
-[bold]Main Menu:[/bold]
-
-[cyan]Starting Components:[/cyan]
-  [bold]1[/bold] - Start AI Brain (command processor)
-  [bold]2[/bold] - Start Automation Engine (executor)
-  [bold]3[/bold] - Start Both Components
-
-[cyan]Stopping Components:[/cyan]
-  [bold]4[/bold] - Stop AI Brain
-  [bold]5[/bold] - Stop Automation Engine
-  [bold]6[/bold] - Stop Both Components
-
-[cyan]Information:[/cyan]
-  [bold]7[/bold] - View Status
-  [bold]8[/bold] - Help
-
-[cyan]Exit:[/cyan]
-  [bold]q[/bold] - Quit
-"""
-        self.console.print(Panel(menu, border_style="cyan", title="Options"))
-
         
     def run(self):
         """Run the main CLI loop."""
@@ -85,9 +48,9 @@ class AutomationCLI:
         
         while self.running:
             try:
-                self.console.print("\n[bold cyan]Select an option[/bold cyan]", end='')
+                self.console.print("\n[bold cyan]Select an option[/bold cyan]")
                 choice = input()
-
+                
                 if choice == "1":
                     self._start_ai_brain()
                 elif choice == "2":
@@ -114,7 +77,42 @@ class AutomationCLI:
                 break
             except Exception as e:
                 self.console.print(f"[red]Error: {e}[/red]")
+    
+    def _print_banner(self):
+        """Print the application banner."""
+        banner = '''
+[bold cyan]╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║        AI AUTOMATION ASSISTANT - Control Center          ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝[/bold cyan]
+'''
+        self.console.print(banner)
+    
+    def _print_main_menu(self):
+        """Print the main menu."""
+        menu = '''
+[bold]Main Menu:[/bold]
 
+[cyan]Starting Components:[/cyan]
+  [bold]1[/bold] - Start AI Brain (command processor)
+  [bold]2[/bold] - Start Automation Engine (executor)
+  [bold]3[/bold] - Start Both Components
+
+[cyan]Stopping Components:[/cyan]
+  [bold]4[/bold] - Stop AI Brain
+  [bold]5[/bold] - Stop Automation Engine
+  [bold]6[/bold] - Stop Both Components
+
+[cyan]Information:[/cyan]
+  [bold]7[/bold] - View Status
+  [bold]8[/bold] - Help
+
+[cyan]Exit:[/cyan]
+  [bold]q[/bold] - Quit
+'''
+        self.console.print(Panel(menu, border_style="cyan", title="Options"))
+    
     def _start_ai_brain(self):
         """Start the AI Brain component."""
         if self.ai_brain_process and self.ai_brain_process.poll() is None:
@@ -123,14 +121,17 @@ class AutomationCLI:
         
         self.console.print("\n[cyan]Starting AI Brain...[/cyan]")
         
+        # Check if API key is configured
         if not self._check_api_key():
             return
         
         try:
+            # Start AI Brain in a new process
             self.ai_brain_process = subprocess.Popen(
                 [sys.executable, "-m", "ai_brain.main"]
             )
-            time.sleep(1)
+            
+            time.sleep(1)  # Give it time to start
             
             if self.ai_brain_process.poll() is None:
                 self.console.print("[green]✓ AI Brain started successfully[/green]")
@@ -151,18 +152,21 @@ class AutomationCLI:
         
         self.console.print("\n[cyan]Starting Automation Engine...[/cyan]")
         
-        self.console.print("Start in dry-run mode (simulation only)? (y/n)", end='')
+        self.console.print("Start in dry-run mode (simulation only)? (y/n)")
         dry_run_choice = input().lower()
         dry_run = dry_run_choice == 'y'
-
+        
         try:
+            # Start Automation Engine in a new process
             cmd = [sys.executable, "-m", "automation_engine.main"]
             if dry_run:
                 cmd.append("--dry-run")
             
-            self.automation_engine_process = subprocess.Popen(cmd)
+            self.automation_engine_process = subprocess.Popen(
+                cmd
+            )
             
-            time.sleep(1)
+            time.sleep(1)  # Give it time to start
             
             if self.automation_engine_process.poll() is None:
                 mode = "DRY-RUN" if dry_run else "LIVE"
@@ -361,7 +365,7 @@ class AutomationCLI:
     
     def _show_help(self):
         """Show help information."""
-        help_text = """
+        help_text = '''
 [bold cyan]AI Automation Assistant - Help[/bold cyan]
 
 [bold]Overview:[/bold]
@@ -403,7 +407,7 @@ The AI Automation Assistant consists of two main components:
 • Dependencies: google-generativeai, pyautogui, mss, pillow, rich
 
 For more information, see README.md
-"""
+'''
         self.console.print(Panel(help_text, border_style="cyan", title="Help"))
     
     def _check_api_key(self, silent: bool = False) -> bool:

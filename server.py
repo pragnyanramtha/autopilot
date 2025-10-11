@@ -23,6 +23,8 @@ def handle_connect():
     cmd = ['python', '-u', 'cli.py']
     env = os.environ.copy()
     env['PYTHONUNBUFFERED'] = '1'
+    env['PYTHONUTF8'] = '1'
+    env['GEMINI_API_KEY'] = 'AIzaSyBXU-eQd5HOeIm2IpAaMTTS1MgbKGB08v4'
     env['NO_RICH'] = '1'
     
     process = subprocess.Popen(
