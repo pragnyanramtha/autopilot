@@ -174,49 +174,183 @@ class AIBrainApp:
             # Display parsed intent
             self._display_intent(intent)
             
-            # Step 2: Generate workflow
-            self.console.print("\n→ Generating workflow...")
-            workflow = self.workflow_generator.create_workflow(intent)
-            
-            # Validate workflow
-            validation = self.workflow_generator.validate_workflow(workflow)
-            if not validation['valid']:
-                self.console.print(f"[red]Workflow validation failed:[/red]")
-                for issue in validation['issues']:
-                    self.console.print(f"  • {issue}")
-                return
-            
-            if validation['warnings']:
-                self.console.print("[yellow]Warnings:[/yellow]")
-                for warning in validation['warnings']:
-                    self.console.print(f"  • {warning}")
-            
-            # Display workflow
-            self._display_workflow(workflow)
-            
-            # Step 3: Confirm execution
-            confirm = Prompt.ask(
-                "\n[bold]Send workflow to automation engine?[/bold]",
-                choices=["y", "n"],
-                default="y"
-            )
-            
-            if confirm.lower() != 'y':
-                self.console.print("[yellow]Workflow cancelled[/yellow]")
-                return
-            
-            # Step 4: Send workflow
-            self.console.print("\n→ Sending workflow to automation engine...")
-            self.message_broker.send_workflow(workflow)
-            self.console.print(f"[green]✓ Workflow sent (ID: {workflow.id})[/green]")
-            
-            # Step 5: Wait for execution result
-            self._wait_for_result(workflow.id)
+            # Check if complex workflow requires additional processing
+            complexity = intent.parameters.get('complexity', 'simple')
+            if complexity == 'complex':
+                self._handle_complex_workflow(intent, user_input)
+            else:
+                self._handle_simple_workflow(intent)
             
         except CommunicationError as e:
             self.console.print(f"[red]Communication error: {e}[/red]")
         except Exception as e:
             self.console.print(f"[red]Error processing command: {e}[/red]")
+    
+    def _handle_simple_workflow(self, intent: CommandIntent):
+        """Handle a simple single-action workflow."""
+        # Step 2: Generate workflow
+        self.console.print("\n→ Generating workflow...")
+        workflow = self.workflow_generator.create_workflow(intent)
+        
+        # Validate workflow
+        validation = self.workflow_generator.validate_workflow(workflow)
+        if not validation['valid']:
+            self.console.print(f"[red]Workflow validation failed:[/red]")
+            for issue in validation['issues']:
+                self.console.print(f"  • {issue}")
+            return
+        
+        if validation['warnings']:
+            self.console.print("[yellow]Warnings:[/yellow]")
+            for warning in validation['warnings']:
+                self.console.print(f"  • {warning}")
+        
+        # Display workflow
+        self._display_workflow(workflow)
+        
+        # Step 3: Confirm execution
+        confirm = Prompt.ask(
+            "\n[bold]Send workflow to automation engine?[/bold]",
+            choices=["y", "n"],
+            default="y"
+        )
+        
+        if confirm.lower() != 'y':
+            self.console.print("[yellow]Workflow cancelled[/yellow]")
+            return
+        
+        # Step 4: Send workflow
+        self.console.print("\n→ Sending workflow to automation engine...")
+        self.message_broker.send_workflow(workflow)
+        self.console.print(f"[green]✓ Workflow sent (ID: {workflow.id})[/green]")
+        
+        # Step 5: Wait for execution result
+        self._wait_for_result(workflow.id)
+    
+    def _handle_complex_workflow(self, intent: CommandIntent, user_input: str):
+        """Handle a complex multi-step workflow with additional processing."""
+        self.console.print("\n[bold cyan]Complex Multi-Step Workflow Detected[/bold cyan]")
+        
+        # Show sub-tasks
+        sub_tasks = intent.parameters.get('sub_tasks', [])
+        if sub_tasks:
+            self.console.print(f"\n[bold]Breakdown of {len(sub_tasks)} sub-tasks:[/bold]")
+            for i, task in enumerate(sub_tasks, 1):
+                self.console.print(f"  {i}. {task.get('description', task.get('action', 'Unknown'))}")
+        
+        # Check for special requirements
+        requires_research = intent.parameters.get('requires_research', False)
+        requires_auth = intent.parameters.get('requires_authentication', False)
+        requires_content = intent.parameters.get('requires_content_generation', False)
+        
+        if requires_research or requires_auth or requires_content:
+            self.console.print("\n[bold yellow]Special Requirements:[/bold yellow]")
+            if requires_research:
+                self.console.print("  • Web research needed")
+            if requires_auth:
+                self.console.print("  • Authentication required (may need manual login)")
+            if requires_content:
+                self.console.print("  • Content generation required")
+        
+        # Handle content generation if needed
+        generated_content = None
+        if requires_content:
+            self.console.print("\n→ Generating content with Gemini...")
+            topic = self._extract_content_topic(intent, user_input)
+            generated_content = self.gemini_client.generate_content(
+                topic=topic,
+                content_type='article',
+                parameters={'length': 'medium', 'style': 'informative'}
+            )
+            self.console.print(f"[green]✓ Content generated ({len(generated_content)} characters)[/green]")
+            self.console.print(f"\n[dim]Preview: {generated_content[:200]}...[/dim]")
+            
+            # Store in intent for workflow
+            intent.parameters['generated_content'] = generated_content
+        
+        # Handle research if needed
+        if requires_research:
+            self.console.print("\n→ Researching topic with Gemini...")
+            query = self._extract_research_query(intent, user_input)
+            research = self.gemini_client.research_topic(query)
+            self.console.print(f"[green]✓ Research complete[/green]")
+            if research.get('key_points'):
+                self.console.print(f"  Key points: {len(research['key_points'])} found")
+            
+            # Store in intent
+            intent.parameters['research_data'] = research
+        
+        # Generate workflow
+        self.console.print("\n→ Generating complex workflow...")
+        workflow = self.workflow_generator.create_workflow(intent)
+        
+        # Validate workflow
+        validation = self.workflow_generator.validate_workflow(workflow)
+        if not validation['valid']:
+            self.console.print(f"[red]Workflow validation failed:[/red]")
+            for issue in validation['issues']:
+                self.console.print(f"  • {issue}")
+            return
+        
+        if validation['warnings']:
+            self.console.print("[yellow]Warnings:[/yellow]")
+            for warning in validation['warnings']:
+                self.console.print(f"  • {warning}")
+        
+        # Display workflow
+        self._display_workflow(workflow)
+        
+        # Warn about manual steps
+        if requires_auth:
+            self.console.print("\n[bold yellow]Note:[/bold yellow] This workflow requires authentication.")
+            self.console.print("You may need to manually log in when prompted.")
+        
+        # Confirm execution
+        confirm = Prompt.ask(
+            "\n[bold]Execute this complex workflow?[/bold]",
+            choices=["y", "n"],
+            default="y"
+        )
+        
+        if confirm.lower() != 'y':
+            self.console.print("[yellow]Workflow cancelled[/yellow]")
+            return
+        
+        # Send workflow
+        self.console.print("\n→ Sending workflow to automation engine...")
+        self.message_broker.send_workflow(workflow)
+        self.console.print(f"[green]✓ Workflow sent (ID: {workflow.id})[/green]")
+        
+        # Wait for execution result
+        self._wait_for_result(workflow.id, timeout=60.0)  # Longer timeout for complex workflows
+    
+    def _extract_content_topic(self, intent: CommandIntent, user_input: str) -> str:
+        """Extract the topic for content generation from intent or user input."""
+        # Check sub-tasks for generate_content action
+        sub_tasks = intent.parameters.get('sub_tasks', [])
+        for task in sub_tasks:
+            if task.get('action') == 'generate_content':
+                return task.get('parameters', {}).get('topic', intent.target)
+        
+        # Fallback to parsing user input
+        # Simple heuristic: look for "about X" or "on X"
+        lower_input = user_input.lower()
+        if 'about ' in lower_input:
+            return lower_input.split('about ')[1].split(' and ')[0].strip()
+        elif 'on ' in lower_input:
+            return lower_input.split('on ')[1].split(' and ')[0].strip()
+        
+        return intent.target
+    
+    def _extract_research_query(self, intent: CommandIntent, user_input: str) -> str:
+        """Extract the research query from intent or user input."""
+        # Check sub-tasks for search_web action
+        sub_tasks = intent.parameters.get('sub_tasks', [])
+        for task in sub_tasks:
+            if task.get('action') == 'search_web':
+                return task.get('parameters', {}).get('query', task.get('target', ''))
+        
+        return self._extract_content_topic(intent, user_input)
     
     def _display_intent(self, intent: CommandIntent):
         """Display parsed command intent."""
@@ -294,12 +428,18 @@ class AIBrainApp:
 [bold cyan]Welcome to AI Automation Assistant![/bold cyan]
 
 I can help you automate tasks using natural language commands.
+Now with support for complex multi-step workflows!
 
-[bold]Examples:[/bold]
+[bold]Simple Examples:[/bold]
   • "Click the submit button"
   • "Type hello world"
   • "Open Chrome"
   • "Search for Python tutorials"
+
+[bold]Complex Examples:[/bold]
+  • "Write an article about AI and post to X"
+  • "Research Python best practices and create a summary"
+  • "Open Gmail, compose email, and send to team"
 
 [bold]Special commands:[/bold]
   • help - Show this help message
@@ -317,7 +457,7 @@ I can help you automate tasks using natural language commands.
 [bold]Natural Language Commands:[/bold]
 You can give commands in plain English. The AI will understand and execute them.
 
-[bold]Supported Actions:[/bold]
+[bold]Simple Actions:[/bold]
   • Click - "Click the OK button", "Click at 100, 200"
   • Type - "Type hello world", "Type my email address"
   • Open App - "Open Chrome", "Launch Notepad"
@@ -325,6 +465,12 @@ You can give commands in plain English. The AI will understand and execute them.
   • Search - "Search for Python tutorials"
   • Double Click - "Double click the file icon"
   • Right Click - "Right click the desktop"
+
+[bold]Complex Multi-Step Commands:[/bold]
+  • Research & Write - "Research AI trends and write an article"
+  • Post to Social - "Write an article about AI and post to X"
+  • Web Automation - "Go to example.com, login, and fill the form"
+  • Content Generation - "Generate a blog post about Python"
 
 [bold]Special Commands:[/bold]
   • help, h, ? - Show this help
@@ -335,7 +481,9 @@ You can give commands in plain English. The AI will understand and execute them.
 [bold]Tips:[/bold]
   • Be specific about what you want to click or interact with
   • The AI can see your screen to find elements
+  • Complex commands are automatically broken down into steps
   • You'll be asked to confirm before executing workflows
+  • For tasks requiring login, you may need to authenticate manually
 """
         self.console.print(Panel(help_text, border_style="cyan"))
     
