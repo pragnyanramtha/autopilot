@@ -37,52 +37,12 @@ class AutomationCLI:
         """Initialize the CLI."""
         self.console = Console()
         self.ai_brain_process: Optional[subprocess.Popen] = None
-        self.automation_engine_process: Optional[subprocess.Popen] = None
         self.running = False
-        
-    def run(self):
-        """Run the main CLI loop."""
-        self.running = True
-        self._print_banner()
-        self._print_main_menu()
-        
-        while self.running:
-            try:
-                choice = Prompt.ask(
-                    "\n[bold cyan]Select an option[/bold cyan]",
-                    choices=["1", "2", "3", "4", "5", "6", "7", "8", "q"],
-                    default="1"
-                )
-                
-                if choice == "1":
-                    self._start_ai_brain()
-                elif choice == "2":
-                    self._start_automation_engine()
-                elif choice == "3":
-                    self._start_both()
-                elif choice == "4":
-                    self._stop_ai_brain()
-                elif choice == "5":
-                    self._stop_automation_engine()
-                elif choice == "6":
-                    self._stop_both()
-                elif choice == "7":
-                    self._show_status()
-                elif choice == "8":
-                    self._show_help()
-                elif choice.lower() == "q":
-                    self._quit()
-                    break
-                    
-            except KeyboardInterrupt:
-                self.console.print("\n[yellow]Interrupted by user[/yellow]")
-                self._quit()
-                break
-            except Exception as e:
-                self.console.print(f"[red]Error: {e}[/red]")
-    
+
     def _print_banner(self):
         """Print the application banner."""
+        if os.getenv('NO_RICH'):
+            return
         banner = """
 [bold cyan]╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
@@ -115,7 +75,46 @@ class AutomationCLI:
   [bold]q[/bold] - Quit
 """
         self.console.print(Panel(menu, border_style="cyan", title="Options"))
-    
+
+        
+    def run(self):
+        """Run the main CLI loop."""
+        self.running = True
+        self._print_banner()
+        self._print_main_menu()
+        
+        while self.running:
+            try:
+                self.console.print("\n[bold cyan]Select an option[/bold cyan]", end='')
+                choice = input()
+
+                if choice == "1":
+                    self._start_ai_brain()
+                elif choice == "2":
+                    self._start_automation_engine()
+                elif choice == "3":
+                    self._start_both()
+                elif choice == "4":
+                    self._stop_ai_brain()
+                elif choice == "5":
+                    self._stop_automation_engine()
+                elif choice == "6":
+                    self._stop_both()
+                elif choice == "7":
+                    self._show_status()
+                elif choice == "8":
+                    self._show_help()
+                elif choice.lower() == "q":
+                    self._quit()
+                    break
+                    
+            except KeyboardInterrupt:
+                self.console.print("\n[yellow]Interrupted by user[/yellow]")
+                self._quit()
+                break
+            except Exception as e:
+                self.console.print(f"[red]Error: {e}[/red]")
+
     def _start_ai_brain(self):
         """Start the AI Brain component."""
         if self.ai_brain_process and self.ai_brain_process.poll() is None:
@@ -124,26 +123,14 @@ class AutomationCLI:
         
         self.console.print("\n[cyan]Starting AI Brain...[/cyan]")
         
-        # Check if API key is configured
         if not self._check_api_key():
             return
         
         try:
-            # Start AI Brain in a new process
-            if sys.platform == "win32":
-                # Windows
-                self.ai_brain_process = subprocess.Popen(
-                    [sys.executable, "-m", "ai_brain.main"],
-                    creationflags=subprocess.CREATE_NEW_CONSOLE
-                )
-            else:
-                # Unix-like systems
-                self.ai_brain_process = subprocess.Popen(
-                    [sys.executable, "-m", "ai_brain.main"],
-                    start_new_session=True
-                )
-            
-            time.sleep(1)  # Give it time to start
+            self.ai_brain_process = subprocess.Popen(
+                [sys.executable, "-m", "ai_brain.main"]
+            )
+            time.sleep(1)
             
             if self.ai_brain_process.poll() is None:
                 self.console.print("[green]✓ AI Brain started successfully[/green]")
@@ -164,32 +151,18 @@ class AutomationCLI:
         
         self.console.print("\n[cyan]Starting Automation Engine...[/cyan]")
         
-        # Ask about dry-run mode
-        dry_run = Confirm.ask(
-            "Start in dry-run mode (simulation only)?",
-            default=False
-        )
-        
+        self.console.print("Start in dry-run mode (simulation only)? (y/n)", end='')
+        dry_run_choice = input().lower()
+        dry_run = dry_run_choice == 'y'
+
         try:
-            # Start Automation Engine in a new process
             cmd = [sys.executable, "-m", "automation_engine.main"]
             if dry_run:
                 cmd.append("--dry-run")
             
-            if sys.platform == "win32":
-                # Windows
-                self.automation_engine_process = subprocess.Popen(
-                    cmd,
-                    creationflags=subprocess.CREATE_NEW_CONSOLE
-                )
-            else:
-                # Unix-like systems
-                self.automation_engine_process = subprocess.Popen(
-                    cmd,
-                    start_new_session=True
-                )
+            self.automation_engine_process = subprocess.Popen(cmd)
             
-            time.sleep(1)  # Give it time to start
+            time.sleep(1)
             
             if self.automation_engine_process.poll() is None:
                 mode = "DRY-RUN" if dry_run else "LIVE"

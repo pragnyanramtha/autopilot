@@ -1,5 +1,1 @@
 google-generativeai
-pyautogui
-mss
-pillow
-rich
