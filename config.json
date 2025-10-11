@@ -1,0 +1,18 @@
+{
+  "gemini": {
+    "api_key": "AIzaSyAUbRJYQVyQzB240azNeY7gYD5QLaZp71s",
+    "model": "gemini-2.5-flash",
+    "temperature": 0.7
+  },
+  "automation": {
+    "safety_delay_ms": 100,
+    "screenshot_quality": 85,
+    "enable_safety_monitor": true,
+    "interrupt_on_mouse_move": true
+  },
+  "communication": {
+    "method": "file",
+    "workflow_file": "shared/workflow_queue.json",
+    "status_file": "shared/status_queue.json"
+  }
+}

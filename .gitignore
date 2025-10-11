@@ -1,0 +1,7 @@
+.env
+venv/
+.kiro
+__pycache__/
+ai_brain/__pycache__
+automation_engine\__pycache__
+shared\__pycache__
