@@ -48,11 +48,8 @@ class AutomationCLI:
         
         while self.running:
             try:
-                choice = Prompt.ask(
-                    "\n[bold cyan]Select an option[/bold cyan]",
-                    choices=["1", "2", "3", "4", "5", "6", "7", "8", "q"],
-                    default="1"
-                )
+                self.console.print("\n[bold cyan]Select an option[/bold cyan]")
+                choice = input()
                 
                 if choice == "1":
                     self._start_ai_brain()
@@ -83,18 +80,18 @@ class AutomationCLI:
     
     def _print_banner(self):
         """Print the application banner."""
-        banner = """
+        banner = '''
 [bold cyan]╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
 ║        AI AUTOMATION ASSISTANT - Control Center          ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝[/bold cyan]
-"""
+'''
         self.console.print(banner)
     
     def _print_main_menu(self):
         """Print the main menu."""
-        menu = """
+        menu = '''
 [bold]Main Menu:[/bold]
 
 [cyan]Starting Components:[/cyan]
@@ -113,7 +110,7 @@ class AutomationCLI:
 
 [cyan]Exit:[/cyan]
   [bold]q[/bold] - Quit
-"""
+'''
         self.console.print(Panel(menu, border_style="cyan", title="Options"))
     
     def _start_ai_brain(self):
@@ -130,18 +127,9 @@ class AutomationCLI:
         
         try:
             # Start AI Brain in a new process
-            if sys.platform == "win32":
-                # Windows
-                self.ai_brain_process = subprocess.Popen(
-                    [sys.executable, "-m", "ai_brain.main"],
-                    creationflags=subprocess.CREATE_NEW_CONSOLE
-                )
-            else:
-                # Unix-like systems
-                self.ai_brain_process = subprocess.Popen(
-                    [sys.executable, "-m", "ai_brain.main"],
-                    start_new_session=True
-                )
+            self.ai_brain_process = subprocess.Popen(
+                [sys.executable, "-m", "ai_brain.main"]
+            )
             
             time.sleep(1)  # Give it time to start
             
@@ -164,11 +152,9 @@ class AutomationCLI:
         
         self.console.print("\n[cyan]Starting Automation Engine...[/cyan]")
         
-        # Ask about dry-run mode
-        dry_run = Confirm.ask(
-            "Start in dry-run mode (simulation only)?",
-            default=False
-        )
+        self.console.print("Start in dry-run mode (simulation only)? (y/n)")
+        dry_run_choice = input().lower()
+        dry_run = dry_run_choice == 'y'
         
         try:
             # Start Automation Engine in a new process
@@ -176,18 +162,9 @@ class AutomationCLI:
             if dry_run:
                 cmd.append("--dry-run")
             
-            if sys.platform == "win32":
-                # Windows
-                self.automation_engine_process = subprocess.Popen(
-                    cmd,
-                    creationflags=subprocess.CREATE_NEW_CONSOLE
-                )
-            else:
-                # Unix-like systems
-                self.automation_engine_process = subprocess.Popen(
-                    cmd,
-                    start_new_session=True
-                )
+            self.automation_engine_process = subprocess.Popen(
+                cmd
+            )
             
             time.sleep(1)  # Give it time to start
             
@@ -388,7 +365,7 @@ class AutomationCLI:
     
     def _show_help(self):
         """Show help information."""
-        help_text = """
+        help_text = '''
 [bold cyan]AI Automation Assistant - Help[/bold cyan]
 
 [bold]Overview:[/bold]
@@ -430,7 +407,7 @@ The AI Automation Assistant consists of two main components:
 • Dependencies: google-generativeai, pyautogui, mss, pillow, rich
 
 For more information, see README.md
-"""
+'''
         self.console.print(Panel(help_text, border_style="cyan", title="Help"))
     
     def _check_api_key(self, silent: bool = False) -> bool:
