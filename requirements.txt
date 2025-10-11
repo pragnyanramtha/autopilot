@@ -1,1 +1,9 @@
 google-generativeai
+pyautogui
+mss
+pillow
+rich
+python-dotenv
+pyperclip
+SpeechRecognition
+PyAudio
