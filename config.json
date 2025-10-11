@@ -11,6 +11,22 @@
     "enable_safety_monitor": true,
     "interrupt_on_mouse_move": true
   },
+  "social_media": {
+    "posting_strategy": "tab_navigation",
+    "note": "Strategies: 'keyboard_shortcut' (fast), 'tab_navigation' (reliable), 'smart' (with verification)",
+    "supported_platforms": [
+      "X/Twitter",
+      "Facebook",
+      "LinkedIn",
+      "Instagram",
+      "Reddit",
+      "Gmail",
+      "Outlook",
+      "YouTube",
+      "GitHub",
+      "Stack Overflow"
+    ]
+  },
   "communication": {
     "method": "file",
     "workflow_file": "shared/workflow_queue.json",

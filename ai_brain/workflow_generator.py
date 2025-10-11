@@ -10,19 +10,22 @@ from PIL import Image
 from shared.data_models import Workflow, WorkflowStep
 from ai_brain.gemini_client import CommandIntent, ScreenAnalysis, GeminiClient
 from shared.browser_shortcuts import BrowserShortcutHelper
+from shared.website_navigation import WebsiteNavigator
 
 
 class WorkflowGenerator:
     """Converts CommandIntent into executable Workflow with steps."""
     
-    def __init__(self, gemini_client: Optional[GeminiClient] = None):
+    def __init__(self, gemini_client: Optional[GeminiClient] = None, config: Optional[dict] = None):
         """
         Initialize the workflow generator.
         
         Args:
             gemini_client: Optional GeminiClient for screen analysis
+            config: Optional configuration dictionary
         """
         self.gemini_client = gemini_client
+        self.config = config or {}
         self.screen_width = 1920  # Default, will be updated from actual screen
         self.screen_height = 1080
         self._update_screen_dimensions()
@@ -37,6 +40,17 @@ class WorkflowGenerator:
         else:
             platform_name = 'windows'
         self.browser_shortcuts = BrowserShortcutHelper(platform_name)
+        
+        # Initialize website navigator
+        self.website_nav = WebsiteNavigator()
+        
+        # Social media posting configuration
+        social_config = self.config.get('social_media', {})
+        self.twitter_strategy = social_config.get('posting_strategy', 'keyboard_shortcut')
+        # Keep backward compatibility
+        if 'twitter' in self.config:
+            self.twitter_strategy = self.config['twitter'].get('posting_strategy', self.twitter_strategy)
+        self.twitter_tab_count = 22  # Default for X/Twitter
     
     def _update_screen_dimensions(self):
         """Update screen dimensions from actual display."""
@@ -517,41 +531,70 @@ class WorkflowGenerator:
         return steps
     
     def _generate_social_post_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
-        """Generate steps for posting to social media using keyboard shortcuts."""
+        """Generate steps for posting to social media using website-specific navigation."""
         platform = intent.parameters.get('platform', 'x')
         content_source = intent.parameters.get('content_source', 'generated')
         
         steps = []
         
-        if platform.lower() in ['twitter', 'x']:
-            # Use Twitter keyboard shortcuts
-            # Open compose tweet (N key)
-            compose_steps = self.browser_shortcuts.twitter_compose_tweet()
+        # Map platform to URL
+        platform_urls = {
+            'x': 'https://x.com',
+            'twitter': 'https://twitter.com',
+            'facebook': 'https://facebook.com',
+            'linkedin': 'https://linkedin.com',
+            'instagram': 'https://instagram.com',
+            'reddit': 'https://reddit.com'
+        }
+        
+        url = platform_urls.get(platform.lower(), 'https://x.com')
+        
+        # Get website-specific navigation
+        website_info = self.website_nav.get_website_info(url)
+        
+        if website_info:
+            # Use website-specific strategy
+            if self.twitter_strategy == 'tab_navigation' or not website_info.get('shortcuts', {}).get('new_post'):
+                # Use Tab navigation
+                compose_steps = self.website_nav.get_compose_steps(url, strategy='tab_navigation')
+            else:
+                # Use keyboard shortcut
+                compose_steps = self.website_nav.get_compose_steps(url, strategy='shortcut')
+            
+            # Convert to WorkflowSteps
             for step_data in compose_steps:
                 steps.append(WorkflowStep(
                     type=step_data['action'],
                     data=step_data.get('data'),
-                    delay_ms=step_data.get('delay_ms', 100)
+                    delay_ms=step_data.get('delay_ms', 100),
+                    validation={'description': step_data.get('description', '')}
                 ))
             
-            # Type the tweet content
+            # Type content
             steps.append(WorkflowStep(
                 type='type',
-                data=f"[GENERATED_CONTENT]",  # Placeholder, will be replaced with actual content
+                data='[GENERATED_CONTENT]',
                 delay_ms=1000
             ))
             
-            # Post tweet (Ctrl+Enter)
-            post_steps = self.browser_shortcuts.twitter_post_tweet()
+            # Post
+            post_steps = self.website_nav.get_post_steps(url)
             for step_data in post_steps:
                 steps.append(WorkflowStep(
                     type=step_data['action'],
                     data=step_data.get('data'),
-                    delay_ms=step_data.get('delay_ms', 100)
+                    delay_ms=step_data.get('delay_ms', 100),
+                    validation={'description': step_data.get('description', '')}
                 ))
         else:
-            # Generic social media posting (accessibility fallback)
-            # Try to find compose button
+            # Fallback for unsupported platforms - use generic approach
+            steps.append(WorkflowStep(
+                type='wait',
+                delay_ms=100,
+                data=f"No navigation strategy for {platform}, using generic approach"
+            ))
+            
+            # Try to find compose button using accessibility
             fallback_steps = self.browser_shortcuts.accessibility_fallback_interact('compose')
             for step_data in fallback_steps:
                 steps.append(WorkflowStep(
@@ -563,7 +606,7 @@ class WorkflowGenerator:
             # Type content
             steps.append(WorkflowStep(
                 type='type',
-                data=f"[GENERATED_CONTENT]",
+                data='[GENERATED_CONTENT]',
                 delay_ms=1000
             ))
             
@@ -575,6 +618,95 @@ class WorkflowGenerator:
                     data=step_data.get('data'),
                     delay_ms=step_data.get('delay_ms', 100)
                 ))
+        
+        return steps
+    
+    def _generate_twitter_tab_navigation_steps(self, tab_count: int = 22) -> list[WorkflowStep]:
+        """
+        Generate steps to navigate to Twitter compose field using Tab key.
+        
+        Args:
+            tab_count: Number of times to press Tab (default 22 for X.com)
+            
+        Returns:
+            List of workflow steps
+        """
+        steps = []
+        
+        # Press Tab multiple times to reach the compose field
+        for i in range(tab_count):
+            steps.append(WorkflowStep(
+                type='press_key',
+                data='tab',
+                delay_ms=100,
+                validation={'tab_index': i + 1, 'description': f'Tab {i+1}/{tab_count}'}
+            ))
+        
+        # Type content
+        steps.append(WorkflowStep(
+            type='type',
+            data='[GENERATED_CONTENT]',
+            delay_ms=1000
+        ))
+        
+        # Post (Ctrl+Enter or Tab to Post button and Enter)
+        steps.append(WorkflowStep(
+            type='press_key',
+            data='ctrl+enter',
+            delay_ms=2000
+        ))
+        
+        return steps
+    
+    def _generate_smart_twitter_post_steps(self) -> list[WorkflowStep]:
+        """
+        Generate smart Twitter posting steps with multiple fallback strategies.
+        Uses screen capture to verify each step.
+        
+        Returns:
+            List of workflow steps
+        """
+        steps = []
+        
+        # Strategy 1: Try 'N' shortcut
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=100,
+            data='Strategy 1: Trying N shortcut'
+        ))
+        steps.append(WorkflowStep(
+            type='press_key',
+            data='n',
+            delay_ms=1000
+        ))
+        
+        # Capture screen to verify compose dialog opened
+        steps.append(WorkflowStep(
+            type='capture',
+            delay_ms=500,
+            data='Verify compose dialog opened'
+        ))
+        
+        # Type content
+        steps.append(WorkflowStep(
+            type='type',
+            data='[GENERATED_CONTENT]',
+            delay_ms=1000
+        ))
+        
+        # Post
+        steps.append(WorkflowStep(
+            type='press_key',
+            data='ctrl+enter',
+            delay_ms=2000
+        ))
+        
+        # Verify post succeeded
+        steps.append(WorkflowStep(
+            type='capture',
+            delay_ms=1000,
+            data='Verify post succeeded'
+        ))
         
         return steps
     

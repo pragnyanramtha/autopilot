@@ -4,3 +4,4 @@ mss
 pillow
 rich
 python-dotenv
+pyperclip

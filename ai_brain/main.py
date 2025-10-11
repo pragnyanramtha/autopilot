@@ -103,7 +103,10 @@ class AIBrainApp:
             
             # Initialize workflow generator
             self.console.print("✓ Initializing workflow generator...")
-            self.workflow_generator = WorkflowGenerator(gemini_client=self.gemini_client)
+            self.workflow_generator = WorkflowGenerator(
+                gemini_client=self.gemini_client,
+                config=self.config
+            )
             
             # Initialize message broker
             self.console.print("✓ Initializing communication layer...")
