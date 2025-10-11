@@ -1,0 +1,350 @@
+{
+  "type": "workflow",
+  "id": "7a0a10f9-8cf6-4f1b-9603-10e0553f1011",
+  "timestamp": "2025-10-11T15:44:23.177058",
+  "payload": {
+    "steps": [
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": "Starting complex workflow: search for an article about elon musk and post it on twitter",
+        "delay_ms": 500,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": "Sub-task 1: Search for a relevant article about Elon Musk to share.",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "ai_search",
+        "coordinates": null,
+        "data": "news articles about Elon Musk",
+        "delay_ms": 500,
+        "validation": {
+          "search_type": "direct",
+          "query": "news articles about Elon Musk"
+        }
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 1000,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": "Sub-task 2: Open the Twitter website to prepare for posting.",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "press_key",
+        "coordinates": null,
+        "data": "ctrl+l",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 300,
+        "validation": null
+      },
+      {
+        "type": "type",
+        "coordinates": null,
+        "data": "https://twitter.com",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "press_key",
+        "coordinates": null,
+        "data": "enter",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 2000,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 1000,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": "Sub-task 3: Log in to the user's Twitter account if not already logged in.",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": "Login to twitter.com - requires manual authentication or credential management",
+        "delay_ms": 1000,
+        "validation": null
+      },
+      {
+        "type": "capture",
+        "coordinates": null,
+        "data": "Analyzing login page",
+        "delay_ms": 500,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 1000,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": "Sub-task 4: Create a new post on Twitter containing the link to the article found.",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "press_key",
+        "coordinates": null,
+        "data": "n",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 1000,
+        "validation": null
+      },
+      {
+        "type": "type",
+        "coordinates": null,
+        "data": "[GENERATED_CONTENT]",
+        "delay_ms": 1000,
+        "validation": null
+      },
+      {
+        "type": "press_key",
+        "coordinates": null,
+        "data": "ctrl+enter",
+        "delay_ms": 100,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 2000,
+        "validation": null
+      },
+      {
+        "type": "wait",
+        "coordinates": null,
+        "data": null,
+        "delay_ms": 1000,
+        "validation": null
+      }
+    ],
+    "metadata": {
+      "intent": {
+        "action": "multi_step",
+        "target": "search for an article about elon musk and post it on twitter",
+        "parameters": {
+          "sub_tasks": [
+            {
+              "action": "search_web",
+              "target": "Elon Musk article",
+              "parameters": {
+                "query": "news articles about Elon Musk"
+              },
+              "description": "Search for a relevant article about Elon Musk to share."
+            },
+            {
+              "action": "navigate_to_url",
+              "target": "https://twitter.com",
+              "parameters": {
+                "url": "https://twitter.com"
+              },
+              "description": "Open the Twitter website to prepare for posting."
+            },
+            {
+              "action": "login",
+              "target": "Twitter",
+              "parameters": {
+                "service": "twitter.com"
+              },
+              "description": "Log in to the user's Twitter account if not already logged in."
+            },
+            {
+              "action": "post_to_social",
+              "target": "Twitter",
+              "parameters": {
+                "platform": "twitter",
+                "content_source": "search_result_link"
+              },
+              "description": "Create a new post on Twitter containing the link to the article found."
+            }
+          ],
+          "requires_research": true,
+          "requires_authentication": true,
+          "requires_content_generation": false,
+          "complexity": "complex",
+          "research_data": {
+            "query": "news articles about Elon Musk",
+            "summary": "Recent news about Elon Musk is dominated by two major stories: his artificial intelligence startup, xAI, securing a massive $6 billion in funding to compete with OpenAI, and the contentious upcoming Tesla shareholder vote on his $56 billion compensation package. Major advisory firms are recommending shareholders vote against the pay package, while Musk actively campaigns for its approval. Other notable topics include SpaceX's preparations for its next Starship test flight and Musk's increasingly vocal political commentary.",
+            "results": [
+              {
+                "title": "Elon Musk\u2019s xAI raises $6 billion in new funding round",
+                "snippet": "Elon Musk's artificial intelligence company, xAI, has secured $6 billion in a Series B funding round. The investment, which includes backers like Andreessen Horowitz and Sequoia Capital, values the company at $24 billion and aims to bring its first products to market and accelerate the development of advanced infrastructure to compete with rivals like OpenAI and Google.",
+                "relevance": "high"
+              },
+              {
+                "title": "Influential Firm Recommends Tesla Shareholders Reject Elon Musk\u2019s $56 Billion Pay Package",
+                "snippet": "Proxy advisory firm Glass Lewis has urged Tesla shareholders to vote against ratifying CEO Elon Musk's $56 billion pay package. The firm called the compensation \"excessive\" and cited concerns about Musk's focus being diluted across his numerous other companies. This follows a similar negative recommendation from another influential firm, ISS.",
+                "relevance": "high"
+              },
+              {
+                "title": "SpaceX\u2019s Starship is ready for its 4th test flight, Elon Musk says",
+                "snippet": "According to Elon Musk, SpaceX's Starship rocket is ready for its fourth test flight, pending regulatory approval from the Federal Aviation Administration (FAA). The primary goal of the upcoming flight is for the vehicle to survive a reentry through Earth's atmosphere.",
+                "relevance": "medium"
+              },
+              {
+                "title": "Elon Musk says he is not making a big donation to Donald Trump\u2019s campaign",
+                "snippet": "Despite reports of a growing relationship, Elon Musk has stated on his social media platform X that he is not making a significant financial donation to Donald Trump's presidential campaign. This follows discussions where Trump has reportedly pitched Musk on an advisory role if he wins the election.",
+                "relevance": "medium"
+              },
+              {
+                "title": "X is officially hiding likes",
+                "snippet": "Elon Musk's social media platform, X (formerly Twitter), is moving forward with its plan to make the 'Likes' tab private for all users. The stated goal is to allow users to like posts without facing criticism or negative feedback for their choices.",
+                "relevance": "low"
+              }
+            ],
+            "key_findings": [
+              "Musk's AI startup, xAI, successfully raised $6 billion in a funding round, significantly escalating its position as a major competitor in the AI industry.",
+              "There is substantial opposition from influential shareholder advisory firms (Glass Lewis and ISS) to the ratification of Musk's $56 billion Tesla compensation package ahead of the June 13th vote.",
+              "SpaceX is awaiting regulatory approval for the fourth test flight of its Starship rocket, a critical step in its development.",
+              "Musk continues to be a prominent figure in the political sphere, clarifying his financial position regarding the 2024 US presidential election."
+            ],
+            "trending_topics": [
+              "AI Arms Race",
+              "Corporate Governance & Executive Pay",
+              "Space Exploration & Regulation",
+              "Musk's Political Influence"
+            ]
+          },
+          "search_results": {
+            "query": "news articles about Elon Musk",
+            "summary": "Recent news about Elon Musk is dominated by two major stories: his artificial intelligence startup, xAI, securing a massive $6 billion in funding to compete with OpenAI, and the contentious upcoming Tesla shareholder vote on his $56 billion compensation package. Major advisory firms are recommending shareholders vote against the pay package, while Musk actively campaigns for its approval. Other notable topics include SpaceX's preparations for its next Starship test flight and Musk's increasingly vocal political commentary.",
+            "results": [
+              {
+                "title": "Elon Musk\u2019s xAI raises $6 billion in new funding round",
+                "snippet": "Elon Musk's artificial intelligence company, xAI, has secured $6 billion in a Series B funding round. The investment, which includes backers like Andreessen Horowitz and Sequoia Capital, values the company at $24 billion and aims to bring its first products to market and accelerate the development of advanced infrastructure to compete with rivals like OpenAI and Google.",
+                "relevance": "high"
+              },
+              {
+                "title": "Influential Firm Recommends Tesla Shareholders Reject Elon Musk\u2019s $56 Billion Pay Package",
+                "snippet": "Proxy advisory firm Glass Lewis has urged Tesla shareholders to vote against ratifying CEO Elon Musk's $56 billion pay package. The firm called the compensation \"excessive\" and cited concerns about Musk's focus being diluted across his numerous other companies. This follows a similar negative recommendation from another influential firm, ISS.",
+                "relevance": "high"
+              },
+              {
+                "title": "SpaceX\u2019s Starship is ready for its 4th test flight, Elon Musk says",
+                "snippet": "According to Elon Musk, SpaceX's Starship rocket is ready for its fourth test flight, pending regulatory approval from the Federal Aviation Administration (FAA). The primary goal of the upcoming flight is for the vehicle to survive a reentry through Earth's atmosphere.",
+                "relevance": "medium"
+              },
+              {
+                "title": "Elon Musk says he is not making a big donation to Donald Trump\u2019s campaign",
+                "snippet": "Despite reports of a growing relationship, Elon Musk has stated on his social media platform X that he is not making a significant financial donation to Donald Trump's presidential campaign. This follows discussions where Trump has reportedly pitched Musk on an advisory role if he wins the election.",
+                "relevance": "medium"
+              },
+              {
+                "title": "X is officially hiding likes",
+                "snippet": "Elon Musk's social media platform, X (formerly Twitter), is moving forward with its plan to make the 'Likes' tab private for all users. The stated goal is to allow users to like posts without facing criticism or negative feedback for their choices.",
+                "relevance": "low"
+              }
+            ],
+            "key_findings": [
+              "Musk's AI startup, xAI, successfully raised $6 billion in a funding round, significantly escalating its position as a major competitor in the AI industry.",
+              "There is substantial opposition from influential shareholder advisory firms (Glass Lewis and ISS) to the ratification of Musk's $56 billion Tesla compensation package ahead of the June 13th vote.",
+              "SpaceX is awaiting regulatory approval for the fourth test flight of its Starship rocket, a critical step in its development.",
+              "Musk continues to be a prominent figure in the political sphere, clarifying his financial position regarding the 2024 US presidential election."
+            ],
+            "trending_topics": [
+              "AI Arms Race",
+              "Corporate Governance & Executive Pay",
+              "Space Exploration & Regulation",
+              "Musk's Political Influence"
+            ]
+          }
+        },
+        "confidence": 0.95
+      },
+      "created_by": "workflow_generator",
+      "complexity": "complex",
+      "screen_dimensions": {
+        "width": 1920,
+        "height": 1080
+      },
+      "search_results": {
+        "query": "news articles about Elon Musk",
+        "summary": "Recent news about Elon Musk is dominated by two major stories: his artificial intelligence startup, xAI, securing a massive $6 billion in funding to compete with OpenAI, and the contentious upcoming Tesla shareholder vote on his $56 billion compensation package. Major advisory firms are recommending shareholders vote against the pay package, while Musk actively campaigns for its approval. Other notable topics include SpaceX's preparations for its next Starship test flight and Musk's increasingly vocal political commentary.",
+        "results": [
+          {
+            "title": "Elon Musk\u2019s xAI raises $6 billion in new funding round",
+            "snippet": "Elon Musk's artificial intelligence company, xAI, has secured $6 billion in a Series B funding round. The investment, which includes backers like Andreessen Horowitz and Sequoia Capital, values the company at $24 billion and aims to bring its first products to market and accelerate the development of advanced infrastructure to compete with rivals like OpenAI and Google.",
+            "relevance": "high"
+          },
+          {
+            "title": "Influential Firm Recommends Tesla Shareholders Reject Elon Musk\u2019s $56 Billion Pay Package",
+            "snippet": "Proxy advisory firm Glass Lewis has urged Tesla shareholders to vote against ratifying CEO Elon Musk's $56 billion pay package. The firm called the compensation \"excessive\" and cited concerns about Musk's focus being diluted across his numerous other companies. This follows a similar negative recommendation from another influential firm, ISS.",
+            "relevance": "high"
+          },
+          {
+            "title": "SpaceX\u2019s Starship is ready for its 4th test flight, Elon Musk says",
+            "snippet": "According to Elon Musk, SpaceX's Starship rocket is ready for its fourth test flight, pending regulatory approval from the Federal Aviation Administration (FAA). The primary goal of the upcoming flight is for the vehicle to survive a reentry through Earth's atmosphere.",
+            "relevance": "medium"
+          },
+          {
+            "title": "Elon Musk says he is not making a big donation to Donald Trump\u2019s campaign",
+            "snippet": "Despite reports of a growing relationship, Elon Musk has stated on his social media platform X that he is not making a significant financial donation to Donald Trump's presidential campaign. This follows discussions where Trump has reportedly pitched Musk on an advisory role if he wins the election.",
+            "relevance": "medium"
+          },
+          {
+            "title": "X is officially hiding likes",
+            "snippet": "Elon Musk's social media platform, X (formerly Twitter), is moving forward with its plan to make the 'Likes' tab private for all users. The stated goal is to allow users to like posts without facing criticism or negative feedback for their choices.",
+            "relevance": "low"
+          }
+        ],
+        "key_findings": [
+          "Musk's AI startup, xAI, successfully raised $6 billion in a funding round, significantly escalating its position as a major competitor in the AI industry.",
+          "There is substantial opposition from influential shareholder advisory firms (Glass Lewis and ISS) to the ratification of Musk's $56 billion Tesla compensation package ahead of the June 13th vote.",
+          "SpaceX is awaiting regulatory approval for the fourth test flight of its Starship rocket, a critical step in its development.",
+          "Musk continues to be a prominent figure in the political sphere, clarifying his financial position regarding the 2024 US presidential election."
+        ],
+        "trending_topics": [
+          "AI Arms Race",
+          "Corporate Governance & Executive Pay",
+          "Space Exploration & Regulation",
+          "Musk's Political Influence"
+        ]
+      }
+    },
+    "created_at": "2025-10-11T15:44:19.904911"
+  }
+}

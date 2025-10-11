@@ -392,10 +392,36 @@ class WorkflowGenerator:
     
     def _generate_navigate_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
         """Generate steps for navigating to a URL using keyboard shortcuts."""
-        url = intent.target or intent.parameters.get('url', '')
+        # Get URL from parameters first (more specific), then target
+        url = intent.parameters.get('url', '') or intent.target
+        
+        # If URL doesn't start with http, assume it needs https://
+        if url and not url.startswith('http'):
+            # Check if it's a domain-like string
+            if '.' in url or url.lower() in ['x', 'twitter', 'facebook', 'linkedin']:
+                # Map common names to URLs
+                url_map = {
+                    'x': 'https://x.com',
+                    'twitter': 'https://twitter.com',
+                    'facebook': 'https://facebook.com',
+                    'linkedin': 'https://linkedin.com'
+                }
+                url = url_map.get(url.lower(), f'https://{url}.com')
+        
         steps = []
         
-        # Use browser shortcuts helper
+        # First, open Chrome if not already open
+        steps.extend(self._generate_open_app_steps(
+            CommandIntent(action='open_app', target='Chrome', parameters={}, confidence=1.0)
+        ))
+        
+        # Wait for Chrome to open
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=2000
+        ))
+        
+        # Now navigate to URL using keyboard shortcuts
         shortcut_steps = self.browser_shortcuts.navigate_to_url(url)
         for step_data in shortcut_steps:
             steps.append(WorkflowStep(
