@@ -273,6 +273,231 @@ class WorkflowGenerator:
         
         return steps
     
+    def _generate_complex_workflow(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """
+        Generate a complex multi-step workflow from sub-tasks.
+        
+        Args:
+            intent: CommandIntent with sub_tasks in parameters
+            
+        Returns:
+            List of workflow steps
+        """
+        steps = []
+        sub_tasks = intent.parameters.get('sub_tasks', [])
+        
+        # Add initial context step
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=500,
+            data=f"Starting complex workflow: {intent.target}"
+        ))
+        
+        # Process each sub-task
+        for i, sub_task in enumerate(sub_tasks):
+            action = sub_task.get('action', '')
+            target = sub_task.get('target', '')
+            params = sub_task.get('parameters', {})
+            description = sub_task.get('description', '')
+            
+            # Add a marker for this sub-task
+            steps.append(WorkflowStep(
+                type='wait',
+                delay_ms=100,
+                data=f"Sub-task {i+1}: {description}"
+            ))
+            
+            # Generate steps for this sub-task
+            sub_intent = CommandIntent(
+                action=action,
+                target=target,
+                parameters=params,
+                confidence=intent.confidence
+            )
+            
+            sub_steps = self._generate_steps_for_action(sub_intent)
+            steps.extend(sub_steps)
+            
+            # Add delay between sub-tasks
+            steps.append(WorkflowStep(
+                type='wait',
+                delay_ms=1000
+            ))
+        
+        return steps
+    
+    def _generate_steps_for_action(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """
+        Generate steps for a specific action (helper for complex workflows).
+        
+        Args:
+            intent: CommandIntent for a single action
+            
+        Returns:
+            List of workflow steps
+        """
+        action = intent.action
+        
+        if action == 'search_web':
+            return self._generate_search_steps(intent)
+        elif action == 'navigate_to_url':
+            return self._generate_navigate_steps(intent)
+        elif action == 'login':
+            return self._generate_login_steps(intent)
+        elif action == 'fill_form':
+            return self._generate_fill_form_steps(intent)
+        elif action == 'generate_content':
+            return self._generate_content_generation_steps(intent)
+        elif action == 'post_to_social':
+            return self._generate_social_post_steps(intent)
+        elif action == 'open_app':
+            return self._generate_open_app_steps(intent)
+        elif action == 'click':
+            return self._generate_click_steps(intent, None)
+        elif action == 'type':
+            return self._generate_type_steps(intent)
+        elif action == 'wait':
+            delay = intent.parameters.get('delay_ms', 1000)
+            return [WorkflowStep(type='wait', delay_ms=delay)]
+        else:
+            return [WorkflowStep(
+                type='wait',
+                delay_ms=100,
+                data=f"Unsupported action in complex workflow: {action}"
+            )]
+    
+    def _generate_navigate_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """Generate steps for navigating to a URL."""
+        url = intent.target or intent.parameters.get('url', '')
+        steps = []
+        
+        # Focus address bar (Ctrl+L)
+        steps.append(WorkflowStep(
+            type='press_key',
+            data='ctrl+l',
+            delay_ms=300
+        ))
+        
+        # Type URL
+        steps.append(WorkflowStep(
+            type='type',
+            data=url,
+            delay_ms=500
+        ))
+        
+        # Press Enter
+        steps.append(WorkflowStep(
+            type='press_key',
+            data='enter',
+            delay_ms=2000  # Wait for page load
+        ))
+        
+        return steps
+    
+    def _generate_login_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """Generate steps for logging into a service."""
+        service = intent.parameters.get('service', intent.target)
+        steps = []
+        
+        # Add placeholder steps for login
+        # In a real implementation, this would need credentials management
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=1000,
+            data=f"Login to {service} - requires manual authentication or credential management"
+        ))
+        
+        # Capture screen to find login elements
+        steps.append(WorkflowStep(
+            type='capture',
+            delay_ms=500,
+            data="Analyzing login page"
+        ))
+        
+        return steps
+    
+    def _generate_fill_form_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """Generate steps for filling out a form."""
+        form_data = intent.parameters.get('form_data', {})
+        steps = []
+        
+        for field_name, field_value in form_data.items():
+            # Tab to next field
+            steps.append(WorkflowStep(
+                type='press_key',
+                data='tab',
+                delay_ms=200
+            ))
+            
+            # Type value
+            steps.append(WorkflowStep(
+                type='type',
+                data=str(field_value),
+                delay_ms=300
+            ))
+        
+        return steps
+    
+    def _generate_content_generation_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """Generate steps for content generation."""
+        topic = intent.parameters.get('topic', intent.target)
+        content_type = intent.parameters.get('content_type', 'article')
+        
+        steps = []
+        
+        # Add a step to indicate content generation
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=500,
+            data=f"Generating {content_type} about: {topic}"
+        ))
+        
+        # In a real implementation, this would call the Gemini API
+        # and store the generated content for later use
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=2000,
+            data="Content generation complete (stored in context)"
+        ))
+        
+        return steps
+    
+    def _generate_social_post_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """Generate steps for posting to social media."""
+        platform = intent.parameters.get('platform', 'x')
+        content_source = intent.parameters.get('content_source', 'generated')
+        
+        steps = []
+        
+        # Find and click the compose/post button
+        steps.append(WorkflowStep(
+            type='capture',
+            delay_ms=500,
+            data=f"Looking for compose button on {platform}"
+        ))
+        
+        # Wait for compose dialog
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=1000
+        ))
+        
+        # Type content (placeholder - would use generated content)
+        steps.append(WorkflowStep(
+            type='type',
+            data=f"[Content from {content_source}]",
+            delay_ms=1000
+        ))
+        
+        # Find and click post button
+        steps.append(WorkflowStep(
+            type='capture',
+            delay_ms=500,
+            data="Looking for post/submit button"
+        ))
+        
+        return steps
+    
     def _get_coordinates(self, intent: CommandIntent, screen_analysis: Optional[ScreenAnalysis]) -> Optional[tuple[int, int]]:
         """
         Get coordinates for an action from various sources.
