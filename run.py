@@ -22,6 +22,12 @@ if not hasattr(sys, 'real_prefix') and not (hasattr(sys, 'base_prefix') and sys.
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.markdown import Markdown
+from rich.live import Live
+from rich.layout import Layout
+from rich.text import Text
+from rich.align import Align
+from datetime import datetime
 
 console = Console()
 
@@ -59,28 +65,85 @@ class UnifiedAssistant:
         self.executor = None
         self.message_broker = None
         
+        # Chat history
+        self.chat_history = []
+        
         # Voice recognition
         if VOICE_AVAILABLE:
             self.recognizer = sr.Recognizer()
             self.microphone = sr.Microphone()
+    
+    def add_message(self, role: str, content: str, status: str = ""):
+        """Add a message to chat history."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.chat_history.append({
+            'role': role,
+            'content': content,
+            'status': status,
+            'timestamp': timestamp
+        })
+    
+    def print_chat_message(self, role: str, content: str, status: str = ""):
+        """Print a chat message with styling."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        
+        if role == "user":
+            # User message - cyan bubble
+            self.console.print()
+            self.console.print(f"[dim]{timestamp}[/dim] [bold cyan]You:[/bold cyan]")
+            self.console.print(Panel(
+                content,
+                border_style="cyan",
+                padding=(0, 2)
+            ))
+        elif role == "assistant":
+            # Assistant message - green bubble
+            self.console.print()
+            self.console.print(f"[dim]{timestamp}[/dim] [bold green]🤖 Assistant:[/bold green]")
+            self.console.print(Panel(
+                content,
+                border_style="green",
+                padding=(0, 2)
+            ))
+        elif role == "system":
+            # System message - yellow
+            self.console.print(f"[dim]{timestamp}[/dim] [yellow]⚙️  {content}[/yellow]")
+        elif role == "success":
+            # Success message - bright green
+            self.console.print(f"[dim]{timestamp}[/dim] [bold green]✓ {content}[/bold green]")
+        elif role == "error":
+            # Error message - red
+            self.console.print(f"[dim]{timestamp}[/dim] [bold red]✗ {content}[/bold red]")
+        elif role == "info":
+            # Info message - blue
+            self.console.print(f"[dim]{timestamp}[/dim] [blue]ℹ️  {content}[/blue]")
         
     def initialize(self):
         """Initialize all components."""
-        self.console.print(Panel.fit(
-            "[bold cyan]AI Automation Assistant[/bold cyan]\n"
-            "Unified Interface with Voice & Text Input",
-            border_style="cyan"
-        ))
+        # Clear screen
+        self.console.clear()
+        
+        # Show banner
+        banner = """
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║     🤖  AI AUTOMATION ASSISTANT  🤖                       ║
+║                                                           ║
+║     Your intelligent automation companion                ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+"""
+        self.console.print(banner, style="bold cyan")
         
         # Check API key
         api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
-            self.console.print("[red]Error: GEMINI_API_KEY not found in .env file![/red]")
+            self.print_chat_message("error", "GEMINI_API_KEY not found in .env file!")
             return False
         
         try:
             # Initialize AI Brain
-            self.console.print("✓ Initializing AI Brain...")
+            self.print_chat_message("system", "Initializing AI Brain...")
             self.gemini_client = GeminiClient(api_key=api_key)
             
             # Load config
@@ -97,25 +160,25 @@ class UnifiedAssistant:
             )
             
             # Initialize Automation Engine
-            self.console.print("✓ Initializing Automation Engine...")
+            self.print_chat_message("system", "Initializing Automation Engine...")
             self.executor = AutomationExecutor(dry_run=False)
             
             # Initialize Communication
-            self.console.print("✓ Initializing Communication...")
+            self.print_chat_message("system", "Initializing Communication...")
             self.message_broker = MessageBroker()
             
             # Check voice support
             if VOICE_AVAILABLE:
-                self.console.print("✓ Voice input available")
+                self.print_chat_message("success", "Voice input available! Press 'V' to speak")
                 self.voice_enabled = True
             else:
-                self.console.print("[yellow]⚠ Voice input not available (install: pip install SpeechRecognition pyaudio)[/yellow]")
+                self.print_chat_message("info", "Voice input not available (optional)")
             
-            self.console.print("[green]✓ All systems ready![/green]\n")
+            self.print_chat_message("success", "All systems ready! 🚀")
             return True
             
         except Exception as e:
-            self.console.print(f"[red]Initialization failed: {e}[/red]")
+            self.print_chat_message("error", f"Initialization failed: {e}")
             return False
     
     def listen_voice(self):
@@ -125,42 +188,48 @@ class UnifiedAssistant:
         
         try:
             with self.microphone as source:
-                self.console.print("[dim]🎤 Listening... (speak now)[/dim]")
+                self.print_chat_message("info", "🎤 Listening... Speak now!")
                 self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
                 audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=10)
             
-            self.console.print("[dim]🔄 Processing...[/dim]")
+            self.print_chat_message("system", "🔄 Processing audio...")
             text = self.recognizer.recognize_google(audio)
             return text
             
         except sr.WaitTimeoutError:
             return None
         except sr.UnknownValueError:
-            self.console.print("[yellow]Could not understand audio[/yellow]")
+            self.print_chat_message("error", "Could not understand audio")
             return None
         except sr.RequestError as e:
-            self.console.print(f"[red]Voice recognition error: {e}[/red]")
+            self.print_chat_message("error", f"Voice recognition error: {e}")
             return None
         except Exception as e:
             return None
     
     def get_input(self):
         """Get input from user (voice or text)."""
+        self.console.print()
+        self.console.print("─" * 60, style="dim")
+        
         if self.voice_enabled:
-            self.console.print("\n[bold]Enter command[/bold] (type or press [cyan]V[/cyan] for voice):")
-            choice = Prompt.ask("", default="")
-            
-            if choice.lower() == 'v':
-                command = self.listen_voice()
-                if command:
-                    self.console.print(f"[green]🎤 Heard:[/green] {command}")
-                    return command
-                else:
-                    return self.get_input()  # Try again
-            else:
-                return choice
+            prompt_text = "💬 [bold cyan]You:[/bold cyan] (type or press [yellow]V[/yellow] for voice)"
         else:
-            return Prompt.ask("\n[bold cyan]Enter command[/bold cyan]", default="")
+            prompt_text = "💬 [bold cyan]You:[/bold cyan]"
+        
+        choice = Prompt.ask(prompt_text, default="")
+        
+        if self.voice_enabled and choice.lower() == 'v':
+            command = self.listen_voice()
+            if command:
+                self.print_chat_message("user", f"🎤 {command}")
+                return command
+            else:
+                return self.get_input()  # Try again
+        else:
+            if choice:
+                self.print_chat_message("user", choice)
+            return choice
     
     def process_command(self, user_input):
         """Process a command and execute it."""
