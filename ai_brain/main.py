@@ -9,6 +9,7 @@ import json
 import time
 from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
 
 from rich.console import Console
 from rich.prompt import Prompt
@@ -20,6 +21,9 @@ from ai_brain.gemini_client import GeminiClient, CommandIntent
 from ai_brain.workflow_generator import WorkflowGenerator
 from shared.communication import MessageBroker, CommunicationError
 from shared.data_models import ExecutionResult
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class AIBrainApp:
@@ -85,14 +89,16 @@ class AIBrainApp:
         ))
         
         try:
-            # Initialize Gemini client
-            api_key = self.config["gemini"].get("api_key") or os.getenv("GEMINI_API_KEY")
-            if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
-                self.console.print("[red]Error: Gemini API key not configured![/red]")
-                self.console.print("Please set GEMINI_API_KEY environment variable or update config.json")
+            # Initialize Gemini client (reads from .env file)
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                self.console.print("[red]Error: Gemini API key not found![/red]")
+                self.console.print("[yellow]Please create a .env file with:[/yellow]")
+                self.console.print("GEMINI_API_KEY=your_api_key_here")
+                self.console.print("\n[dim]Get your API key from: https://makersuite.google.com/app/apikey[/dim]")
                 return False
             
-            self.console.print("✓ Initializing Gemini client...")
+            self.console.print("✓ Initializing Gemini client (from .env)...")
             self.gemini_client = GeminiClient(api_key=api_key)
             
             # Initialize workflow generator

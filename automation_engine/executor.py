@@ -279,9 +279,9 @@ class AutomationExecutor:
         interval = step.validation.get('interval', 0.05) if step.validation else 0.05
         
         if self.dry_run:
-            print(f"  [DRY RUN] Would type: '{step.data}'")
+            print(f"  [DRY RUN] Would type: '{text[:100]}...'")
         else:
-            self.input_controller.type_text(step.data, interval=interval)
+            self.input_controller.type_text(text, interval=interval)
     
     def _execute_press_key(self, step: WorkflowStep) -> None:
         """Execute a key press step."""
