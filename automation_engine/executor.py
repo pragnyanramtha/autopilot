@@ -217,9 +217,6 @@ class AutomationExecutor:
         elif step.type == "capture":
             self._execute_capture(step)
         
-        elif step.type == "ai_search":
-            self._execute_ai_search(step)
-        
         elif step.type == "ai_generate":
             self._execute_ai_generate(step)
         
@@ -481,22 +478,7 @@ class AutomationExecutor:
         with self._lock:
             return self._is_running
 
-    def _execute_ai_search(self, step: WorkflowStep) -> None:
-        """
-        Execute an AI-powered web search step.
-        This uses Gemini's knowledge rather than browser automation.
-        """
-        query = step.data
-        
-        if self.dry_run:
-            print(f"  [DRY RUN] Would perform AI search for: {query}")
-        else:
-            print(f"  Performing AI search: {query}")
-            # The actual search is performed by the AI Brain before execution
-            # This step just marks that the search was completed
-            # Results are stored in the workflow metadata
-            print(f"  Search results available in workflow context")
-    
+
     def _execute_ai_generate(self, step: WorkflowStep) -> None:
         """
         Execute an AI content generation step.

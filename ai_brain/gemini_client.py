@@ -227,6 +227,10 @@ For SIMPLE commands, return:
     "confidence": 0.95
 }}
 
+IMPORTANT: Search commands are SIMPLE, not complex!
+- "search for X" → {{"complexity": "simple", "action": "search_web", "target": "X", "parameters": {{"query": "X"}}, "confidence": 0.95}}
+- "search for X and open first" → {{"complexity": "simple", "action": "search_web", "target": "X", "parameters": {{"query": "X", "open_first_result": true}}, "confidence": 0.95}}
+
 For COMPLEX commands, break down into sub-tasks and return:
 {{
     "complexity": "complex",
@@ -258,8 +262,14 @@ Supported actions:
 - Simple: click, type, open_app, move_mouse, press_key, double_click, right_click, wait
 - Complex: search_web, navigate_to_url, login, fill_form, generate_content, post_to_social, send_email, multi_step
 
+Special parameters for search_web:
+- "open_first_result": true/false - Set to true if user wants to open the first search result
+  Examples: "search for X and open first result", "look up X and click first link", "find X and open it"
+
 Examples:
 Simple: "Click the submit button" -> {{"complexity": "simple", "action": "click", "target": "submit button", "parameters": {{}}, "confidence": 0.9}}
+
+Simple with open first: "Search for Python tutorials and open first result" -> {{"complexity": "simple", "action": "search_web", "target": "Python tutorials", "parameters": {{"query": "Python tutorials", "open_first_result": true}}, "confidence": 0.95}}
 
 Complex: "Write an article about AI and post to X" -> 
 {{

@@ -268,45 +268,63 @@ class WorkflowGenerator:
         return []
     
     def _generate_search_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
-        """Generate steps for performing a search."""
+        """Generate steps for performing a search in browser."""
         query = intent.parameters.get('query', intent.target)
-        use_direct_search = intent.parameters.get('use_direct_search', True)
+        open_first = intent.parameters.get('open_first_result', False)
         
         steps = []
         
-        # Use direct AI search instead of browser automation by default
-        if use_direct_search:
+        # Always use browser for search (so user can see results)
+        # Open browser (Chrome)
+        steps.extend(self._generate_open_app_steps(
+            CommandIntent(action='open_app', target='Chrome', parameters={}, confidence=1.0)
+        ))
+        
+        # Wait for browser to open
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=2000
+        ))
+        
+        # Focus address bar
+        steps.append(WorkflowStep(
+            type='press_key',
+            data='ctrl+l',
+            delay_ms=300
+        ))
+        
+        # Type search query
+        steps.append(WorkflowStep(
+            type='type',
+            data=query,
+            delay_ms=500
+        ))
+        
+        # Press Enter to search
+        steps.append(WorkflowStep(
+            type='press_key',
+            data='enter',
+            delay_ms=3000  # Wait for search results to load
+        ))
+        
+        # If user wants to open first result
+        if open_first:
+            # Tab twice to reach first result link
             steps.append(WorkflowStep(
-                type='ai_search',
-                data=query,
-                delay_ms=500,
-                validation={'search_type': 'direct', 'query': query}
+                type='press_key',
+                data='tab',
+                delay_ms=200
             ))
-        else:
-            # Fallback to browser automation
-            # Open browser (assuming Chrome)
-            steps.extend(self._generate_open_app_steps(
-                CommandIntent(action='open_app', target='Chrome', parameters={}, confidence=1.0)
-            ))
-            
-            # Wait for browser to open
             steps.append(WorkflowStep(
-                type='wait',
-                delay_ms=2000
+                type='press_key',
+                data='tab',
+                delay_ms=200
             ))
-            
-            # Type search query in address bar
-            steps.append(WorkflowStep(
-                type='type',
-                data=query,
-                delay_ms=500
-            ))
-            
-            # Press Enter
+            # Press Enter to open first result
             steps.append(WorkflowStep(
                 type='press_key',
                 data='enter',
-                delay_ms=100
+                delay_ms=2000
             ))
         
         return steps
