@@ -36,8 +36,8 @@ class GeminiClient:
     """Handles all interactions with Gemini API for NLP and vision."""
     
     # Model selection based on task complexity
-    SIMPLE_MODEL = 'gemini-1.5-flash'  # Fast model for simple tasks
-    COMPLEX_MODEL = 'gemini-1.5-pro'  # Advanced model for complex tasks
+    SIMPLE_MODEL = 'gemini-2.5-flash'  # Fast model for simple tasks
+    COMPLEX_MODEL = 'gemini-2.5-pro'  # Advanced model for complex tasks
     
     def __init__(self, api_key: Optional[str] = None):
         """
