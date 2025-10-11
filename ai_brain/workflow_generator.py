@@ -244,32 +244,44 @@ class WorkflowGenerator:
     def _generate_search_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
         """Generate steps for performing a search."""
         query = intent.parameters.get('query', intent.target)
+        use_direct_search = intent.parameters.get('use_direct_search', True)
+        
         steps = []
         
-        # Open browser (assuming Chrome)
-        steps.extend(self._generate_open_app_steps(
-            CommandIntent(action='open_app', target='Chrome', parameters={}, confidence=1.0)
-        ))
-        
-        # Wait for browser to open
-        steps.append(WorkflowStep(
-            type='wait',
-            delay_ms=2000
-        ))
-        
-        # Type search query in address bar
-        steps.append(WorkflowStep(
-            type='type',
-            data=query,
-            delay_ms=500
-        ))
-        
-        # Press Enter
-        steps.append(WorkflowStep(
-            type='press_key',
-            data='enter',
-            delay_ms=100
-        ))
+        # Use direct AI search instead of browser automation by default
+        if use_direct_search:
+            steps.append(WorkflowStep(
+                type='ai_search',
+                data=query,
+                delay_ms=500,
+                validation={'search_type': 'direct', 'query': query}
+            ))
+        else:
+            # Fallback to browser automation
+            # Open browser (assuming Chrome)
+            steps.extend(self._generate_open_app_steps(
+                CommandIntent(action='open_app', target='Chrome', parameters={}, confidence=1.0)
+            ))
+            
+            # Wait for browser to open
+            steps.append(WorkflowStep(
+                type='wait',
+                delay_ms=2000
+            ))
+            
+            # Type search query in address bar
+            steps.append(WorkflowStep(
+                type='type',
+                data=query,
+                delay_ms=500
+            ))
+            
+            # Press Enter
+            steps.append(WorkflowStep(
+                type='press_key',
+                data='enter',
+                delay_ms=100
+            ))
         
         return steps
     
@@ -447,17 +459,33 @@ class WorkflowGenerator:
         
         # Add a step to indicate content generation
         steps.append(WorkflowStep(
-            type='wait',
+            type='ai_generate',
+            data=topic,
             delay_ms=500,
-            data=f"Generating {content_type} about: {topic}"
+            validation={
+                'content_type': content_type,
+                'topic': topic,
+                'parameters': intent.parameters
+            }
         ))
         
-        # In a real implementation, this would call the Gemini API
-        # and store the generated content for later use
+        return steps
+    
+    def _generate_user_input_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
+        """Generate steps for requesting user input."""
+        prompt_text = intent.parameters.get('prompt', 'Please provide input')
+        input_type = intent.parameters.get('input_type', 'text')
+        
+        steps = []
+        
         steps.append(WorkflowStep(
-            type='wait',
-            delay_ms=2000,
-            data="Content generation complete (stored in context)"
+            type='user_input',
+            data=prompt_text,
+            delay_ms=100,
+            validation={
+                'input_type': input_type,
+                'prompt': prompt_text
+            }
         ))
         
         return steps

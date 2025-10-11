@@ -272,13 +272,31 @@ class AIBrainApp:
         if requires_research:
             self.console.print("\n→ Researching topic with Gemini...")
             query = self._extract_research_query(intent, user_input)
-            research = self.gemini_client.research_topic(query)
-            self.console.print(f"[green]✓ Research complete[/green]")
-            if research.get('key_points'):
-                self.console.print(f"  Key points: {len(research['key_points'])} found")
+            
+            # Use direct web search
+            self.console.print(f"  Searching: {query}")
+            search_results = self.gemini_client.search_web_direct(query)
+            
+            self.console.print(f"[green]✓ Search complete[/green]")
+            
+            # Display search results
+            if search_results.get('summary'):
+                self.console.print(f"\n[bold]Search Results:[/bold]")
+                self.console.print(f"  {search_results['summary']}")
+            
+            if search_results.get('key_findings'):
+                self.console.print(f"\n[bold]Key Findings:[/bold]")
+                for i, finding in enumerate(search_results['key_findings'][:5], 1):
+                    self.console.print(f"  {i}. {finding}")
+            
+            if search_results.get('trending_topics'):
+                self.console.print(f"\n[bold]Trending Topics:[/bold]")
+                for topic in search_results['trending_topics'][:5]:
+                    self.console.print(f"  • {topic}")
             
             # Store in intent
-            intent.parameters['research_data'] = research
+            intent.parameters['research_data'] = search_results
+            intent.parameters['search_results'] = search_results
         
         # Generate workflow
         self.console.print("\n→ Generating complex workflow...")

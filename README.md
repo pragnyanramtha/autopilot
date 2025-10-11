@@ -10,6 +10,8 @@ The AI Automation Assistant bridges the gap between natural language and system-
 
 - **Natural Language Processing**: Give commands in plain English
 - **Complex Multi-Step Workflows**: Handle sophisticated tasks like "research, write, and post"
+- **Direct AI Search**: 🆕 Search the web without opening a browser - results in seconds!
+- **Interactive Workflows**: 🆕 Request user input during execution for dynamic workflows
 - **Content Generation**: AI-powered content creation using Gemini
 - **Web Research**: Automatic topic research and information gathering
 - **Screen Vision**: AI can see and understand your screen

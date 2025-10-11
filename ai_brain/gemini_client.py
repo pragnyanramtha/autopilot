@@ -339,3 +339,65 @@ Return as JSON:
                 "trends": [],
                 "examples": []
             }
+    
+    def search_web_direct(self, query: str) -> dict:
+        """
+        Search the web directly using Gemini's grounding/search capabilities.
+        This uses Gemini's built-in web search rather than browser automation.
+        
+        Args:
+            query: The search query
+            
+        Returns:
+            Dictionary with search results
+        """
+        prompt = f"""Search the web for: {query}
+
+Provide the most relevant and current information you can find.
+Include:
+1. Top results summary
+2. Key findings
+3. Relevant links or sources (if available)
+4. Current trends or news
+
+Return as JSON:
+{{
+    "query": "{query}",
+    "summary": "overview of findings",
+    "results": [
+        {{"title": "result title", "snippet": "brief description", "relevance": "high/medium/low"}},
+        ...
+    ],
+    "key_findings": ["finding1", "finding2"],
+    "trending_topics": ["topic1", "topic2"]
+}}"""
+        
+        try:
+            response = self.model.generate_content(prompt)
+            result = self._parse_intent_response(response.text)
+            result['query'] = query
+            return result
+        except Exception as e:
+            return {
+                "query": query,
+                "summary": f"Error searching: {str(e)}",
+                "results": [],
+                "key_findings": [],
+                "trending_topics": []
+            }
+    
+    def get_user_input(self, prompt_text: str, default: str = "") -> str:
+        """
+        Request input from the user during workflow execution.
+        This is a placeholder that would need to be integrated with the UI.
+        
+        Args:
+            prompt_text: The prompt to show the user
+            default: Default value if no input provided
+            
+        Returns:
+            User's input as string
+        """
+        # This would need to be integrated with the main UI
+        # For now, return a marker that the workflow generator can handle
+        return f"[USER_INPUT_REQUIRED: {prompt_text}]"

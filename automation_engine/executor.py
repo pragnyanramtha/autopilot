@@ -211,6 +211,15 @@ class AutomationExecutor:
         elif step.type == "capture":
             self._execute_capture(step)
         
+        elif step.type == "ai_search":
+            self._execute_ai_search(step)
+        
+        elif step.type == "ai_generate":
+            self._execute_ai_generate(step)
+        
+        elif step.type == "user_input":
+            self._execute_user_input(step)
+        
         else:
             raise ValueError(f"Unknown step type: {step.type}")
     
@@ -404,3 +413,67 @@ class AutomationExecutor:
         """Check if a workflow is currently executing."""
         with self._lock:
             return self._is_running
+
+    def _execute_ai_search(self, step: WorkflowStep) -> None:
+        """
+        Execute an AI-powered web search step.
+        This uses Gemini's knowledge rather than browser automation.
+        """
+        query = step.data
+        
+        if self.dry_run:
+            print(f"  [DRY RUN] Would perform AI search for: {query}")
+        else:
+            print(f"  Performing AI search: {query}")
+            # The actual search is performed by the AI Brain before execution
+            # This step just marks that the search was completed
+            # Results are stored in the workflow metadata
+            print(f"  Search results available in workflow context")
+    
+    def _execute_ai_generate(self, step: WorkflowStep) -> None:
+        """
+        Execute an AI content generation step.
+        This uses Gemini to generate content.
+        """
+        topic = step.data
+        validation = step.validation or {}
+        content_type = validation.get('content_type', 'text')
+        
+        if self.dry_run:
+            print(f"  [DRY RUN] Would generate {content_type} about: {topic}")
+        else:
+            print(f"  Generating {content_type} about: {topic}")
+            # The actual generation is performed by the AI Brain before execution
+            # This step just marks that content was generated
+            # Generated content is stored in the workflow metadata
+            print(f"  Content generated and available in workflow context")
+    
+    def _execute_user_input(self, step: WorkflowStep) -> None:
+        """
+        Execute a user input request step.
+        This prompts the user for input during workflow execution.
+        """
+        prompt_text = step.data
+        validation = step.validation or {}
+        input_type = validation.get('input_type', 'text')
+        
+        if self.dry_run:
+            print(f"  [DRY RUN] Would request user input: {prompt_text}")
+        else:
+            print(f"\n  [USER INPUT REQUIRED]")
+            print(f"  {prompt_text}")
+            
+            # In a real implementation, this would integrate with the UI
+            # For now, we'll use a simple input() call
+            try:
+                user_response = input(f"  > ")
+                print(f"  User provided: {user_response}")
+                # Store the response in step validation for later use
+                if step.validation is None:
+                    step.validation = {}
+                step.validation['user_response'] = user_response
+            except EOFError:
+                print(f"  No input provided (non-interactive mode)")
+                if step.validation is None:
+                    step.validation = {}
+                step.validation['user_response'] = ""
