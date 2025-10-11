@@ -166,17 +166,20 @@ Edit `config.json` to customize:
 ```
 ai-automation-assistant/
 ├── run.py                  # 🚀 Main launcher (use this!)
-├── run.bat                 # Windows launcher
-├── .env                    # API key (create this)
-├── config.json             # Configuration
-├── requirements.txt        # Dependencies
+├── run.bat                 # 🚀 Windows launcher
+├── setup_venv.bat          # Setup script
+├── .env                    # 🔒 API key (create this)
+├── config.json             # ⚙️ Configuration
+├── requirements.txt        # 📦 Dependencies
 │
-├── ai_brain/              # AI command processing
-├── automation_engine/     # Mouse/keyboard control
-├── shared/                # Shared utilities
+├── 📁 ai_brain/           # 🧠 AI command processing
+├── 📁 automation_engine/  # 🤖 Mouse/keyboard control
+├── 📁 shared/             # 🔧 Shared utilities
 │
-├── docs/                  # 📖 Documentation
-└── venv/                  # Virtual environment
+├── 📁 docs/               # 📖 Documentation
+├── 📁 scripts/            # 🔨 Helper scripts & old launchers
+├── 📁 tests/              # 🧪 Test files
+└── 📁 venv/               # 🐍 Virtual environment
 ```
 
 ---
