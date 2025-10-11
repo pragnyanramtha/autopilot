@@ -124,19 +124,39 @@ Edit `config.json` and replace `YOUR_GEMINI_API_KEY_HERE` with your actual API k
 
 ## Usage
 
-### Quick Start with CLI
+### Quick Start (Windows)
 
-The easiest way to use the system is through the unified CLI:
-
-```bash
-python cli.py
+**Easiest way - Double-click:**
+```
+quick_start.bat
 ```
 
-This will show you a menu with options to:
-- Start/stop AI Brain
-- Start/stop Automation Engine
-- View system status
-- Get help
+This interactive launcher will:
+- ✓ Check if venv is activated
+- ✓ Check if .env file exists
+- ✓ Check if API key is set
+- ✓ Let you choose what to start
+- ✓ Run tests and check status
+
+**Or use individual launchers:**
+```
+start_ai_brain.bat          - Start AI Brain only
+start_automation_engine.bat - Start Automation Engine only
+start_both.bat              - Start both in separate windows
+```
+
+### Quick Start (Manual)
+
+If you prefer command line:
+
+```bash
+# Activate venv first
+.\venv\Scripts\Activate.ps1
+
+# Then start components
+python -m ai_brain.main
+python -m automation_engine.main
+```
 
 ### Starting Components Individually
 

@@ -9,6 +9,7 @@ import json
 import time
 from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
 
 from rich.console import Console
 from rich.prompt import Prompt
@@ -20,6 +21,9 @@ from ai_brain.gemini_client import GeminiClient, CommandIntent
 from ai_brain.workflow_generator import WorkflowGenerator
 from shared.communication import MessageBroker, CommunicationError
 from shared.data_models import ExecutionResult
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class AIBrainApp:
@@ -85,19 +89,24 @@ class AIBrainApp:
         ))
         
         try:
-            # Initialize Gemini client
-            api_key = self.config["gemini"].get("api_key") or os.getenv("GEMINI_API_KEY")
-            if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
-                self.console.print("[red]Error: Gemini API key not configured![/red]")
-                self.console.print("Please set GEMINI_API_KEY environment variable or update config.json")
+            # Initialize Gemini client (reads from .env file)
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                self.console.print("[red]Error: Gemini API key not found![/red]")
+                self.console.print("[yellow]Please create a .env file with:[/yellow]")
+                self.console.print("GEMINI_API_KEY=your_api_key_here")
+                self.console.print("\n[dim]Get your API key from: https://makersuite.google.com/app/apikey[/dim]")
                 return False
             
-            self.console.print("✓ Initializing Gemini client...")
+            self.console.print("✓ Initializing Gemini client (from .env)...")
             self.gemini_client = GeminiClient(api_key=api_key)
             
             # Initialize workflow generator
             self.console.print("✓ Initializing workflow generator...")
-            self.workflow_generator = WorkflowGenerator(gemini_client=self.gemini_client)
+            self.workflow_generator = WorkflowGenerator(
+                gemini_client=self.gemini_client,
+                config=self.config
+            )
             
             # Initialize message broker
             self.console.print("✓ Initializing communication layer...")
@@ -256,17 +265,38 @@ class AIBrainApp:
         generated_content = None
         if requires_content:
             self.console.print("\n→ Generating content with Gemini...")
+            
+            # Extract topic and parameters from sub-tasks
             topic = self._extract_content_topic(intent, user_input)
+            content_params = self._extract_content_parameters(intent)
+            
+            # Use search results if available for context
+            context = ""
+            if hasattr(self, '_workflow_context') and 'search_results' in self._workflow_context:
+                search_data = self._workflow_context['search_results']
+                if search_data.get('trending_topics'):
+                    context = f"Trending topics: {', '.join(search_data['trending_topics'][:3])}"
+            
+            # Generate content with context
             generated_content = self.gemini_client.generate_content(
                 topic=topic,
-                content_type='article',
-                parameters={'length': 'medium', 'style': 'informative'}
+                content_type=content_params.get('content_type', 'tweet'),
+                parameters={
+                    'length': content_params.get('length', 'short'),
+                    'style': content_params.get('style', 'engaging'),
+                    'context': context,
+                    'goal': content_params.get('goal', 'engagement')
+                }
             )
             self.console.print(f"[green]✓ Content generated ({len(generated_content)} characters)[/green]")
-            self.console.print(f"\n[dim]Preview: {generated_content[:200]}...[/dim]")
+            self.console.print(f"\n[bold cyan]Generated Content:[/bold cyan]")
+            self.console.print(f"[white]{generated_content}[/white]")
             
-            # Store in intent for workflow
+            # Store in intent and workflow context
             intent.parameters['generated_content'] = generated_content
+            if not hasattr(self, '_workflow_context'):
+                self._workflow_context = {}
+            self._workflow_context['generated_content'] = generated_content
         
         # Handle research if needed
         if requires_research:
@@ -282,7 +312,7 @@ class AIBrainApp:
             # Display search results
             if search_results.get('summary'):
                 self.console.print(f"\n[bold]Search Results:[/bold]")
-                self.console.print(f"  {search_results['summary']}")
+                self.console.print(f"  {search_results['summary'][:200]}...")
             
             if search_results.get('key_findings'):
                 self.console.print(f"\n[bold]Key Findings:[/bold]")
@@ -294,9 +324,14 @@ class AIBrainApp:
                 for topic in search_results['trending_topics'][:5]:
                     self.console.print(f"  • {topic}")
             
-            # Store in intent
+            # Store in intent and workflow metadata
             intent.parameters['research_data'] = search_results
             intent.parameters['search_results'] = search_results
+            
+            # Also store for workflow execution
+            if not hasattr(self, '_workflow_context'):
+                self._workflow_context = {}
+            self._workflow_context['search_results'] = search_results
         
         # Generate workflow
         self.console.print("\n→ Generating complex workflow...")
@@ -334,6 +369,13 @@ class AIBrainApp:
             self.console.print("[yellow]Workflow cancelled[/yellow]")
             return
         
+        # Add generated content to workflow metadata
+        if hasattr(self, '_workflow_context'):
+            if 'generated_content' in self._workflow_context:
+                workflow.metadata['generated_content'] = self._workflow_context['generated_content']
+            if 'search_results' in self._workflow_context:
+                workflow.metadata['search_results'] = self._workflow_context['search_results']
+        
         # Send workflow
         self.console.print("\n→ Sending workflow to automation engine...")
         self.message_broker.send_workflow(workflow)
@@ -369,6 +411,28 @@ class AIBrainApp:
                 return task.get('parameters', {}).get('query', task.get('target', ''))
         
         return self._extract_content_topic(intent, user_input)
+    
+    def _extract_content_parameters(self, intent: CommandIntent) -> dict:
+        """Extract content generation parameters from intent."""
+        # Check sub-tasks for generate_content action
+        sub_tasks = intent.parameters.get('sub_tasks', [])
+        for task in sub_tasks:
+            if task.get('action') == 'generate_content':
+                params = task.get('parameters', {})
+                # Determine content type from target
+                target = task.get('target', '').lower()
+                if 'tweet' in target:
+                    params['content_type'] = 'tweet'
+                    params['length'] = 'short'
+                elif 'article' in target:
+                    params['content_type'] = 'article'
+                    params['length'] = 'medium'
+                elif 'post' in target:
+                    params['content_type'] = 'post'
+                    params['length'] = 'short'
+                return params
+        
+        return {'content_type': 'text', 'length': 'medium', 'style': 'engaging'}
     
     def _display_intent(self, intent: CommandIntent):
         """Display parsed command intent."""

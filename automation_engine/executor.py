@@ -92,12 +92,18 @@ class AutomationExecutor:
         steps_completed = 0
         error_message = None
         
+        # Extract generated content from workflow metadata if available
+        generated_content = workflow.metadata.get('generated_content', '')
+        
         try:
             # Store initial mouse position for safety monitoring
             self._initial_mouse_pos = self.input_controller.get_mouse_position()
             
             print(f"{'[DRY RUN] ' if self.dry_run else ''}Starting workflow: {workflow.id}")
             print(f"Total steps: {len(workflow.steps)}")
+            
+            if generated_content:
+                print(f"Using generated content: {generated_content[:100]}...")
             
             # Execute each step sequentially
             for i, step in enumerate(workflow.steps):
@@ -255,12 +261,73 @@ class AutomationExecutor:
         if not step.data:
             raise ValueError("Type step requires data")
         
+        # Replace placeholder with actual generated content
+        text = step.data
+        use_clipboard = False
+        
+        if text == "[GENERATED_CONTENT]" and self._current_workflow:
+            generated_content = self._current_workflow.metadata.get('generated_content', '')
+            if generated_content:
+                text = generated_content
+                # Use clipboard for long content (faster and more reliable)
+                if len(text) > 100:
+                    use_clipboard = True
+                print(f"  Using generated content: {text[:80]}...")
+            else:
+                print(f"  Warning: No generated content found in metadata")
+                print(f"  Metadata keys: {list(self._current_workflow.metadata.keys())}")
+        elif "[Content from" in text and self._current_workflow:
+            # Handle other content placeholders
+            generated_content = self._current_workflow.metadata.get('generated_content', '')
+            if generated_content:
+                text = generated_content
+                if len(text) > 100:
+                    use_clipboard = True
+        
         interval = step.validation.get('interval', 0.05) if step.validation else 0.05
         
         if self.dry_run:
-            print(f"  [DRY RUN] Would type: '{step.data}'")
+            print(f"  [DRY RUN] Would type: '{text[:100]}...'")
+            if use_clipboard:
+                print(f"  [DRY RUN] Would use clipboard (Ctrl+V) for long content")
         else:
-            self.input_controller.type_text(step.data, interval=interval)
+            if use_clipboard:
+                # Use clipboard for long content (much faster)
+                self._type_via_clipboard(text)
+            else:
+                self.input_controller.type_text(text, interval=interval)
+    
+    def _type_via_clipboard(self, text: str) -> None:
+        """Type text using clipboard (Ctrl+V) - faster for long content."""
+        import pyperclip
+        
+        # Save current clipboard
+        try:
+            old_clipboard = pyperclip.paste()
+        except:
+            old_clipboard = ""
+        
+        try:
+            # Copy text to clipboard
+            pyperclip.copy(text)
+            print(f"  Copied {len(text)} characters to clipboard")
+            
+            # Wait a moment
+            time.sleep(0.1)
+            
+            # Paste with Ctrl+V
+            self.input_controller.press_key('ctrl+v')
+            print(f"  Pasted content with Ctrl+V")
+            
+            # Wait for paste to complete
+            time.sleep(0.2)
+            
+        finally:
+            # Restore old clipboard
+            try:
+                pyperclip.copy(old_clipboard)
+            except:
+                pass
     
     def _execute_press_key(self, step: WorkflowStep) -> None:
         """Execute a key press step."""

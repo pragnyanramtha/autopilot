@@ -9,6 +9,10 @@ from datetime import datetime
 from typing import Optional
 from PIL import Image
 import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 @dataclass
@@ -31,25 +35,55 @@ class ScreenAnalysis:
 class GeminiClient:
     """Handles all interactions with Gemini API for NLP and vision."""
     
+    # Model selection based on task complexity
+    SIMPLE_MODEL = 'gemini-2.5-flash'  # Fast model for simple tasks
+    COMPLEX_MODEL = 'gemini-2.5-pro'  # Advanced model for complex tasks
+    
     def __init__(self, api_key: Optional[str] = None):
         """
         Initialize the Gemini client.
         
         Args:
-            api_key: Gemini API key. If None, reads from GEMINI_API_KEY env var.
+            api_key: Gemini API key. If None, reads from GEMINI_API_KEY in .env file.
         """
+        # Load from .env file (more secure than config.json)
         self.api_key = api_key or os.getenv('GEMINI_API_KEY')
         if not self.api_key:
-            raise ValueError("Gemini API key not provided. Set GEMINI_API_KEY environment variable.")
+            raise ValueError(
+                "Gemini API key not found. Please set GEMINI_API_KEY in .env file.\n"
+                "Create a .env file with: GEMINI_API_KEY=your_key_here"
+            )
         
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
-        self.vision_model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        # Initialize with simple model by default
+        self.current_model_name = self.SIMPLE_MODEL
+        self.model = genai.GenerativeModel(self.SIMPLE_MODEL)
+        self.vision_model = genai.GenerativeModel(self.SIMPLE_MODEL)
         self.conversation_history = []
+    
+    def _switch_model(self, complexity: str = 'simple'):
+        """
+        Switch between simple and complex models based on task complexity.
+        
+        Args:
+            complexity: 'simple' or 'complex'
+        """
+        if complexity == 'complex':
+            if self.current_model_name != self.COMPLEX_MODEL:
+                self.current_model_name = self.COMPLEX_MODEL
+                self.model = genai.GenerativeModel(self.COMPLEX_MODEL)
+                print(f"  Switched to complex model: {self.COMPLEX_MODEL}")
+        else:
+            if self.current_model_name != self.SIMPLE_MODEL:
+                self.current_model_name = self.SIMPLE_MODEL
+                self.model = genai.GenerativeModel(self.SIMPLE_MODEL)
+                print(f"  Switched to simple model: {self.SIMPLE_MODEL}")
     
     def process_command(self, user_input: str, context: Optional[dict] = None) -> CommandIntent:
         """
         Process a natural language command and extract intent.
+        Automatically switches between simple and complex models based on command complexity.
         
         Args:
             user_input: The user's natural language command
@@ -58,12 +92,24 @@ class GeminiClient:
         Returns:
             CommandIntent with parsed action, target, and parameters
         """
+        # Detect complexity from command keywords
+        complexity = self._detect_command_complexity(user_input)
+        
+        # Switch to appropriate model
+        self._switch_model(complexity)
+        
         # Build prompt for Gemini
         prompt = self._build_command_prompt(user_input, context)
         
         try:
             response = self.model.generate_content(prompt)
             intent_data = self._parse_intent_response(response.text)
+            
+            # Store detected complexity in parameters
+            if 'complexity' not in intent_data.get('parameters', {}):
+                if intent_data.get('parameters') is None:
+                    intent_data['parameters'] = {}
+                intent_data['parameters']['complexity'] = complexity
             
             return CommandIntent(
                 action=intent_data.get('action', 'unknown'),
@@ -79,6 +125,39 @@ class GeminiClient:
                 parameters={'error': str(e)},
                 confidence=0.0
             )
+    
+    def _detect_command_complexity(self, user_input: str) -> str:
+        """
+        Detect if a command is simple or complex based on keywords.
+        
+        Args:
+            user_input: The user's command
+            
+        Returns:
+            'simple' or 'complex'
+        """
+        user_input_lower = user_input.lower()
+        
+        # Complex command indicators
+        complex_indicators = [
+            'and', 'then', 'after', 'write', 'create', 'generate',
+            'research', 'search for', 'find', 'post', 'publish',
+            'compose', 'draft', 'summarize', 'analyze', 'multiple',
+            'several', 'both', 'all', 'maximize', 'optimize'
+        ]
+        
+        # Count complex indicators
+        complexity_score = sum(1 for indicator in complex_indicators if indicator in user_input_lower)
+        
+        # Check for multi-step patterns
+        if ' and ' in user_input_lower or ' then ' in user_input_lower:
+            complexity_score += 2
+        
+        # Determine complexity
+        if complexity_score >= 2:
+            return 'complex'
+        else:
+            return 'simple'
     
     def analyze_screen(self, screenshot: Image.Image) -> ScreenAnalysis:
         """
@@ -265,27 +344,67 @@ Complex: "Write an article about AI and post to X" ->
     def generate_content(self, topic: str, content_type: str = "article", parameters: Optional[dict] = None) -> str:
         """
         Generate content using Gemini.
+        Uses complex model for better quality content generation.
         
         Args:
             topic: The topic to write about
-            content_type: Type of content (article, post, email, etc.)
-            parameters: Additional parameters (length, style, tone, etc.)
+            content_type: Type of content (article, post, email, tweet, etc.)
+            parameters: Additional parameters (length, style, tone, context, goal, etc.)
             
         Returns:
             Generated content as string
         """
+        # Use complex model for content generation (better quality)
+        self._switch_model('complex')
+        
         params = parameters or {}
         length = params.get('length', 'medium')
         style = params.get('style', 'informative')
         tone = params.get('tone', 'professional')
+        context = params.get('context', '')
+        goal = params.get('goal', '')
         
-        length_guide = {
-            'short': '1-2 paragraphs (100-200 words)',
-            'medium': '3-5 paragraphs (300-500 words)',
-            'long': '6-10 paragraphs (600-1000 words)'
-        }
+        # Special handling for tweets
+        if content_type == 'tweet':
+            prompt = f"""Create an engaging tweet about: {topic}
+
+Requirements:
+- Maximum 280 characters
+- Style: {style}
+- Goal: {goal if goal else 'maximize engagement'}
+- Include relevant hashtags (2-3 max)
+- Make it attention-grabbing
+- Use questions, calls-to-action, or interesting facts
+- Be concise and impactful
+
+{f'Context: {context}' if context else ''}
+
+Return ONLY the tweet text, no quotes or additional commentary."""
         
-        prompt = f"""Write a {length} {content_type} about: {topic}
+        elif content_type in ['post', 'social']:
+            prompt = f"""Create an engaging social media post about: {topic}
+
+Requirements:
+- Keep it concise (under 300 characters)
+- Style: {style}
+- Goal: {goal if goal else 'maximize engagement'}
+- Include relevant hashtags
+- Make it shareable and engaging
+- Use emojis if appropriate
+
+{f'Context: {context}' if context else ''}
+
+Return ONLY the post text, no additional commentary."""
+        
+        else:
+            # Article or longer content
+            length_guide = {
+                'short': '1-2 paragraphs (100-200 words)',
+                'medium': '3-5 paragraphs (300-500 words)',
+                'long': '6-10 paragraphs (600-1000 words)'
+            }
+            
+            prompt = f"""Write a {length} {content_type} about: {topic}
 
 Requirements:
 - Length: {length_guide.get(length, 'medium length')}
@@ -293,19 +412,29 @@ Requirements:
 - Tone: {tone}
 - Make it engaging and well-structured
 - Include relevant examples or insights
-- For social media posts, keep it concise and impactful
+
+{f'Context: {context}' if context else ''}
+{f'Goal: {goal}' if goal else ''}
 
 Return ONLY the content, no additional commentary."""
         
         try:
             response = self.model.generate_content(prompt)
-            return response.text.strip()
+            content = response.text.strip()
+            
+            # Clean up any markdown formatting or quotes
+            content = content.replace('```', '').replace('**', '').strip()
+            if content.startswith('"') and content.endswith('"'):
+                content = content[1:-1]
+            
+            return content
         except Exception as e:
             return f"Error generating content: {str(e)}"
     
     def research_topic(self, query: str) -> dict:
         """
         Research a topic using Gemini's knowledge.
+        Uses complex model for better research quality.
         
         Args:
             query: The research query
@@ -313,6 +442,9 @@ Return ONLY the content, no additional commentary."""
         Returns:
             Dictionary with research findings
         """
+        # Use complex model for research (better analysis)
+        self._switch_model('complex')
+        
         prompt = f"""Research the following topic and provide key insights: {query}
 
 Provide:
@@ -344,6 +476,7 @@ Return as JSON:
         """
         Search the web directly using Gemini's grounding/search capabilities.
         This uses Gemini's built-in web search rather than browser automation.
+        Uses complex model for better search understanding.
         
         Args:
             query: The search query
@@ -351,6 +484,9 @@ Return as JSON:
         Returns:
             Dictionary with search results
         """
+        # Use complex model for web search (better understanding)
+        self._switch_model('complex')
+        
         prompt = f"""Search the web for: {query}
 
 Provide the most relevant and current information you can find.
