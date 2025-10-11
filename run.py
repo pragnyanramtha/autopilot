@@ -249,83 +249,97 @@ class UnifiedAssistant:
         
         try:
             # Parse command
-            self.console.print(f"\n[dim]Processing: {user_input}[/dim]")
+            self.print_chat_message("system", "🧠 Analyzing your command...")
             intent = self.gemini_client.process_command(user_input)
             
-            # Debug: Show parsed intent
-            self.console.print(f"[dim]Action: {intent.action}, Target: {intent.target}[/dim]")
-            if intent.parameters.get('open_first_result'):
-                self.console.print(f"[dim]Will open first result[/dim]")
-            
             if intent.confidence < 0.5:
-                self.console.print(f"[yellow]Low confidence ({intent.confidence:.0%})[/yellow]")
+                self.print_chat_message("error", f"Low confidence ({intent.confidence:.0%})")
                 if intent.action == 'error':
-                    self.console.print(f"[red]Error: {intent.parameters.get('error')}[/red]")
+                    self.print_chat_message("error", intent.parameters.get('error'))
                     return
             
+            # Show what we understood
+            action_desc = {
+                'search_web': '🔍 Searching',
+                'click': '🖱️ Clicking',
+                'type': '⌨️ Typing',
+                'open_app': '📱 Opening app',
+                'navigate_to_url': '🌐 Navigating',
+                'post_to_social': '📤 Posting'
+            }.get(intent.action, f'🎯 {intent.action}')
+            
+            self.print_chat_message("assistant", f"{action_desc}: {intent.target}")
+            
+            if intent.parameters.get('open_first_result'):
+                self.print_chat_message("info", "Will open first search result")
+            
+            # Check if we need to generate content BEFORE creating workflow
+            requires_content = intent.parameters.get('requires_content_generation', False)
+            generated_content = None
+            
+            if requires_content:
+                self.print_chat_message("system", "✍️ Generating content first...")
+                topic = self._extract_topic(intent, user_input)
+                generated_content = self.gemini_client.generate_content(
+                    topic=topic,
+                    content_type='tweet',
+                    parameters={'length': 'short', 'style': 'engaging'}
+                )
+                self.print_chat_message("assistant", f"📝 Generated:\n{generated_content}")
+            
             # Generate workflow
-            self.console.print("→ Generating workflow...")
+            self.print_chat_message("system", "⚙️ Generating workflow...")
             
             # Handle complex workflows
             complexity = intent.parameters.get('complexity', 'simple')
             if complexity == 'complex':
-                self._handle_complex(intent, user_input)
+                self._handle_complex(intent, user_input, generated_content)
             else:
                 workflow = self.workflow_generator.create_workflow(intent)
+                if generated_content:
+                    workflow.metadata['generated_content'] = generated_content
                 self._execute_workflow(workflow)
             
         except Exception as e:
-            self.console.print(f"[red]Error: {e}[/red]")
+            self.print_chat_message("error", f"Error: {e}")
     
-    def _handle_complex(self, intent, user_input):
+    def _handle_complex(self, intent, user_input, generated_content=None):
         """Handle complex workflow with content generation."""
         # Check requirements
-        requires_content = intent.parameters.get('requires_content_generation', False)
         requires_research = intent.parameters.get('requires_research', False)
         
-        # Generate content if needed
-        if requires_content:
-            self.console.print("→ Generating content...")
-            topic = self._extract_topic(intent, user_input)
-            content = self.gemini_client.generate_content(
-                topic=topic,
-                content_type='tweet',
-                parameters={'length': 'short', 'style': 'engaging'}
-            )
-            self.console.print(f"[green]✓ Content:[/green] {content}")
-            intent.parameters['generated_content'] = content
-        
-        # Research if needed
+        # Research if needed (for complex workflows that need it)
         if requires_research:
-            self.console.print("→ Researching...")
+            self.print_chat_message("system", "🔍 Researching...")
             query = self._extract_query(intent, user_input)
             results = self.gemini_client.search_web_direct(query)
-            self.console.print(f"[green]✓ Research complete[/green]")
+            self.print_chat_message("success", "Research complete!")
             intent.parameters['search_results'] = results
         
-        # Generate and execute workflow
+        # Generate workflow
         workflow = self.workflow_generator.create_workflow(intent)
         
-        # Add generated content to metadata
-        if requires_content:
-            workflow.metadata['generated_content'] = content
+        # CRITICAL: Add generated content to workflow metadata BEFORE execution
+        if generated_content:
+            workflow.metadata['generated_content'] = generated_content
+            self.print_chat_message("info", f"✓ Content added to workflow ({len(generated_content)} chars)")
         
         self._execute_workflow(workflow)
     
     def _execute_workflow(self, workflow):
         """Execute a workflow."""
-        self.console.print(f"→ Executing {len(workflow.steps)} steps...")
+        self.print_chat_message("system", f"🚀 Executing {len(workflow.steps)} steps...")
         
         # Execute directly (no separate process)
         result = self.executor.execute_workflow(workflow)
         
         # Show result
         if result.status == 'success':
-            self.console.print(f"[green]✓ Success![/green] ({result.duration_ms}ms)")
+            self.print_chat_message("success", f"Done! Completed in {result.duration_ms}ms ⚡")
         else:
-            self.console.print(f"[red]✗ {result.status}[/red]")
+            self.print_chat_message("error", f"Failed: {result.status}")
             if result.error:
-                self.console.print(f"  Error: {result.error}")
+                self.print_chat_message("error", f"Error: {result.error}")
     
     def _extract_topic(self, intent, user_input):
         """Extract topic from intent."""
@@ -386,14 +400,25 @@ class UnifiedAssistant:
             return
         
         # Show welcome
-        self.console.print(Panel(
-            "[bold]Welcome to AI Automation Assistant![/bold]\n\n"
-            "• Type commands naturally\n"
-            "• Press [cyan]V[/cyan] for voice input\n"
-            "• Type [cyan]help[/cyan] for commands\n"
-            "• Type [cyan]exit[/cyan] to quit",
-            border_style="green"
-        ))
+        welcome = """
+👋 Welcome! I'm your AI automation assistant.
+
+I can help you:
+  🔍 Search the web
+  🖱️ Control your mouse and keyboard  
+  📝 Generate content
+  📤 Post to social media
+  🌐 Navigate websites
+
+Just tell me what you want to do in plain English!
+
+💡 Tips:
+  • Type naturally: "search for Python tutorials"
+  • Press V for voice input
+  • Type 'help' for more commands
+  • Type 'exit' to quit
+"""
+        self.print_chat_message("assistant", welcome)
         
         self.running = True
         
@@ -408,7 +433,8 @@ class UnifiedAssistant:
             except Exception as e:
                 self.console.print(f"[red]Error: {e}[/red]")
         
-        self.console.print("\n[cyan]Goodbye![/cyan]")
+        self.console.print()
+        self.print_chat_message("assistant", "👋 Goodbye! Thanks for using AI Automation Assistant!")
 
 
 def main():

@@ -571,13 +571,15 @@ class WorkflowGenerator:
         website_info = self.website_nav.get_website_info(url)
         
         if website_info:
-            # Use website-specific strategy
-            if self.twitter_strategy == 'tab_navigation' or not website_info.get('shortcuts', {}).get('new_post'):
-                # Use Tab navigation
-                compose_steps = self.website_nav.get_compose_steps(url, strategy='tab_navigation')
-            else:
-                # Use keyboard shortcut
+            # Try keyboard shortcut first (faster and more reliable)
+            has_shortcut = website_info.get('shortcuts', {}).get('new_post')
+            
+            if has_shortcut and self.twitter_strategy != 'tab_navigation':
+                # Use keyboard shortcut (N key for Twitter/X)
                 compose_steps = self.website_nav.get_compose_steps(url, strategy='shortcut')
+            else:
+                # Fallback to Tab navigation
+                compose_steps = self.website_nav.get_compose_steps(url, strategy='tab_navigation')
             
             # Convert to WorkflowSteps
             for step_data in compose_steps:
