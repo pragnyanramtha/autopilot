@@ -50,28 +50,44 @@ class WorkflowGenerator:
         workflow_id = str(uuid.uuid4())
         steps = []
         
-        # Generate steps based on action type
-        if intent.action == 'click':
-            steps = self._generate_click_steps(intent, screen_analysis)
-        elif intent.action == 'type':
-            steps = self._generate_type_steps(intent)
-        elif intent.action == 'open_app':
-            steps = self._generate_open_app_steps(intent)
-        elif intent.action == 'move_mouse':
-            steps = self._generate_move_mouse_steps(intent, screen_analysis)
-        elif intent.action == 'search':
-            steps = self._generate_search_steps(intent)
-        elif intent.action == 'double_click':
-            steps = self._generate_double_click_steps(intent, screen_analysis)
-        elif intent.action == 'right_click':
-            steps = self._generate_right_click_steps(intent, screen_analysis)
+        # Check if this is a complex multi-step command
+        complexity = intent.parameters.get('complexity', 'simple')
+        
+        if complexity == 'complex' or intent.action == 'multi_step':
+            steps = self._generate_complex_workflow(intent)
         else:
-            # Unknown action - create a placeholder
-            steps = [WorkflowStep(
-                type='wait',
-                delay_ms=100,
-                data=f"Unknown action: {intent.action}"
-            )]
+            # Generate steps based on action type (simple commands)
+            if intent.action == 'click':
+                steps = self._generate_click_steps(intent, screen_analysis)
+            elif intent.action == 'type':
+                steps = self._generate_type_steps(intent)
+            elif intent.action == 'open_app':
+                steps = self._generate_open_app_steps(intent)
+            elif intent.action == 'move_mouse':
+                steps = self._generate_move_mouse_steps(intent, screen_analysis)
+            elif intent.action == 'search' or intent.action == 'search_web':
+                steps = self._generate_search_steps(intent)
+            elif intent.action == 'double_click':
+                steps = self._generate_double_click_steps(intent, screen_analysis)
+            elif intent.action == 'right_click':
+                steps = self._generate_right_click_steps(intent, screen_analysis)
+            elif intent.action == 'navigate_to_url':
+                steps = self._generate_navigate_steps(intent)
+            elif intent.action == 'login':
+                steps = self._generate_login_steps(intent)
+            elif intent.action == 'fill_form':
+                steps = self._generate_fill_form_steps(intent)
+            elif intent.action == 'generate_content':
+                steps = self._generate_content_generation_steps(intent)
+            elif intent.action == 'post_to_social':
+                steps = self._generate_social_post_steps(intent)
+            else:
+                # Unknown action - create a placeholder
+                steps = [WorkflowStep(
+                    type='wait',
+                    delay_ms=100,
+                    data=f"Unknown action: {intent.action}"
+                )]
         
         return Workflow(
             id=workflow_id,
@@ -84,6 +100,7 @@ class WorkflowGenerator:
                     'confidence': intent.confidence
                 },
                 'created_by': 'workflow_generator',
+                'complexity': complexity,
                 'screen_dimensions': {
                     'width': self.screen_width,
                     'height': self.screen_height

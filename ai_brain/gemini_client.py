@@ -131,27 +131,77 @@ class GeminiClient:
     def _build_command_prompt(self, user_input: str, context: Optional[dict]) -> str:
         """Build a prompt for command processing."""
         base_prompt = f"""You are an AI assistant that converts natural language commands into structured automation intents.
+You excel at breaking down complex multi-step tasks into actionable workflows.
 
 User command: "{user_input}"
 
-Analyze this command and extract:
-1. The primary action (click, type, open_app, move_mouse, search, etc.)
-2. The target element or application
-3. Any additional parameters (text to type, coordinates, etc.)
-4. Your confidence level (0.0 to 1.0)
+Analyze this command and determine if it's:
+1. SIMPLE: Single action (click, type, open app)
+2. COMPLEX: Multiple sequential steps (research + write + post, login + navigate + submit)
 
-Return ONLY a JSON object with this structure:
+For SIMPLE commands, return:
 {{
+    "complexity": "simple",
     "action": "the_action",
     "target": "the_target",
     "parameters": {{}},
     "confidence": 0.95
 }}
 
+For COMPLEX commands, break down into sub-tasks and return:
+{{
+    "complexity": "complex",
+    "action": "multi_step",
+    "target": "overall goal description",
+    "parameters": {{
+        "sub_tasks": [
+            {{
+                "action": "action1",
+                "target": "target1",
+                "parameters": {{}},
+                "description": "what this step does"
+            }},
+            {{
+                "action": "action2",
+                "target": "target2",
+                "parameters": {{}},
+                "description": "what this step does"
+            }}
+        ],
+        "requires_research": true/false,
+        "requires_authentication": true/false,
+        "requires_content_generation": true/false
+    }},
+    "confidence": 0.95
+}}
+
+Supported actions:
+- Simple: click, type, open_app, move_mouse, press_key, double_click, right_click, wait
+- Complex: search_web, navigate_to_url, login, fill_form, generate_content, post_to_social, send_email, multi_step
+
 Examples:
-- "Click the submit button" -> {{"action": "click", "target": "submit button", "parameters": {{}}, "confidence": 0.9}}
-- "Type hello world" -> {{"action": "type", "target": "", "parameters": {{"text": "hello world"}}, "confidence": 0.95}}
-- "Open Chrome" -> {{"action": "open_app", "target": "Chrome", "parameters": {{}}, "confidence": 0.9}}
+Simple: "Click the submit button" -> {{"complexity": "simple", "action": "click", "target": "submit button", "parameters": {{}}, "confidence": 0.9}}
+
+Complex: "Write an article about AI and post to X" -> 
+{{
+    "complexity": "complex",
+    "action": "multi_step",
+    "target": "write and post article about AI to X",
+    "parameters": {{
+        "sub_tasks": [
+            {{"action": "search_web", "target": "AI latest trends", "parameters": {{"query": "latest AI trends 2025"}}, "description": "Research AI topics"}},
+            {{"action": "generate_content", "target": "article", "parameters": {{"topic": "AI", "length": "medium", "style": "informative"}}, "description": "Write article about AI"}},
+            {{"action": "open_app", "target": "Chrome", "parameters": {{}}, "description": "Open browser"}},
+            {{"action": "navigate_to_url", "target": "https://x.com", "parameters": {{}}, "description": "Go to X"}},
+            {{"action": "login", "target": "X", "parameters": {{"service": "x.com"}}, "description": "Login to X"}},
+            {{"action": "post_to_social", "target": "X", "parameters": {{"platform": "x", "content_source": "generated"}}, "description": "Post the article"}}
+        ],
+        "requires_research": true,
+        "requires_authentication": true,
+        "requires_content_generation": true
+    }},
+    "confidence": 0.85
+}}
 """
         
         if context:
@@ -211,3 +261,81 @@ Examples:
     def clear_context(self):
         """Clear conversation history."""
         self.conversation_history = []
+    
+    def generate_content(self, topic: str, content_type: str = "article", parameters: Optional[dict] = None) -> str:
+        """
+        Generate content using Gemini.
+        
+        Args:
+            topic: The topic to write about
+            content_type: Type of content (article, post, email, etc.)
+            parameters: Additional parameters (length, style, tone, etc.)
+            
+        Returns:
+            Generated content as string
+        """
+        params = parameters or {}
+        length = params.get('length', 'medium')
+        style = params.get('style', 'informative')
+        tone = params.get('tone', 'professional')
+        
+        length_guide = {
+            'short': '1-2 paragraphs (100-200 words)',
+            'medium': '3-5 paragraphs (300-500 words)',
+            'long': '6-10 paragraphs (600-1000 words)'
+        }
+        
+        prompt = f"""Write a {length} {content_type} about: {topic}
+
+Requirements:
+- Length: {length_guide.get(length, 'medium length')}
+- Style: {style}
+- Tone: {tone}
+- Make it engaging and well-structured
+- Include relevant examples or insights
+- For social media posts, keep it concise and impactful
+
+Return ONLY the content, no additional commentary."""
+        
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            return f"Error generating content: {str(e)}"
+    
+    def research_topic(self, query: str) -> dict:
+        """
+        Research a topic using Gemini's knowledge.
+        
+        Args:
+            query: The research query
+            
+        Returns:
+            Dictionary with research findings
+        """
+        prompt = f"""Research the following topic and provide key insights: {query}
+
+Provide:
+1. Main points and key facts
+2. Current trends or developments
+3. Important considerations
+4. Relevant examples
+
+Return as JSON:
+{{
+    "summary": "brief overview",
+    "key_points": ["point1", "point2", "point3"],
+    "trends": ["trend1", "trend2"],
+    "examples": ["example1", "example2"]
+}}"""
+        
+        try:
+            response = self.model.generate_content(prompt)
+            return self._parse_intent_response(response.text)
+        except Exception as e:
+            return {
+                "summary": f"Error researching: {str(e)}",
+                "key_points": [],
+                "trends": [],
+                "examples": []
+            }
