@@ -92,12 +92,18 @@ class AutomationExecutor:
         steps_completed = 0
         error_message = None
         
+        # Extract generated content from workflow metadata if available
+        generated_content = workflow.metadata.get('generated_content', '')
+        
         try:
             # Store initial mouse position for safety monitoring
             self._initial_mouse_pos = self.input_controller.get_mouse_position()
             
             print(f"{'[DRY RUN] ' if self.dry_run else ''}Starting workflow: {workflow.id}")
             print(f"Total steps: {len(workflow.steps)}")
+            
+            if generated_content:
+                print(f"Using generated content: {generated_content[:100]}...")
             
             # Execute each step sequentially
             for i, step in enumerate(workflow.steps):
@@ -254,6 +260,21 @@ class AutomationExecutor:
         """Execute a keyboard typing step."""
         if not step.data:
             raise ValueError("Type step requires data")
+        
+        # Replace placeholder with actual generated content
+        text = step.data
+        if text == "[GENERATED_CONTENT]" and self._current_workflow:
+            generated_content = self._current_workflow.metadata.get('generated_content', '')
+            if generated_content:
+                text = generated_content
+                print(f"  Using generated content: {text[:80]}...")
+            else:
+                print(f"  Warning: No generated content found, using placeholder")
+        elif "[Content from" in text and self._current_workflow:
+            # Handle other content placeholders
+            generated_content = self._current_workflow.metadata.get('generated_content', '')
+            if generated_content:
+                text = generated_content
         
         interval = step.validation.get('interval', 0.05) if step.validation else 0.05
         

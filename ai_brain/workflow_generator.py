@@ -9,6 +9,7 @@ from PIL import Image
 
 from shared.data_models import Workflow, WorkflowStep
 from ai_brain.gemini_client import CommandIntent, ScreenAnalysis, GeminiClient
+from shared.browser_shortcuts import BrowserShortcutHelper
 
 
 class WorkflowGenerator:
@@ -25,6 +26,17 @@ class WorkflowGenerator:
         self.screen_width = 1920  # Default, will be updated from actual screen
         self.screen_height = 1080
         self._update_screen_dimensions()
+        
+        # Initialize browser shortcut helper
+        import platform
+        system = platform.system().lower()
+        if 'darwin' in system:
+            platform_name = 'mac'
+        elif 'linux' in system:
+            platform_name = 'linux'
+        else:
+            platform_name = 'windows'
+        self.browser_shortcuts = BrowserShortcutHelper(platform_name)
     
     def _update_screen_dimensions(self):
         """Update screen dimensions from actual display."""
@@ -379,30 +391,18 @@ class WorkflowGenerator:
             )]
     
     def _generate_navigate_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
-        """Generate steps for navigating to a URL."""
+        """Generate steps for navigating to a URL using keyboard shortcuts."""
         url = intent.target or intent.parameters.get('url', '')
         steps = []
         
-        # Focus address bar (Ctrl+L)
-        steps.append(WorkflowStep(
-            type='press_key',
-            data='ctrl+l',
-            delay_ms=300
-        ))
-        
-        # Type URL
-        steps.append(WorkflowStep(
-            type='type',
-            data=url,
-            delay_ms=500
-        ))
-        
-        # Press Enter
-        steps.append(WorkflowStep(
-            type='press_key',
-            data='enter',
-            delay_ms=2000  # Wait for page load
-        ))
+        # Use browser shortcuts helper
+        shortcut_steps = self.browser_shortcuts.navigate_to_url(url)
+        for step_data in shortcut_steps:
+            steps.append(WorkflowStep(
+                type=step_data['action'],
+                data=step_data.get('data'),
+                delay_ms=step_data.get('delay_ms', 100)
+            ))
         
         return steps
     
@@ -491,38 +491,64 @@ class WorkflowGenerator:
         return steps
     
     def _generate_social_post_steps(self, intent: CommandIntent) -> list[WorkflowStep]:
-        """Generate steps for posting to social media."""
+        """Generate steps for posting to social media using keyboard shortcuts."""
         platform = intent.parameters.get('platform', 'x')
         content_source = intent.parameters.get('content_source', 'generated')
         
         steps = []
         
-        # Find and click the compose/post button
-        steps.append(WorkflowStep(
-            type='capture',
-            delay_ms=500,
-            data=f"Looking for compose button on {platform}"
-        ))
-        
-        # Wait for compose dialog
-        steps.append(WorkflowStep(
-            type='wait',
-            delay_ms=1000
-        ))
-        
-        # Type content (placeholder - would use generated content)
-        steps.append(WorkflowStep(
-            type='type',
-            data=f"[Content from {content_source}]",
-            delay_ms=1000
-        ))
-        
-        # Find and click post button
-        steps.append(WorkflowStep(
-            type='capture',
-            delay_ms=500,
-            data="Looking for post/submit button"
-        ))
+        if platform.lower() in ['twitter', 'x']:
+            # Use Twitter keyboard shortcuts
+            # Open compose tweet (N key)
+            compose_steps = self.browser_shortcuts.twitter_compose_tweet()
+            for step_data in compose_steps:
+                steps.append(WorkflowStep(
+                    type=step_data['action'],
+                    data=step_data.get('data'),
+                    delay_ms=step_data.get('delay_ms', 100)
+                ))
+            
+            # Type the tweet content
+            steps.append(WorkflowStep(
+                type='type',
+                data=f"[GENERATED_CONTENT]",  # Placeholder, will be replaced with actual content
+                delay_ms=1000
+            ))
+            
+            # Post tweet (Ctrl+Enter)
+            post_steps = self.browser_shortcuts.twitter_post_tweet()
+            for step_data in post_steps:
+                steps.append(WorkflowStep(
+                    type=step_data['action'],
+                    data=step_data.get('data'),
+                    delay_ms=step_data.get('delay_ms', 100)
+                ))
+        else:
+            # Generic social media posting (accessibility fallback)
+            # Try to find compose button
+            fallback_steps = self.browser_shortcuts.accessibility_fallback_interact('compose')
+            for step_data in fallback_steps:
+                steps.append(WorkflowStep(
+                    type=step_data['action'],
+                    data=step_data.get('data'),
+                    delay_ms=step_data.get('delay_ms', 100)
+                ))
+            
+            # Type content
+            steps.append(WorkflowStep(
+                type='type',
+                data=f"[GENERATED_CONTENT]",
+                delay_ms=1000
+            ))
+            
+            # Try to find and click post button
+            post_fallback = self.browser_shortcuts.accessibility_fallback_interact('post')
+            for step_data in post_fallback:
+                steps.append(WorkflowStep(
+                    type=step_data['action'],
+                    data=step_data.get('data'),
+                    delay_ms=step_data.get('delay_ms', 100)
+                ))
         
         return steps
     

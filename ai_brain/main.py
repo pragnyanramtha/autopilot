@@ -360,6 +360,13 @@ class AIBrainApp:
             self.console.print("[yellow]Workflow cancelled[/yellow]")
             return
         
+        # Add generated content to workflow metadata
+        if hasattr(self, '_workflow_context'):
+            if 'generated_content' in self._workflow_context:
+                workflow.metadata['generated_content'] = self._workflow_context['generated_content']
+            if 'search_results' in self._workflow_context:
+                workflow.metadata['search_results'] = self._workflow_context['search_results']
+        
         # Send workflow
         self.console.print("\n→ Sending workflow to automation engine...")
         self.message_broker.send_workflow(workflow)
