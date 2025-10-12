@@ -5,6 +5,8 @@ Replaces the old WorkflowGenerator with a protocol-based approach.
 import json
 from typing import Optional
 from ai_brain.gemini_client import CommandIntent, GeminiClient
+from shared.action_registry import ActionRegistry
+from shared.action_handlers import ActionHandlers
 
 
 class ProtocolGenerator:
@@ -20,6 +22,12 @@ class ProtocolGenerator:
         """
         self.gemini_client = gemini_client
         self.config = config or {}
+        
+        # Initialize action registry to get action library
+        self.action_registry = ActionRegistry()
+        # Register all standard actions
+        action_handlers = ActionHandlers(self.action_registry)
+        action_handlers.register_all()
     
     def create_protocol(self, intent: CommandIntent, user_input: str = "") -> dict:
         """
@@ -35,8 +43,14 @@ class ProtocolGenerator:
         if not self.gemini_client:
             raise ValueError("GeminiClient is required for protocol generation")
         
+        # Get action library for AI
+        action_library = self.action_registry.get_action_library_for_ai()
+        
         # Use Gemini to generate the protocol
-        protocol = self.gemini_client.generate_protocol(user_input or intent.target)
+        protocol = self.gemini_client.generate_protocol(
+            user_input or intent.target,
+            action_library
+        )
         
         return protocol
     
@@ -55,8 +69,11 @@ class ProtocolGenerator:
         parser = JSONProtocolParser()
         
         try:
-            # Parse and validate
-            parsed = parser.parse(protocol)
+            # Parse and validate - use parse_dict for dict input
+            if isinstance(protocol, dict):
+                parsed = parser.parse_dict(protocol)
+            else:
+                parsed = parser.parse(protocol)
             
             return {
                 'valid': True,

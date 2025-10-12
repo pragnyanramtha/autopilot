@@ -230,7 +230,8 @@ class AIBrainApp:
         
         # Step 4: Send protocol
         self.console.print("\n→ Sending protocol to automation engine...")
-        protocol_id = protocol.get('metadata', {}).get('id', 'unknown')
+        # Use description as protocol_id (same as executor uses)
+        protocol_id = protocol.get('metadata', {}).get('description', 'unknown')
         self.message_broker.send_protocol(protocol)
         self.console.print(f"[green]✓ Protocol sent (ID: {protocol_id})[/green]")
         
@@ -383,7 +384,8 @@ class AIBrainApp:
         
         # Send protocol
         self.console.print("\n→ Sending protocol to automation engine...")
-        protocol_id = protocol.get('metadata', {}).get('id', 'unknown')
+        # Use description as protocol_id (same as executor uses)
+        protocol_id = protocol.get('metadata', {}).get('description', 'unknown')
         self.message_broker.send_protocol(protocol)
         self.console.print(f"[green]✓ Protocol sent (ID: {protocol_id})[/green]")
         

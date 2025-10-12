@@ -12,7 +12,12 @@ import sys
 import time
 import signal
 import json
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from shared.protocol_executor import ProtocolExecutor
 from shared.protocol_models import ProtocolSchema
@@ -37,8 +42,49 @@ class AutomationEngineApp:
         self.config = self._load_config(config_path)
         self.dry_run = dry_run
         
-        # Initialize components
+        # Initialize core components
         self.action_registry = ActionRegistry()
+        
+        # Initialize dependencies for action handlers
+        from automation_engine.input_controller import InputController
+        from automation_engine.mouse_controller import MouseController
+        from automation_engine.screen_capture import ScreenCapture
+        from shared.visual_verifier import VisualVerifier
+        
+        input_controller = InputController()
+        mouse_controller = MouseController()
+        screen_capture = ScreenCapture()
+        
+        # Initialize visual verifier with Gemini API key
+        import os
+        api_key = os.getenv('GEMINI_API_KEY')
+        visual_verifier = None
+        if api_key:
+            try:
+                visual_verifier = VisualVerifier(
+                    api_key=api_key,
+                    screen_capture=screen_capture
+                )
+                print("✓ Visual verifier initialized")
+            except Exception as e:
+                print(f"⚠ Visual verifier initialization failed: {e}")
+                print("  Vision-based actions will use fallback behavior")
+        else:
+            print("⚠ GEMINI_API_KEY not found - vision features disabled")
+        
+        # Inject dependencies into action registry
+        self.action_registry.inject_dependencies(
+            input_controller=input_controller,
+            mouse_controller=mouse_controller,
+            screen_capture=screen_capture,
+            visual_verifier=visual_verifier
+        )
+        
+        # Register all action handlers
+        from shared.action_handlers import ActionHandlers
+        action_handlers = ActionHandlers(self.action_registry)
+        action_handlers.register_all()
+        
         self.executor = ProtocolExecutor(
             action_registry=self.action_registry,
             dry_run=dry_run

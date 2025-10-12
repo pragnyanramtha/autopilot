@@ -516,6 +516,9 @@ class ProtocolExecutor:
         Returns:
             Dictionary with variables substituted
             
+        Raises:
+            ValueError: If a required variable is not found in context
+            
         Requirements:
         - 7.1: Variable substitution with {{var}} syntax
         """
@@ -529,13 +532,26 @@ class ProtocolExecutor:
                 # Pattern: {{variable_name}}
                 pattern = r'\{\{(\w+)\}\}'
                 
+                # Check if there are any variables to substitute
+                matches = re.findall(pattern, value)
+                if matches:
+                    # Check if all variables exist
+                    missing_vars = [var for var in matches if var not in variables]
+                    if missing_vars:
+                        raise ValueError(
+                            f"Missing required variables in context: {', '.join(missing_vars)}. "
+                            f"Available variables: {', '.join(variables.keys()) if variables else 'none'}. "
+                            f"Hint: Variables like 'verified_x' and 'verified_y' come from 'verify_screen' action results."
+                        )
+                    
+                    # Special case: if the entire value is a single variable, return the actual value (preserving type)
+                    if len(matches) == 1 and value == f"{{{{{matches[0]}}}}}":
+                        result[key] = variables[matches[0]]
+                        continue
+                
                 def replace_var(match):
                     var_name = match.group(1)
-                    if var_name in variables:
-                        return str(variables[var_name])
-                    else:
-                        # Keep original if variable not found
-                        return match.group(0)
+                    return str(variables[var_name])
                 
                 result[key] = re.sub(pattern, replace_var, value)
                 
