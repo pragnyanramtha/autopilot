@@ -116,21 +116,89 @@ Demonstrates advanced macro composition:
 
 ---
 
+### 5. File Management Workflow (`file_management_workflow.json`)
+
+**Complexity:** Medium  
+**Uses Vision:** No  
+**Duration:** ~25 seconds
+
+Demonstrates file system operations:
+- Creating folders
+- Opening and editing files
+- Saving files with specific paths
+- Using macros for common file operations
+
+**What it does:**
+1. Creates a new folder in Documents
+2. Opens Notepad
+3. Types document content
+4. Saves file to the new folder
+5. Edits the content
+6. Saves and closes using a macro
+7. Reopens the file to verify changes
+
+**Key Features:**
+- `create_folder` action for directory creation
+- `save_and_close` macro for common file operations
+- File path specification in save dialog
+- `select_all` for text replacement
+- `open_file` to reopen saved files
+
+---
+
+### 6. Multi-Window Workflow (`multi_window_workflow.json`)
+
+**Complexity:** Complex  
+**Uses Vision:** Yes  
+**Duration:** ~40 seconds
+
+Demonstrates working with multiple applications simultaneously:
+- Window switching between applications
+- Copying data from browser to text editor
+- Visual verification across window switches
+- Complex multi-step workflows
+
+**What it does:**
+1. Opens Chrome and navigates to GitHub trending
+2. Uses AI vision to find first trending repository
+3. Copies repository name
+4. Opens Notepad in parallel
+5. Pastes first repository name
+6. Switches back to Chrome
+7. Finds and copies second repository
+8. Switches to Notepad and pastes
+9. Closes both applications
+
+**Key Features:**
+- `switch_window` action for Alt+Tab navigation
+- Multiple `verify_screen` actions across window switches
+- Clipboard operations between applications
+- `copy_from_browser` and `paste_to_notepad` macros
+- Coordinate verification in different windows
+
+---
+
 ## Protocol Features Demonstrated
 
 ### Actions Used Across Examples
 
-| Action | Simple Search | Twitter Post | Visual Verification | Complex Macro |
-|--------|--------------|--------------|---------------------|---------------|
-| `open_app` | ✓ | ✓ | ✓ | - |
-| `press_key` | ✓ | ✓ | ✓ | ✓ |
-| `shortcut` | ✓ | ✓ | ✓ | ✓ |
-| `type` | ✓ | ✓ | ✓ | ✓ |
-| `mouse_move` | - | ✓ | ✓ | - |
-| `mouse_click` | - | ✓ | ✓ | - |
-| `verify_screen` | - | ✓ | ✓ | - |
-| `macro` | ✓ | - | ✓ | ✓ |
-| `delay` | - | - | - | ✓ |
+| Action | Simple Search | Twitter Post | Visual Verification | Complex Macro | File Management | Multi-Window |
+|--------|--------------|--------------|---------------------|---------------|-----------------|--------------|
+| `open_app` | ✓ | ✓ | ✓ | - | ✓ | ✓ |
+| `press_key` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `shortcut` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `type` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `mouse_move` | - | ✓ | ✓ | - | - | ✓ |
+| `mouse_click` | - | ✓ | ✓ | - | - | ✓ |
+| `verify_screen` | - | ✓ | ✓ | - | - | ✓ |
+| `macro` | ✓ | - | ✓ | ✓ | ✓ | ✓ |
+| `delay` | - | - | - | ✓ | ✓ | - |
+| `create_folder` | - | - | - | - | ✓ | - |
+| `open_file` | - | - | - | - | ✓ | - |
+| `select_all` | - | - | - | - | ✓ | ✓ |
+| `switch_window` | - | - | - | - | - | ✓ |
+| `copy` | - | - | - | - | - | ✓ |
+| `paste` | - | - | - | - | - | ✓ |
 
 ### Macro Features
 

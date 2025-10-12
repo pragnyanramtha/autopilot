@@ -1,0 +1,217 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Multi-window workflow: Work with multiple applications simultaneously",
+    "complexity": "complex",
+    "uses_vision": true,
+    "estimated_duration_seconds": 40
+  },
+  "macros": {
+    "copy_from_browser": [
+      {"action": "shortcut", "params": {"keys": ["ctrl", "a"]}, "wait_after_ms": 100},
+      {"action": "shortcut", "params": {"keys": ["ctrl", "c"]}, "wait_after_ms": 200}
+    ],
+    "paste_to_notepad": [
+      {"action": "shortcut", "params": {"keys": ["ctrl", "v"]}, "wait_after_ms": 200}
+    ]
+  },
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "chrome"},
+      "wait_after_ms": 3000,
+      "description": "Open Chrome browser"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Chrome should be open and ready",
+        "expected": "Chrome window with address bar visible"
+      },
+      "wait_after_ms": 500,
+      "description": "Verify Chrome opened successfully"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "l"]},
+      "wait_after_ms": 200,
+      "description": "Focus address bar"
+    },
+    {
+      "action": "type",
+      "params": {"text": "github.com/trending"},
+      "wait_after_ms": 100,
+      "description": "Type GitHub trending URL"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 5000,
+      "description": "Navigate to GitHub trending"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for first trending repository name",
+        "expected": "Trending repositories list visible"
+      },
+      "wait_after_ms": 1000,
+      "description": "Verify page loaded"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true
+      },
+      "wait_after_ms": 200,
+      "description": "Move to first repository"
+    },
+    {
+      "action": "mouse_triple_click",
+      "params": {},
+      "wait_after_ms": 200,
+      "description": "Select repository name"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "c"]},
+      "wait_after_ms": 200,
+      "description": "Copy repository name"
+    },
+    {
+      "action": "open_app",
+      "params": {"app_name": "notepad"},
+      "wait_after_ms": 2000,
+      "description": "Open Notepad in parallel"
+    },
+    {
+      "action": "type",
+      "params": {"text": "Trending GitHub Repositories\n\n"},
+      "wait_after_ms": 200,
+      "description": "Add header"
+    },
+    {
+      "action": "type",
+      "params": {"text": "1. "},
+      "wait_after_ms": 100,
+      "description": "Add list number"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "v"]},
+      "wait_after_ms": 200,
+      "description": "Paste first repository name"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100,
+      "description": "New line"
+    },
+    {
+      "action": "switch_window",
+      "params": {},
+      "wait_after_ms": 1000,
+      "description": "Switch back to Chrome"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for second trending repository",
+        "expected": "Second repository in the list"
+      },
+      "wait_after_ms": 500,
+      "description": "Find second repository"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true
+      },
+      "wait_after_ms": 200,
+      "description": "Move to second repository"
+    },
+    {
+      "action": "mouse_triple_click",
+      "params": {},
+      "wait_after_ms": 200,
+      "description": "Select second repository name"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "c"]},
+      "wait_after_ms": 200,
+      "description": "Copy second repository name"
+    },
+    {
+      "action": "switch_window",
+      "params": {},
+      "wait_after_ms": 1000,
+      "description": "Switch back to Notepad"
+    },
+    {
+      "action": "type",
+      "params": {"text": "2. "},
+      "wait_after_ms": 100,
+      "description": "Add list number"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "v"]},
+      "wait_after_ms": 200,
+      "description": "Paste second repository name"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100,
+      "description": "New line"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100,
+      "description": "Add blank line"
+    },
+    {
+      "action": "type",
+      "params": {"text": "Collected on: "},
+      "wait_after_ms": 100,
+      "description": "Add timestamp label"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["alt", "f4"]},
+      "wait_after_ms": 500,
+      "description": "Close Notepad (don't save)"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "tab"},
+      "wait_after_ms": 200,
+      "description": "Navigate to Don't Save button"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 500,
+      "description": "Confirm don't save"
+    },
+    {
+      "action": "switch_window",
+      "params": {},
+      "wait_after_ms": 500,
+      "description": "Switch back to Chrome"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["alt", "f4"]},
+      "wait_after_ms": 500,
+      "description": "Close Chrome"
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "File management workflow: Create folder, open file, edit and save",
+    "complexity": "medium",
+    "uses_vision": false,
+    "estimated_duration_seconds": 25
+  },
+  "macros": {
+    "save_and_close": [
+      {"action": "shortcut", "params": {"keys": ["ctrl", "s"]}, "wait_after_ms": 500},
+      {"action": "shortcut", "params": {"keys": ["alt", "f4"]}, "wait_after_ms": 500}
+    ]
+  },
+  "actions": [
+    {
+      "action": "create_folder",
+      "params": {"path": "C:\\Users\\Documents\\TestFolder"},
+      "wait_after_ms": 500,
+      "description": "Create a new folder for our files"
+    },
+    {
+      "action": "open_app",
+      "params": {"app_name": "notepad"},
+      "wait_after_ms": 2000,
+      "description": "Open Notepad"
+    },
+    {
+      "action": "type",
+      "params": {
+        "text": "This is a test document.\n\nCreated by automation workflow.\n\nContents:\n- Item 1\n- Item 2\n- Item 3"
+      },
+      "wait_after_ms": 500,
+      "description": "Type document content"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "s"]},
+      "wait_after_ms": 1000,
+      "description": "Open Save dialog"
+    },
+    {
+      "action": "type",
+      "params": {"text": "C:\\Users\\Documents\\TestFolder\\test_document.txt"},
+      "wait_after_ms": 500,
+      "description": "Type file path"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 1000,
+      "description": "Confirm save"
+    },
+    {
+      "action": "select_all",
+      "params": {},
+      "wait_after_ms": 100,
+      "description": "Select all text"
+    },
+    {
+      "action": "type",
+      "params": {
+        "text": "Updated document content.\n\nThis replaces the previous text.\n\nNew information added."
+      },
+      "wait_after_ms": 500,
+      "description": "Replace with new content"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "save_and_close"},
+      "description": "Save and close using macro"
+    },
+    {
+      "action": "delay",
+      "params": {"ms": 1000},
+      "description": "Wait for file to close"
+    },
+    {
+      "action": "open_file",
+      "params": {"path": "C:\\Users\\Documents\\TestFolder\\test_document.txt"},
+      "wait_after_ms": 2000,
+      "description": "Reopen the file to verify changes"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["alt", "f4"]},
+      "wait_after_ms": 500,
+      "description": "Close Notepad"
+    }
+  ]
+}
