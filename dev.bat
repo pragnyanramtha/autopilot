@@ -10,7 +10,8 @@ REM Edit these settings as needed
 REM ========================================
 
 REM AI Model Selection
-REM Options: gemini-2.0-flash-exp, gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-flash, gemini-1.5-pro
+REM Options: gemini-2.0-flash-exp (ultra-fast), gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-flash, gemini-1.5-pro
+SET DEV_ULTRA_FAST_MODEL=true
 SET DEV_SIMPLE_MODEL=gemini-2.5-flash
 SET DEV_COMPLEX_MODEL=gemini-2.5-pro
 
@@ -53,6 +54,7 @@ echo   DEVELOPER MODE
 echo ========================================
 echo.
 echo [DEV] Configuration:
+echo   Ultra-Fast Mode: %DEV_ULTRA_FAST_MODEL%
 echo   Simple Model: %DEV_SIMPLE_MODEL%
 echo   Complex Model: %DEV_COMPLEX_MODEL%
 echo   Temperature: %DEV_TEMPERATURE%
@@ -102,6 +104,7 @@ if errorlevel 1 (
 REM Set environment variables for dev mode
 SET DEV_MODE=1
 SET CONFIG_FILE=config.dev.json
+SET USE_ULTRA_FAST_MODEL=%DEV_ULTRA_FAST_MODEL%
 
 REM Run with dev config
 python run.py

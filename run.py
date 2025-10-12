@@ -144,15 +144,20 @@ class UnifiedAssistant:
         try:
             # Initialize AI Brain
             self.print_chat_message("system", "Initializing AI Brain...")
-            self.gemini_client = GeminiClient(api_key=api_key)
             
-            # Load config
+            # Load config first to check ultra-fast mode
             import json
             try:
                 with open('config.json', 'r') as f:
                     config = json.load(f)
             except:
                 config = {}
+            
+            # Check for ultra-fast mode from config or environment
+            use_ultra_fast = config.get('gemini', {}).get('use_ultra_fast', False)
+            use_ultra_fast = use_ultra_fast or os.getenv('USE_ULTRA_FAST_MODEL', 'false').lower() == 'true'
+            
+            self.gemini_client = GeminiClient(api_key=api_key, use_ultra_fast=use_ultra_fast)
             
             self.workflow_generator = WorkflowGenerator(
                 gemini_client=self.gemini_client,

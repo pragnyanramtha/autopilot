@@ -1,0 +1,87 @@
+lets say the prompt is to search about elon musk and jeff bezos 
+
+then it should do this 
+{
+    "functions":{
+        // the ai can create its own functions and add them too 
+        "open_new_tab_chrome":{
+            inputs_required: {}
+            description: "this function is used to open a new tab in chrome"
+            execution:{
+                "ctrl_shortcuts": "ctrl + t"
+            }
+        }
+    }
+    "execution":{
+        // this is the sequence in which the ai will execute the functions
+        "sequence":[
+            "open_app":{"chrome"},
+            "tap":{
+                ctrl_shortcuts: "ctrl + l"
+            }
+            "type":{"elon_musk"},
+            "tap":{"enter_key"},           
+            "delay": 5, // delay for 5 sec
+            "tap": {
+                ctrl_shortcuts: "ctrl + t"
+            },
+            "type":{"jeff_bezos"},
+            "tap":{"enter_key"}
+        ]
+    }
+   
+}
+
+
+// this is a map of all the existing functions that have to be sent to the ai along with the prompt 
+{
+    "functions":{
+        "open_app":{
+            // a second level function given by us 
+            "inputs_required": {"app_name":str}
+            "description": "this function is used to open the app specified"
+            "execution":{
+                "tap": "win_key"
+                "delay": 0.5
+                "type": "{app_name}"
+                "tap": "enter_key"
+            }
+        // primary functions 
+        "tap":{
+            "inputs_required": {"key":str}
+            "description": "this function is used to tap the specified key"
+            "execution":{
+                "tap": "{key}"
+            }
+        }
+        "type":{
+            "inputs_required": {"text":str}
+            "description": "this function is used to type the specified text"
+            "execution":{
+                "type": "{text}"
+            }
+        }
+        "delay":{
+            "inputs_required": {"time":float}
+            "description": "this function is used to delay the execution for the specified time"
+            "execution":{
+                "delay": "{time}"
+            }
+        "ctrl_shortcuts":{
+            //lets say what ever input it takes it will execute the shortcut ,with ctrl + input 
+            "inputs_required": {"shortcut":str}
+            "description": "this function is used to execute the specified shortcut"
+            "execution":{
+                "shortcut": "{shortcut}"
+            }
+            
+        }
+        "tap_simultanious":{
+            // lets say this is used to make smth like a shortcut but with other keys (prehaps win_key + L or Ctrl+alt+del) 
+
+            
+        }
+            // and many primary fuctions that you need to create yourself 
+        }
+    }
+}

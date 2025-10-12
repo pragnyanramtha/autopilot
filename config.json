@@ -1,6 +1,8 @@
 {
   "gemini": {
     "note": "API key is now stored securely in .env file (not here!)",
+    "use_ultra_fast": false,
+    "ultra_fast_model": "gemini-2.0-flash-exp",
     "simple_model": "gemini-2.5-flash",
     "complex_model": "gemini-2.5-pro",
     "temperature": 0.7
