@@ -34,8 +34,9 @@ console = Console()
 # Import components
 try:
     from ai_brain.gemini_client import GeminiClient
-    from ai_brain.workflow_generator import WorkflowGenerator
-    from automation_engine.executor import AutomationExecutor
+    from ai_brain.protocol_generator import ProtocolGenerator
+    from shared.protocol_executor import ProtocolExecutor
+    from shared.action_registry import ActionRegistry
     from shared.communication import MessageBroker
     from shared.data_models import ExecutionResult
 except ImportError as e:
@@ -61,7 +62,7 @@ class UnifiedAssistant:
         
         # Components
         self.gemini_client = None
-        self.workflow_generator = None
+        self.protocol_generator = None
         self.executor = None
         self.message_broker = None
         
@@ -159,14 +160,18 @@ class UnifiedAssistant:
             
             self.gemini_client = GeminiClient(api_key=api_key, use_ultra_fast=use_ultra_fast)
             
-            self.workflow_generator = WorkflowGenerator(
+            self.protocol_generator = ProtocolGenerator(
                 gemini_client=self.gemini_client,
                 config=config
             )
             
             # Initialize Automation Engine
             self.print_chat_message("system", "Initializing Automation Engine...")
-            self.executor = AutomationExecutor(dry_run=False)
+            self.action_registry = ActionRegistry()
+            self.executor = ProtocolExecutor(
+                action_registry=self.action_registry,
+                dry_run=False
+            )
             
             # Initialize Communication
             self.print_chat_message("system", "Initializing Communication...")
@@ -278,7 +283,7 @@ class UnifiedAssistant:
             if intent.parameters.get('open_first_result'):
                 self.print_chat_message("info", "Will open first search result")
             
-            # Check if we need to generate content BEFORE creating workflow
+            # Check if we need to generate content BEFORE creating protocol
             requires_content = intent.parameters.get('requires_content_generation', False)
             generated_content = None
             
@@ -292,28 +297,30 @@ class UnifiedAssistant:
                 )
                 self.print_chat_message("assistant", f"📝 Generated:\n{generated_content}")
             
-            # Generate workflow
-            self.print_chat_message("system", "⚙️ Generating workflow...")
+            # Generate protocol
+            self.print_chat_message("system", "⚙️ Generating protocol...")
             
-            # Handle complex workflows
+            # Handle complex protocols
             complexity = intent.parameters.get('complexity', 'simple')
             if complexity == 'complex':
                 self._handle_complex(intent, user_input, generated_content)
             else:
-                workflow = self.workflow_generator.create_workflow(intent)
+                protocol = self.protocol_generator.create_protocol(intent, user_input)
                 if generated_content:
-                    workflow.metadata['generated_content'] = generated_content
-                self._execute_workflow(workflow)
+                    if 'metadata' not in protocol:
+                        protocol['metadata'] = {}
+                    protocol['metadata']['generated_content'] = generated_content
+                self._execute_protocol(protocol)
             
         except Exception as e:
             self.print_chat_message("error", f"Error: {e}")
     
     def _handle_complex(self, intent, user_input, generated_content=None):
-        """Handle complex workflow with content generation."""
+        """Handle complex protocol with content generation."""
         # Check requirements
         requires_research = intent.parameters.get('requires_research', False)
         
-        # Research if needed (for complex workflows that need it)
+        # Research if needed (for complex protocols that need it)
         if requires_research:
             self.print_chat_message("system", "🔍 Researching...")
             query = self._extract_query(intent, user_input)
@@ -321,22 +328,25 @@ class UnifiedAssistant:
             self.print_chat_message("success", "Research complete!")
             intent.parameters['search_results'] = results
         
-        # Generate workflow
-        workflow = self.workflow_generator.create_workflow(intent)
+        # Generate protocol
+        protocol = self.protocol_generator.create_protocol(intent, user_input)
         
-        # CRITICAL: Add generated content to workflow metadata BEFORE execution
+        # CRITICAL: Add generated content to protocol metadata BEFORE execution
         if generated_content:
-            workflow.metadata['generated_content'] = generated_content
-            self.print_chat_message("info", f"✓ Content added to workflow ({len(generated_content)} chars)")
+            if 'metadata' not in protocol:
+                protocol['metadata'] = {}
+            protocol['metadata']['generated_content'] = generated_content
+            self.print_chat_message("info", f"✓ Content added to protocol ({len(generated_content)} chars)")
         
-        self._execute_workflow(workflow)
+        self._execute_protocol(protocol)
     
-    def _execute_workflow(self, workflow):
-        """Execute a workflow."""
-        self.print_chat_message("system", f"🚀 Executing {len(workflow.steps)} steps...")
+    def _execute_protocol(self, protocol):
+        """Execute a protocol."""
+        actions = protocol.get('actions', [])
+        self.print_chat_message("system", f"🚀 Executing {len(actions)} actions...")
         
         # Execute directly (no separate process)
-        result = self.executor.execute_workflow(workflow)
+        result = self.executor.execute_protocol(protocol)
         
         # Show result
         if result.status == 'success':

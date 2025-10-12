@@ -1,0 +1,71 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Simple search workflow - Search for Elon Musk and Jeff Bezos",
+    "complexity": "simple",
+    "uses_vision": false,
+    "estimated_duration_seconds": 15
+  },
+  "macros": {
+    "search_in_browser": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "l"]},
+        "wait_after_ms": 200,
+        "description": "Focus address bar"
+      },
+      {
+        "action": "type",
+        "params": {"text": "{{query}}"},
+        "wait_after_ms": 100,
+        "description": "Type search query"
+      },
+      {
+        "action": "press_key",
+        "params": {"key": "enter"},
+        "wait_after_ms": 5000,
+        "description": "Submit search"
+      }
+    ],
+    "new_tab": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "t"]},
+        "wait_after_ms": 1000,
+        "description": "Open new browser tab"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "chrome"},
+      "wait_after_ms": 2000,
+      "description": "Launch Chrome browser"
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "search_in_browser",
+        "vars": {"query": "elon musk"}
+      },
+      "wait_after_ms": 0,
+      "description": "Search for Elon Musk"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "new_tab"},
+      "wait_after_ms": 0,
+      "description": "Open new tab for second search"
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "search_in_browser",
+        "vars": {"query": "jeff bezos"}
+      },
+      "wait_after_ms": 0,
+      "description": "Search for Jeff Bezos"
+    }
+  ]
+}

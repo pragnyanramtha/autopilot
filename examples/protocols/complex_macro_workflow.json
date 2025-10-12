@@ -1,0 +1,249 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Complex workflow with macros - Multi-window file management and text editing",
+    "complexity": "complex",
+    "uses_vision": false,
+    "estimated_duration_seconds": 45
+  },
+  "macros": {
+    "open_notepad": [
+      {
+        "action": "press_key",
+        "params": {"key": "win"},
+        "wait_after_ms": 500,
+        "description": "Open Start menu"
+      },
+      {
+        "action": "type",
+        "params": {"text": "notepad"},
+        "wait_after_ms": 300,
+        "description": "Search for Notepad"
+      },
+      {
+        "action": "press_key",
+        "params": {"key": "enter"},
+        "wait_after_ms": 1500,
+        "description": "Launch Notepad"
+      }
+    ],
+    "save_file_as": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "shift", "s"]},
+        "wait_after_ms": 1000,
+        "description": "Open Save As dialog"
+      },
+      {
+        "action": "type",
+        "params": {"text": "{{filename}}"},
+        "wait_after_ms": 300,
+        "description": "Type filename"
+      },
+      {
+        "action": "press_key",
+        "params": {"key": "enter"},
+        "wait_after_ms": 1000,
+        "description": "Confirm save"
+      }
+    ],
+    "create_text_document": [
+      {
+        "action": "type",
+        "params": {"text": "{{content}}"},
+        "wait_after_ms": 500,
+        "description": "Type document content"
+      },
+      {
+        "action": "macro",
+        "params": {
+          "name": "save_file_as",
+          "vars": {"filename": "{{filename}}"}
+        },
+        "wait_after_ms": 0,
+        "description": "Save document with filename"
+      }
+    ],
+    "switch_to_next_window": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["alt", "tab"]},
+        "wait_after_ms": 500,
+        "description": "Switch to next window"
+      }
+    ],
+    "select_all_and_copy": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "a"]},
+        "wait_after_ms": 200,
+        "description": "Select all text"
+      },
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "c"]},
+        "wait_after_ms": 300,
+        "description": "Copy to clipboard"
+      }
+    ],
+    "open_file_explorer": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["win", "e"]},
+        "wait_after_ms": 1500,
+        "description": "Open File Explorer"
+      }
+    ],
+    "navigate_to_documents": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["alt", "d"]},
+        "wait_after_ms": 200,
+        "description": "Focus address bar in Explorer"
+      },
+      {
+        "action": "type",
+        "params": {"text": "%USERPROFILE%\\Documents"},
+        "wait_after_ms": 300,
+        "description": "Type Documents path"
+      },
+      {
+        "action": "press_key",
+        "params": {"key": "enter"},
+        "wait_after_ms": 1000,
+        "description": "Navigate to Documents"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "action": "macro",
+      "params": {"name": "open_notepad"},
+      "wait_after_ms": 0,
+      "description": "Open first Notepad instance"
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "create_text_document",
+        "vars": {
+          "content": "Meeting Notes - Q1 Planning\n\nDate: January 15, 2025\n\nAttendees:\n- Alice Johnson\n- Bob Smith\n- Carol Williams\n\nAgenda:\n1. Review Q4 results\n2. Set Q1 goals\n3. Resource allocation\n4. Timeline discussion\n\nAction Items:\n- Alice: Prepare Q4 report by Jan 20\n- Bob: Draft Q1 roadmap by Jan 22\n- Carol: Schedule follow-up meeting",
+          "filename": "meeting_notes_q1.txt"
+        }
+      },
+      "wait_after_ms": 0,
+      "description": "Create and save first document"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "open_notepad"},
+      "wait_after_ms": 0,
+      "description": "Open second Notepad instance"
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "create_text_document",
+        "vars": {
+          "content": "Project Tasks - Website Redesign\n\nPhase 1: Planning (Week 1-2)\n- Gather requirements\n- Create wireframes\n- Design mockups\n- Get stakeholder approval\n\nPhase 2: Development (Week 3-6)\n- Set up development environment\n- Implement homepage\n- Implement product pages\n- Implement contact form\n- Add responsive design\n\nPhase 3: Testing (Week 7-8)\n- Cross-browser testing\n- Mobile testing\n- Performance optimization\n- Security audit\n\nPhase 4: Launch (Week 9)\n- Deploy to staging\n- Final review\n- Deploy to production\n- Monitor metrics",
+          "filename": "project_tasks_website.txt"
+        }
+      },
+      "wait_after_ms": 0,
+      "description": "Create and save second document"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "open_notepad"},
+      "wait_after_ms": 0,
+      "description": "Open third Notepad instance for summary"
+    },
+    {
+      "action": "type",
+      "params": {"text": "Combined Summary\n\n=== MEETING NOTES ===\n\n"},
+      "wait_after_ms": 300,
+      "description": "Start summary document"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "switch_to_next_window"},
+      "wait_after_ms": 0,
+      "description": "Switch to meeting notes window"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "select_all_and_copy"},
+      "wait_after_ms": 0,
+      "description": "Copy meeting notes"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "switch_to_next_window"},
+      "wait_after_ms": 0,
+      "description": "Switch back to summary window"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "v"]},
+      "wait_after_ms": 500,
+      "description": "Paste meeting notes"
+    },
+    {
+      "action": "type",
+      "params": {"text": "\n\n=== PROJECT TASKS ===\n\n"},
+      "wait_after_ms": 300,
+      "description": "Add project tasks section header"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "switch_to_next_window"},
+      "wait_after_ms": 0,
+      "description": "Switch to project tasks window"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "select_all_and_copy"},
+      "wait_after_ms": 0,
+      "description": "Copy project tasks"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "switch_to_next_window"},
+      "wait_after_ms": 0,
+      "description": "Switch back to summary window"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "v"]},
+      "wait_after_ms": 500,
+      "description": "Paste project tasks"
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "save_file_as",
+        "vars": {"filename": "combined_summary.txt"}
+      },
+      "wait_after_ms": 0,
+      "description": "Save combined summary"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "open_file_explorer"},
+      "wait_after_ms": 0,
+      "description": "Open File Explorer to view saved files"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "navigate_to_documents"},
+      "wait_after_ms": 0,
+      "description": "Navigate to Documents folder"
+    },
+    {
+      "action": "delay",
+      "params": {"ms": 2000},
+      "wait_after_ms": 0,
+      "description": "Wait to view the created files"
+    }
+  ]
+}

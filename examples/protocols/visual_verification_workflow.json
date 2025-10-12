@@ -1,0 +1,178 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Workflow with visual verification - GitHub login with adaptive navigation",
+    "complexity": "medium",
+    "uses_vision": true,
+    "estimated_duration_seconds": 25
+  },
+  "macros": {
+    "focus_address_bar": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "l"]},
+        "wait_after_ms": 200,
+        "description": "Focus browser address bar"
+      }
+    ]
+  },
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "chrome"},
+      "wait_after_ms": 2000,
+      "description": "Launch Chrome browser"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Chrome should be open with visible window",
+        "expected": "Chrome window with address bar visible",
+        "confidence_threshold": 0.8
+      },
+      "wait_after_ms": 500,
+      "description": "Verify Chrome opened successfully"
+    },
+    {
+      "action": "macro",
+      "params": {"name": "focus_address_bar"},
+      "wait_after_ms": 0,
+      "description": "Focus the address bar"
+    },
+    {
+      "action": "type",
+      "params": {
+        "text": "github.com",
+        "interval_ms": 50
+      },
+      "wait_after_ms": 100,
+      "description": "Type GitHub URL"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 3000,
+      "description": "Navigate to GitHub"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for GitHub login/sign-in button on homepage",
+        "expected": "GitHub homepage with 'Sign in' button visible (usually top right)",
+        "confidence_threshold": 0.85
+      },
+      "wait_after_ms": 500,
+      "description": "Verify GitHub loaded and find Sign in button"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true,
+        "speed": 1.0
+      },
+      "wait_after_ms": 200,
+      "description": "Move to Sign in button (coordinates from AI verification)"
+    },
+    {
+      "action": "mouse_click",
+      "params": {
+        "button": "left",
+        "clicks": 1
+      },
+      "wait_after_ms": 2000,
+      "description": "Click Sign in button"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Should be on GitHub login page with username/email input field",
+        "expected": "Login form visible with username or email input field focused or visible",
+        "confidence_threshold": 0.9
+      },
+      "wait_after_ms": 500,
+      "description": "Verify login page loaded correctly"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true
+      },
+      "wait_after_ms": 200,
+      "description": "Move to username/email field"
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left", "clicks": 1},
+      "wait_after_ms": 300,
+      "description": "Click to focus input field"
+    },
+    {
+      "action": "type",
+      "params": {"text": "demo_user@example.com"},
+      "wait_after_ms": 500,
+      "description": "Type demo email (placeholder)"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for password input field after entering email",
+        "expected": "Password field visible and ready for input",
+        "confidence_threshold": 0.85
+      },
+      "wait_after_ms": 300,
+      "description": "Find password field"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true
+      },
+      "wait_after_ms": 200,
+      "description": "Move to password field"
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left", "clicks": 1},
+      "wait_after_ms": 300,
+      "description": "Click password field"
+    },
+    {
+      "action": "type",
+      "params": {"text": "demo_password123"},
+      "wait_after_ms": 500,
+      "description": "Type demo password (placeholder)"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for Sign in submit button",
+        "expected": "Sign in button visible and enabled (usually green button)",
+        "confidence_threshold": 0.85
+      },
+      "wait_after_ms": 300,
+      "description": "Find Sign in submit button"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true
+      },
+      "wait_after_ms": 200,
+      "description": "Move to Sign in button"
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left", "clicks": 1},
+      "wait_after_ms": 3000,
+      "description": "Click Sign in button (note: will fail with demo credentials)"
+    }
+  ]
+}

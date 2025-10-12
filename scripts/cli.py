@@ -269,7 +269,7 @@ class AutomationCLI:
                 "Automation Engine",
                 "[green]● Running[/green]",
                 str(self.automation_engine_process.pid),
-                "Waiting for workflows"
+                "Waiting for protocols"
             )
         else:
             table.add_row(
@@ -311,27 +311,27 @@ class AutomationCLI:
         table.add_column("Status", style="white")
         table.add_column("Messages", style="yellow", justify="right")
         
-        # Check workflow queue
-        workflow_file = Path("shared/workflow_queue.json")
-        if workflow_file.exists():
+        # Check protocol queue
+        protocol_file = Path("shared/protocol_queue.json")
+        if protocol_file.exists():
             try:
-                with open(workflow_file, 'r') as f:
+                with open(protocol_file, 'r') as f:
                     data = json.load(f)
-                    count = len(data.get("workflows", []))
+                    count = len(data.get("protocols", []))
                 table.add_row(
-                    "Workflow Queue",
+                    "Protocol Queue",
                     "[green]✓ Ready[/green]",
                     str(count)
                 )
             except:
                 table.add_row(
-                    "Workflow Queue",
+                    "Protocol Queue",
                     "[yellow]⚠ Error reading[/yellow]",
                     "-"
                 )
         else:
             table.add_row(
-                "Workflow Queue",
+                "Protocol Queue",
                 "[dim]○ Not created[/dim]",
                 "0"
             )
@@ -371,8 +371,8 @@ class AutomationCLI:
 [bold]Overview:[/bold]
 The AI Automation Assistant consists of two main components:
 
-1. [cyan]AI Brain[/cyan] - Processes natural language commands and generates workflows
-2. [cyan]Automation Engine[/cyan] - Executes workflows by controlling mouse/keyboard
+1. [cyan]AI Brain[/cyan] - Processes natural language commands and generates protocols
+2. [cyan]Automation Engine[/cyan] - Executes protocols by controlling mouse/keyboard
 
 [bold]Getting Started:[/bold]
 
@@ -391,7 +391,7 @@ The AI Automation Assistant consists of two main components:
 
 [bold]Safety Features:[/bold]
 • Dry-run mode for testing without actual execution
-• Confirmation required before executing workflows
+• Confirmation required before executing protocols
 • Emergency stop with Ctrl+C
 • User interrupt detection
 

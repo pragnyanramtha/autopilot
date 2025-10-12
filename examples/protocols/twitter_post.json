@@ -1,0 +1,104 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Twitter/X post with content generation - Post about winter",
+    "complexity": "medium",
+    "uses_vision": true,
+    "estimated_duration_seconds": 30,
+    "generated_content": "Winter is here! ❄️ The crisp air, cozy sweaters, and hot cocoa make this season magical. There's something special about watching snowflakes fall while wrapped in a warm blanket. What's your favorite winter activity? #Winter #CozyVibes #WinterWonderland"
+  },
+  "macros": {},
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "chrome"},
+      "wait_after_ms": 2000,
+      "description": "Launch Chrome browser"
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "l"]},
+      "wait_after_ms": 200,
+      "description": "Focus address bar"
+    },
+    {
+      "action": "type",
+      "params": {"text": "x.com"},
+      "wait_after_ms": 100,
+      "description": "Type Twitter/X URL"
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 3000,
+      "description": "Navigate to Twitter/X"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for 'Post' or 'What's happening' input field on Twitter/X homepage",
+        "expected": "Twitter/X compose area visible and ready for input"
+      },
+      "wait_after_ms": 500,
+      "description": "Verify Twitter/X loaded and compose area is visible"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true
+      },
+      "wait_after_ms": 200,
+      "description": "Move to compose area (coordinates from verification)"
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left", "clicks": 1},
+      "wait_after_ms": 500,
+      "description": "Click to focus compose area"
+    },
+    {
+      "action": "type",
+      "params": {
+        "text": "Winter is here! ❄️ The crisp air, cozy sweaters, and hot cocoa make this season magical. There's something special about watching snowflakes fall while wrapped in a warm blanket. What's your favorite winter activity? #Winter #CozyVibes #WinterWonderland"
+      },
+      "wait_after_ms": 1000,
+      "description": "Type the complete post content with emojis and hashtags"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for Post/Tweet button after typing content",
+        "expected": "Post button visible and enabled (usually blue button in bottom right)"
+      },
+      "wait_after_ms": 500,
+      "description": "Verify Post button is ready"
+    },
+    {
+      "action": "mouse_move",
+      "params": {
+        "x": "{{verified_x}}",
+        "y": "{{verified_y}}",
+        "smooth": true
+      },
+      "wait_after_ms": 200,
+      "description": "Move to Post button"
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left", "clicks": 1},
+      "wait_after_ms": 2000,
+      "description": "Click the Post button to publish"
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Checking if post was successfully published",
+        "expected": "Post appears in timeline or success confirmation visible"
+      },
+      "wait_after_ms": 1000,
+      "description": "Verify post was published successfully"
+    }
+  ]
+}

@@ -13,6 +13,52 @@
     "enable_safety_monitor": true,
     "interrupt_on_mouse_move": true
   },
+  "protocol": {
+    "validation": {
+      "strict_mode": false,
+      "warning_level": "all",
+      "note": "warning_level options: 'none', 'errors_only', 'all'"
+    },
+    "visual_verification": {
+      "enabled": true,
+      "timeout_seconds": 10,
+      "confidence_threshold": 0.7,
+      "primary_model": "gemini-2.0-flash-exp",
+      "fallback_model": "gemini-1.5-flash",
+      "note": "confidence_threshold: 0.0-1.0, higher = more strict"
+    },
+    "mouse_movement": {
+      "smooth": true,
+      "curve_type": "bezier",
+      "curve_intensity": 0.3,
+      "speed": 1.0,
+      "overshoot": true,
+      "overshoot_amount": 0.05,
+      "add_noise": true,
+      "noise_amount": 2.0,
+      "min_duration": 0.3,
+      "max_duration": 1.5,
+      "note": "curve_intensity: 0.0 = straight, 1.0 = very curved"
+    },
+    "action_library": {
+      "enabled_categories": [
+        "keyboard",
+        "mouse",
+        "window",
+        "browser",
+        "clipboard",
+        "file",
+        "screen",
+        "timing",
+        "vision",
+        "system",
+        "edit",
+        "macro"
+      ],
+      "disabled_actions": [],
+      "note": "Add action names to disabled_actions to prevent their use"
+    }
+  },
   "social_media": {
     "posting_strategy": "keyboard_shortcut",
     "note": "Strategies: 'keyboard_shortcut' (fast, tries N key first), 'tab_navigation' (reliable fallback), 'smart' (with verification)",
@@ -31,7 +77,8 @@
   },
   "communication": {
     "method": "file",
-    "workflow_file": "shared/workflow_queue.json",
-    "status_file": "shared/status_queue.json"
+    "protocol_file": "shared/protocol_queue.json",
+    "status_file": "shared/status_queue.json",
+    "note": "Updated to use protocol_file instead of workflow_file"
   }
 }

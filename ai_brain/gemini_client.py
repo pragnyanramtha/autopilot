@@ -710,3 +710,362 @@ Return ONLY JSON."""
         """Calculate cache hit rate (placeholder)."""
         # This would need proper tracking of hits vs misses
         return 0.0
+    
+    # ========================================
+    # PROTOCOL GENERATION METHODS
+    # ========================================
+    
+    def _build_protocol_prompt_template(self, user_input: str, action_library: dict) -> str:
+        """
+        Build prompt template for protocol generation.
+        Includes function library, examples, and guidance.
+        
+        Args:
+            user_input: User's natural language command
+            action_library: Dictionary of available actions
+            
+        Returns:
+            Formatted prompt string
+        """
+        prompt = f"""You are an automation AI that generates JSON protocols for desktop automation.
+
+USER COMMAND: "{user_input}"
+
+Your task is to generate a JSON protocol that accomplishes this command using the available actions.
+
+# PROTOCOL SCHEMA
+
+Generate a JSON object with this structure:
+
+```json
+{{
+  "version": "1.0",
+  "metadata": {{
+    "description": "Brief description of what this protocol does",
+    "complexity": "simple|medium|complex",
+    "uses_vision": true|false
+  }},
+  "macros": {{
+    "macro_name": [
+      {{"action": "action_name", "params": {{}}, "wait_after_ms": 200}}
+    ]
+  }},
+  "actions": [
+    {{"action": "action_name", "params": {{}}, "wait_after_ms": 200}}
+  ]
+}}
+```
+
+# AVAILABLE ACTIONS
+
+{self._format_action_library(action_library)}
+
+# CRITICAL RULES
+
+1. **press_key vs shortcut**:
+   - Use "press_key" for SINGLE keys: {{"action": "press_key", "params": {{"key": "enter"}}}}
+   - Use "shortcut" for MULTIPLE keys pressed SIMULTANEOUSLY: {{"action": "shortcut", "params": {{"keys": ["ctrl", "t"]}}}}
+   - NEVER use multiple press_key actions for shortcuts like Ctrl+T
+
+2. **type action for ANY length text**:
+   - The "type" action can handle ANY length of text (words, sentences, paragraphs, full posts)
+   - When user says "post something about X", generate the COMPLETE content in the type action
+   - Example: {{"action": "type", "params": {{"text": "Complete post content here with hashtags and emojis..."}}}}
+
+3. **Visual verification when uncertain**:
+   - Use "verify_screen" when you're uncertain about UI state or element location
+   - Example: {{"action": "verify_screen", "params": {{"context": "Looking for login button", "expected": "Login button visible"}}}}
+   - After verification, use {{{{verified_x}}}} and {{{{verified_y}}}} for coordinates
+
+4. **Macros for reusability**:
+   - Define macros for repeated action sequences
+   - Use variable substitution with {{{{var}}}} syntax
+   - Example: "search_in_browser" macro with {{{{query}}}} variable
+
+5. **Timing**:
+   - Always include "wait_after_ms" for each action
+   - Use longer waits after app launches (2000-3000ms)
+   - Use shorter waits after keystrokes (100-200ms)
+
+# EXAMPLES
+
+## Example 1: Simple Search
+```json
+{{
+  "version": "1.0",
+  "metadata": {{
+    "description": "Search for Elon Musk",
+    "complexity": "simple",
+    "uses_vision": false
+  }},
+  "actions": [
+    {{"action": "open_app", "params": {{"app_name": "chrome"}}, "wait_after_ms": 2000}},
+    {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
+    {{"action": "type", "params": {{"text": "elon musk"}}, "wait_after_ms": 100}},
+    {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}}
+  ]
+}}
+```
+
+## Example 2: Using Macros
+```json
+{{
+  "version": "1.0",
+  "metadata": {{
+    "description": "Search for two people",
+    "complexity": "medium",
+    "uses_vision": false
+  }},
+  "macros": {{
+    "search_in_browser": [
+      {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
+      {{"action": "type", "params": {{"text": "{{{{query}}}}"}}, "wait_after_ms": 100}},
+      {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}}
+    ]
+  }},
+  "actions": [
+    {{"action": "open_app", "params": {{"app_name": "chrome"}}, "wait_after_ms": 2000}},
+    {{"action": "macro", "params": {{"name": "search_in_browser", "vars": {{"query": "elon musk"}}}}}},
+    {{"action": "shortcut", "params": {{"keys": ["ctrl", "t"]}}, "wait_after_ms": 1000}},
+    {{"action": "macro", "params": {{"name": "search_in_browser", "vars": {{"query": "jeff bezos"}}}}}}
+  ]
+}}
+```
+
+## Example 3: Post with Full Content Generation
+```json
+{{
+  "version": "1.0",
+  "metadata": {{
+    "description": "Post about winter on Twitter/X",
+    "complexity": "medium",
+    "uses_vision": true
+  }},
+  "actions": [
+    {{"action": "open_app", "params": {{"app_name": "chrome"}}, "wait_after_ms": 2000}},
+    {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
+    {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 100}},
+    {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}},
+    {{"action": "verify_screen", "params": {{"context": "Looking for post input field", "expected": "Post compose area visible"}}, "wait_after_ms": 500}},
+    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
+    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 500}},
+    {{"action": "type", "params": {{"text": "Winter is here! ❄️ The crisp air, cozy sweaters, and hot cocoa make this season magical. What's your favorite winter activity? #Winter #CozyVibes"}}, "wait_after_ms": 1000}},
+    {{"action": "verify_screen", "params": {{"context": "Looking for Post button", "expected": "Post button visible"}}, "wait_after_ms": 500}},
+    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
+    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 2000}}
+  ]
+}}
+```
+
+## Example 4: Visual Verification Usage
+```json
+{{
+  "version": "1.0",
+  "metadata": {{
+    "description": "Click login button with verification",
+    "complexity": "simple",
+    "uses_vision": true
+  }},
+  "actions": [
+    {{"action": "verify_screen", "params": {{"context": "Looking for login button", "expected": "Login button visible on screen"}}, "wait_after_ms": 500}},
+    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
+    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 1000}}
+  ]
+}}
+```
+
+# YOUR TASK
+
+Generate a complete JSON protocol for the user command: "{user_input}"
+
+IMPORTANT:
+- Return ONLY the JSON protocol, no explanation
+- Ensure all actions are from the available action library
+- Use proper wait_after_ms timing
+- For shortcuts, ALWAYS use "shortcut" action with keys array
+- For typing content, include the COMPLETE text in the type action
+- Use verify_screen when uncertain about UI elements
+- Define macros for repeated sequences
+
+Return the JSON protocol now:"""
+        
+        return prompt
+    
+    def _format_action_library(self, action_library: dict) -> str:
+        """
+        Format action library for inclusion in prompt.
+        
+        Args:
+            action_library: Dictionary of available actions
+            
+        Returns:
+            Formatted string describing all actions
+        """
+        lines = []
+        
+        # Group by category
+        categories = {}
+        for action_name, action_info in action_library.items():
+            category = action_info.get("category", "other")
+            if category not in categories:
+                categories[category] = []
+            categories[category].append((action_name, action_info))
+        
+        # Format each category
+        for category, actions in sorted(categories.items()):
+            lines.append(f"\n## {category.upper()} ACTIONS")
+            
+            for action_name, action_info in sorted(actions):
+                description = action_info.get("description", "")
+                params = action_info.get("params", {})
+                required = params.get("required", [])
+                optional = params.get("optional", {})
+                
+                lines.append(f"\n**{action_name}**: {description}")
+                
+                if required:
+                    lines.append(f"  Required: {', '.join(required)}")
+                if optional:
+                    opt_str = ', '.join([f"{k}={v}" for k, v in optional.items()])
+                    lines.append(f"  Optional: {opt_str}")
+                
+                # Add examples if available
+                examples = action_info.get("examples", [])
+                if examples and len(examples) > 0:
+                    lines.append(f"  Example: {examples[0]}")
+        
+        return "\n".join(lines)
+    
+    def generate_protocol(self, user_input: str, action_library: dict) -> dict:
+        """
+        Generate a JSON protocol from natural language command.
+        
+        This method sends the user command along with the complete action library
+        to the AI, which generates a structured JSON protocol that can be executed
+        by the ProtocolExecutor.
+        
+        Args:
+            user_input: User's natural language command
+            action_library: Dictionary of available actions from ActionRegistry
+            
+        Returns:
+            Dictionary containing the generated protocol
+            
+        Raises:
+            ValueError: If protocol generation fails or validation fails
+        """
+        start_time = time.time()
+        
+        # OPTIMIZATION: Check cache first
+        cache_key = f"protocol:{user_input}:{hash(str(action_library))}"
+        cached = self._get_cached_response(cache_key)
+        if cached:
+            print(f"  ⚡ Protocol cache hit! Response time: <1ms")
+            return cached
+        
+        # Detect complexity
+        complexity = self._detect_command_complexity(user_input)
+        
+        # Switch to appropriate model
+        self._switch_model(complexity)
+        
+        # Build prompt with action library
+        prompt = self._build_protocol_prompt_template(user_input, action_library)
+        
+        try:
+            # Generate protocol
+            response = self.model.generate_content(prompt)
+            protocol_text = response.text.strip()
+            
+            # Parse JSON from response
+            protocol = self._parse_protocol_response(protocol_text)
+            
+            # Validate protocol structure
+            self._validate_protocol_structure(protocol)
+            
+            # Cache the result
+            self._cache_response(cache_key, protocol)
+            
+            # Track timing
+            elapsed = time.time() - start_time
+            self.request_times.append(elapsed)
+            print(f"  ⚡ Protocol generated in {elapsed:.2f}s")
+            
+            return protocol
+            
+        except Exception as e:
+            raise ValueError(f"Failed to generate protocol: {str(e)}") from e
+    
+    def _parse_protocol_response(self, response_text: str) -> dict:
+        """
+        Parse protocol JSON from AI response.
+        
+        Args:
+            response_text: Raw response from AI
+            
+        Returns:
+            Parsed protocol dictionary
+            
+        Raises:
+            ValueError: If JSON parsing fails
+        """
+        try:
+            # Extract JSON from response (handle markdown code blocks)
+            cleaned = response_text.strip()
+            if '```json' in cleaned:
+                cleaned = cleaned.split('```json')[1].split('```')[0].strip()
+            elif '```' in cleaned:
+                cleaned = cleaned.split('```')[1].split('```')[0].strip()
+            
+            protocol = json.loads(cleaned)
+            return protocol
+            
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse protocol JSON: {str(e)}\nResponse: {response_text[:200]}") from e
+    
+    def _validate_protocol_structure(self, protocol: dict) -> None:
+        """
+        Validate that protocol has required structure.
+        
+        Args:
+            protocol: Protocol dictionary to validate
+            
+        Raises:
+            ValueError: If protocol structure is invalid
+        """
+        # Check required top-level fields
+        if "version" not in protocol:
+            raise ValueError("Protocol missing 'version' field")
+        
+        if "actions" not in protocol:
+            raise ValueError("Protocol missing 'actions' field")
+        
+        if not isinstance(protocol["actions"], list):
+            raise ValueError("Protocol 'actions' must be a list")
+        
+        if len(protocol["actions"]) == 0:
+            raise ValueError("Protocol 'actions' list is empty")
+        
+        # Check metadata if present
+        if "metadata" in protocol:
+            metadata = protocol["metadata"]
+            if not isinstance(metadata, dict):
+                raise ValueError("Protocol 'metadata' must be a dictionary")
+        
+        # Check macros if present
+        if "macros" in protocol:
+            macros = protocol["macros"]
+            if not isinstance(macros, dict):
+                raise ValueError("Protocol 'macros' must be a dictionary")
+        
+        # Validate each action
+        for i, action in enumerate(protocol["actions"]):
+            if not isinstance(action, dict):
+                raise ValueError(f"Action at index {i} is not a dictionary")
+            
+            if "action" not in action:
+                raise ValueError(f"Action at index {i} missing 'action' field")
+            
+            # params is optional but should be dict if present
+            if "params" in action and not isinstance(action["params"], dict):
+                raise ValueError(f"Action at index {i} 'params' must be a dictionary")

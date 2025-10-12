@@ -1,6 +1,6 @@
 """
 AI Brain main application.
-Provides command loop for accepting user commands, generating workflows,
+Provides command loop for accepting user commands, generating protocols,
 and coordinating with the automation engine.
 """
 import os
@@ -18,7 +18,7 @@ from rich.table import Table
 from rich import print as rprint
 
 from ai_brain.gemini_client import GeminiClient, CommandIntent
-from ai_brain.workflow_generator import WorkflowGenerator
+from ai_brain.protocol_generator import ProtocolGenerator
 from shared.communication import MessageBroker, CommunicationError
 from shared.data_models import ExecutionResult
 
@@ -42,7 +42,7 @@ class AIBrainApp:
         
         # Initialize components
         self.gemini_client: Optional[GeminiClient] = None
-        self.workflow_generator: Optional[WorkflowGenerator] = None
+        self.protocol_generator: Optional[ProtocolGenerator] = None
         self.message_broker: Optional[MessageBroker] = None
         
     def _load_config(self, config_path: str) -> dict:
@@ -101,9 +101,9 @@ class AIBrainApp:
             self.console.print("✓ Initializing Gemini client (from .env)...")
             self.gemini_client = GeminiClient(api_key=api_key)
             
-            # Initialize workflow generator
-            self.console.print("✓ Initializing workflow generator...")
-            self.workflow_generator = WorkflowGenerator(
+            # Initialize protocol generator
+            self.console.print("✓ Initializing protocol generator...")
+            self.protocol_generator = ProtocolGenerator(
                 gemini_client=self.gemini_client,
                 config=self.config
             )
@@ -161,7 +161,7 @@ class AIBrainApp:
     
     def _process_command(self, user_input: str):
         """
-        Process a user command and generate workflow.
+        Process a user command and generate protocol.
         
         Args:
             user_input: The user's natural language command
@@ -183,28 +183,28 @@ class AIBrainApp:
             # Display parsed intent
             self._display_intent(intent)
             
-            # Check if complex workflow requires additional processing
+            # Check if complex protocol requires additional processing
             complexity = intent.parameters.get('complexity', 'simple')
             if complexity == 'complex':
-                self._handle_complex_workflow(intent, user_input)
+                self._handle_complex_protocol(intent, user_input)
             else:
-                self._handle_simple_workflow(intent)
+                self._handle_simple_protocol(intent)
             
         except CommunicationError as e:
             self.console.print(f"[red]Communication error: {e}[/red]")
         except Exception as e:
             self.console.print(f"[red]Error processing command: {e}[/red]")
     
-    def _handle_simple_workflow(self, intent: CommandIntent):
-        """Handle a simple single-action workflow."""
-        # Step 2: Generate workflow
-        self.console.print("\n→ Generating workflow...")
-        workflow = self.workflow_generator.create_workflow(intent)
+    def _handle_simple_protocol(self, intent: CommandIntent):
+        """Handle a simple single-action protocol."""
+        # Step 2: Generate protocol
+        self.console.print("\n→ Generating protocol...")
+        protocol = self.protocol_generator.create_protocol(intent, intent.target)
         
-        # Validate workflow
-        validation = self.workflow_generator.validate_workflow(workflow)
+        # Validate protocol
+        validation = self.protocol_generator.validate_protocol(protocol)
         if not validation['valid']:
-            self.console.print(f"[red]Workflow validation failed:[/red]")
+            self.console.print(f"[red]Protocol validation failed:[/red]")
             for issue in validation['issues']:
                 self.console.print(f"  • {issue}")
             return
@@ -214,31 +214,32 @@ class AIBrainApp:
             for warning in validation['warnings']:
                 self.console.print(f"  • {warning}")
         
-        # Display workflow
-        self._display_workflow(workflow)
+        # Display protocol
+        self._display_protocol(protocol)
         
         # Step 3: Confirm execution
         confirm = Prompt.ask(
-            "\n[bold]Send workflow to automation engine?[/bold]",
+            "\n[bold]Send protocol to automation engine?[/bold]",
             choices=["y", "n"],
             default="y"
         )
         
         if confirm.lower() != 'y':
-            self.console.print("[yellow]Workflow cancelled[/yellow]")
+            self.console.print("[yellow]Protocol cancelled[/yellow]")
             return
         
-        # Step 4: Send workflow
-        self.console.print("\n→ Sending workflow to automation engine...")
-        self.message_broker.send_workflow(workflow)
-        self.console.print(f"[green]✓ Workflow sent (ID: {workflow.id})[/green]")
+        # Step 4: Send protocol
+        self.console.print("\n→ Sending protocol to automation engine...")
+        protocol_id = protocol.get('metadata', {}).get('id', 'unknown')
+        self.message_broker.send_protocol(protocol)
+        self.console.print(f"[green]✓ Protocol sent (ID: {protocol_id})[/green]")
         
         # Step 5: Wait for execution result
-        self._wait_for_result(workflow.id)
+        self._wait_for_result(protocol_id)
     
-    def _handle_complex_workflow(self, intent: CommandIntent, user_input: str):
-        """Handle a complex multi-step workflow with additional processing."""
-        self.console.print("\n[bold cyan]Complex Multi-Step Workflow Detected[/bold cyan]")
+    def _handle_complex_protocol(self, intent: CommandIntent, user_input: str):
+        """Handle a complex multi-step protocol with additional processing."""
+        self.console.print("\n[bold cyan]Complex Multi-Step Protocol Detected[/bold cyan]")
         
         # Show sub-tasks
         sub_tasks = intent.parameters.get('sub_tasks', [])
@@ -272,8 +273,8 @@ class AIBrainApp:
             
             # Use search results if available for context
             context = ""
-            if hasattr(self, '_workflow_context') and 'search_results' in self._workflow_context:
-                search_data = self._workflow_context['search_results']
+            if hasattr(self, '_protocol_context') and 'search_results' in self._protocol_context:
+                search_data = self._protocol_context['search_results']
                 if search_data.get('trending_topics'):
                     context = f"Trending topics: {', '.join(search_data['trending_topics'][:3])}"
             
@@ -292,11 +293,11 @@ class AIBrainApp:
             self.console.print(f"\n[bold cyan]Generated Content:[/bold cyan]")
             self.console.print(f"[white]{generated_content}[/white]")
             
-            # Store in intent and workflow context
+            # Store in intent and protocol context
             intent.parameters['generated_content'] = generated_content
-            if not hasattr(self, '_workflow_context'):
-                self._workflow_context = {}
-            self._workflow_context['generated_content'] = generated_content
+            if not hasattr(self, '_protocol_context'):
+                self._protocol_context = {}
+            self._protocol_context['generated_content'] = generated_content
         
         # Handle research if needed
         if requires_research:
@@ -324,23 +325,23 @@ class AIBrainApp:
                 for topic in search_results['trending_topics'][:5]:
                     self.console.print(f"  • {topic}")
             
-            # Store in intent and workflow metadata
+            # Store in intent and protocol metadata
             intent.parameters['research_data'] = search_results
             intent.parameters['search_results'] = search_results
             
-            # Also store for workflow execution
-            if not hasattr(self, '_workflow_context'):
-                self._workflow_context = {}
-            self._workflow_context['search_results'] = search_results
+            # Also store for protocol execution
+            if not hasattr(self, '_protocol_context'):
+                self._protocol_context = {}
+            self._protocol_context['search_results'] = search_results
         
-        # Generate workflow
-        self.console.print("\n→ Generating complex workflow...")
-        workflow = self.workflow_generator.create_workflow(intent)
+        # Generate protocol
+        self.console.print("\n→ Generating complex protocol...")
+        protocol = self.protocol_generator.create_protocol(intent, user_input)
         
-        # Validate workflow
-        validation = self.workflow_generator.validate_workflow(workflow)
+        # Validate protocol
+        validation = self.protocol_generator.validate_protocol(protocol)
         if not validation['valid']:
-            self.console.print(f"[red]Workflow validation failed:[/red]")
+            self.console.print(f"[red]Protocol validation failed:[/red]")
             for issue in validation['issues']:
                 self.console.print(f"  • {issue}")
             return
@@ -350,39 +351,44 @@ class AIBrainApp:
             for warning in validation['warnings']:
                 self.console.print(f"  • {warning}")
         
-        # Display workflow
-        self._display_workflow(workflow)
+        # Display protocol
+        self._display_protocol(protocol)
         
         # Warn about manual steps
         if requires_auth:
-            self.console.print("\n[bold yellow]Note:[/bold yellow] This workflow requires authentication.")
+            self.console.print("\n[bold yellow]Note:[/bold yellow] This protocol requires authentication.")
             self.console.print("You may need to manually log in when prompted.")
         
         # Confirm execution
         confirm = Prompt.ask(
-            "\n[bold]Execute this complex workflow?[/bold]",
+            "\n[bold]Execute this complex protocol?[/bold]",
             choices=["y", "n"],
             default="y"
         )
         
         if confirm.lower() != 'y':
-            self.console.print("[yellow]Workflow cancelled[/yellow]")
+            self.console.print("[yellow]Protocol cancelled[/yellow]")
             return
         
-        # Add generated content to workflow metadata
-        if hasattr(self, '_workflow_context'):
-            if 'generated_content' in self._workflow_context:
-                workflow.metadata['generated_content'] = self._workflow_context['generated_content']
-            if 'search_results' in self._workflow_context:
-                workflow.metadata['search_results'] = self._workflow_context['search_results']
+        # Add generated content to protocol metadata
+        if hasattr(self, '_protocol_context'):
+            if 'generated_content' in self._protocol_context:
+                if 'metadata' not in protocol:
+                    protocol['metadata'] = {}
+                protocol['metadata']['generated_content'] = self._protocol_context['generated_content']
+            if 'search_results' in self._protocol_context:
+                if 'metadata' not in protocol:
+                    protocol['metadata'] = {}
+                protocol['metadata']['search_results'] = self._protocol_context['search_results']
         
-        # Send workflow
-        self.console.print("\n→ Sending workflow to automation engine...")
-        self.message_broker.send_workflow(workflow)
-        self.console.print(f"[green]✓ Workflow sent (ID: {workflow.id})[/green]")
+        # Send protocol
+        self.console.print("\n→ Sending protocol to automation engine...")
+        protocol_id = protocol.get('metadata', {}).get('id', 'unknown')
+        self.message_broker.send_protocol(protocol)
+        self.console.print(f"[green]✓ Protocol sent (ID: {protocol_id})[/green]")
         
         # Wait for execution result
-        self._wait_for_result(workflow.id, timeout=60.0)  # Longer timeout for complex workflows
+        self._wait_for_result(protocol_id, timeout=60.0)  # Longer timeout for complex protocols
     
     def _extract_content_topic(self, intent: CommandIntent, user_input: str) -> str:
         """Extract the topic for content generation from intent or user input."""
@@ -447,42 +453,55 @@ class AIBrainApp:
         
         self.console.print(table)
     
-    def _display_workflow(self, workflow):
-        """Display workflow steps."""
-        table = Table(title=f"Workflow Steps ({len(workflow.steps)} steps)", show_header=True, header_style="bold green")
-        table.add_column("#", style="dim", width=4)
-        table.add_column("Type", style="cyan")
-        table.add_column("Details", style="white")
-        table.add_column("Delay", style="yellow", justify="right")
+    def _display_protocol(self, protocol):
+        """Display protocol actions."""
+        actions = protocol.get('actions', [])
+        macros = protocol.get('macros', {})
         
-        for i, step in enumerate(workflow.steps, 1):
-            details = []
-            if step.coordinates:
-                details.append(f"coords: {step.coordinates}")
-            if step.data:
-                details.append(f"data: {step.data}")
+        # Display macros if any
+        if macros:
+            self.console.print(f"\n[bold cyan]Macros defined: {len(macros)}[/bold cyan]")
+            for macro_name in macros.keys():
+                self.console.print(f"  • {macro_name}")
+        
+        # Display actions
+        table = Table(title=f"Protocol Actions ({len(actions)} actions)", show_header=True, header_style="bold green")
+        table.add_column("#", style="dim", width=4)
+        table.add_column("Action", style="cyan")
+        table.add_column("Parameters", style="white")
+        table.add_column("Wait", style="yellow", justify="right")
+        
+        for i, action in enumerate(actions, 1):
+            action_name = action.get('action', 'unknown')
+            params = action.get('params', {})
+            wait_ms = action.get('wait_after_ms', 0)
+            
+            # Format parameters
+            param_str = json.dumps(params, indent=None) if params else "-"
+            if len(param_str) > 50:
+                param_str = param_str[:47] + "..."
             
             table.add_row(
                 str(i),
-                step.type,
-                ", ".join(details) if details else "-",
-                f"{step.delay_ms}ms"
+                action_name,
+                param_str,
+                f"{wait_ms}ms"
             )
         
         self.console.print(table)
     
-    def _wait_for_result(self, workflow_id: str, timeout: float = 30.0):
+    def _wait_for_result(self, protocol_id: str, timeout: float = 30.0):
         """
         Wait for execution result from automation engine.
         
         Args:
-            workflow_id: ID of the workflow to wait for
+            protocol_id: ID of the protocol to wait for
             timeout: Maximum time to wait in seconds
         """
         self.console.print(f"\n→ Waiting for execution result (timeout: {timeout}s)...")
         
-        with self.console.status("[bold green]Executing workflow...") as status:
-            result = self.message_broker.receive_status(workflow_id, timeout=timeout)
+        with self.console.status("[bold green]Executing protocol...") as status:
+            result = self.message_broker.receive_status(protocol_id, timeout=timeout)
         
         if result:
             self._display_result(result)
@@ -510,7 +529,7 @@ class AIBrainApp:
 [bold cyan]Welcome to AI Automation Assistant![/bold cyan]
 
 I can help you automate tasks using natural language commands.
-Now with support for complex multi-step workflows!
+Now with support for complex multi-step protocols!
 
 [bold]Simple Examples:[/bold]
   • "Click the submit button"
@@ -564,7 +583,7 @@ You can give commands in plain English. The AI will understand and execute them.
   • Be specific about what you want to click or interact with
   • The AI can see your screen to find elements
   • Complex commands are automatically broken down into steps
-  • You'll be asked to confirm before executing workflows
+  • You'll be asked to confirm before executing protocols
   • For tasks requiring login, you may need to authenticate manually
 """
         self.console.print(Panel(help_text, border_style="cyan"))
@@ -576,7 +595,7 @@ You can give commands in plain English. The AI will understand and execute them.
         table.add_column("Status", style="white")
         
         table.add_row("Gemini Client", "[green]✓ Connected[/green]" if self.gemini_client else "[red]✗ Not initialized[/red]")
-        table.add_row("Workflow Generator", "[green]✓ Ready[/green]" if self.workflow_generator else "[red]✗ Not initialized[/red]")
+        table.add_row("Protocol Generator", "[green]✓ Ready[/green]" if self.protocol_generator else "[red]✗ Not initialized[/red]")
         table.add_row("Message Broker", "[green]✓ Ready[/green]" if self.message_broker else "[red]✗ Not initialized[/red]")
         
         self.console.print(table)
