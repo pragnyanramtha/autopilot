@@ -30,7 +30,7 @@ echo Starting...
 echo.
 
 REM Activate and run
-call venv\Scripts\activate.bat
+call venv\Scripts\activate
 python run.py
 
 if errorlevel 1 (

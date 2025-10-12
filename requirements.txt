@@ -7,3 +7,4 @@ python-dotenv
 pyperclip
 SpeechRecognition
 PyAudio
+numpy

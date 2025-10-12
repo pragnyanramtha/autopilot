@@ -11,6 +11,7 @@ from shared.data_models import Workflow, WorkflowStep
 from ai_brain.gemini_client import CommandIntent, ScreenAnalysis, GeminiClient
 from shared.browser_shortcuts import BrowserShortcutHelper
 from shared.website_navigation import WebsiteNavigator
+from shared.smart_waits import get_smart_wait_time
 
 
 class WorkflowGenerator:
@@ -280,10 +281,11 @@ class WorkflowGenerator:
             CommandIntent(action='open_app', target='Chrome', parameters={}, confidence=1.0)
         ))
         
-        # Wait for browser to open
+        # Smart wait for browser to open
+        chrome_wait = get_smart_wait_time('app_launch', 'Chrome')
         steps.append(WorkflowStep(
             type='wait',
-            delay_ms=2000
+            delay_ms=chrome_wait
         ))
         
         # Focus address bar
@@ -304,7 +306,14 @@ class WorkflowGenerator:
         steps.append(WorkflowStep(
             type='press_key',
             data='enter',
-            delay_ms=3000  # Wait for search results to load
+            delay_ms=100
+        ))
+        
+        # Smart wait for search results
+        search_wait = get_smart_wait_time('search_results')
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=search_wait
         ))
         
         # If user wants to open first result
@@ -447,10 +456,12 @@ class WorkflowGenerator:
             CommandIntent(action='open_app', target='Chrome', parameters={}, confidence=1.0)
         ))
         
-        # Wait for Chrome to open
+        # Smart wait for Chrome to open
+        chrome_wait = get_smart_wait_time('app_launch', 'Chrome')
         steps.append(WorkflowStep(
             type='wait',
-            delay_ms=2000
+            delay_ms=chrome_wait,
+            validation={'wait_type': 'app_launch', 'target': 'Chrome'}
         ))
         
         # Now navigate to URL using keyboard shortcuts
@@ -461,6 +472,14 @@ class WorkflowGenerator:
                 data=step_data.get('data'),
                 delay_ms=step_data.get('delay_ms', 100)
             ))
+        
+        # Smart wait for page to load
+        page_wait = get_smart_wait_time('page_load', url)
+        steps.append(WorkflowStep(
+            type='wait',
+            delay_ms=page_wait,
+            validation={'wait_type': 'page_load', 'target': url}
+        ))
         
         return steps
     
