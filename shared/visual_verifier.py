@@ -63,8 +63,8 @@ class VisualVerifier:
     """
     
     # Model configuration
-    PRIMARY_MODEL = 'gemini-2.0-flash-exp'  # Gemini 2.5 Flash Live API equivalent
-    FALLBACK_MODEL = 'gemini-1.5-flash'  # gemini-flash-lite-latest equivalent
+    PRIMARY_MODEL = 'gemini-flash-lite-latest'  # Gemini 2.5 Flash Live API equivalent
+    FALLBACK_MODEL = 'gemini-2.5-flash'  # gemini-flash-lite-latest equivalent
     
     def __init__(
         self,

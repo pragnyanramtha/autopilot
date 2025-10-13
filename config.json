@@ -2,7 +2,7 @@
   "gemini": {
     "note": "API key is now stored securely in .env file (not here!)",
     "use_ultra_fast": false,
-    "ultra_fast_model": "gemini-2.0-flash-exp",
+    "ultra_fast_model": "gemini-flash-lite-latest",
     "simple_model": "gemini-2.5-flash",
     "complex_model": "gemini-2.5-pro",
     "temperature": 0.7
@@ -23,8 +23,8 @@
       "enabled": true,
       "timeout_seconds": 10,
       "confidence_threshold": 0.7,
-      "primary_model": "gemini-2.0-flash-exp",
-      "fallback_model": "gemini-1.5-flash",
+      "primary_model": "gemini-flash-lite-latest",
+      "fallback_model": "gemini-2.5-flash",
       "note": "confidence_threshold: 0.0-1.0, higher = more strict"
     },
     "mouse_movement": {

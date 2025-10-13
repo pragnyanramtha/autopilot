@@ -1,0 +1,48 @@
+{
+  "type": "protocol_status",
+  "protocol_id": "Opens a browser, types 'query' into the search bar, and presses Enter.",
+  "timestamp": "2025-10-13T10:41:01.414614",
+  "payload": {
+    "protocol_id": "Opens a browser, types 'query' into the search bar, and presses Enter.",
+    "status": "success",
+    "actions_completed": 4,
+    "total_actions": 4,
+    "duration_ms": 6705,
+    "context": {
+      "protocol_id": "Opens a browser, types 'query' into the search bar, and presses Enter.",
+      "start_time": "2025-10-13T10:40:54.706943",
+      "variables": {},
+      "action_results": [
+        {
+          "index": 0,
+          "action": "open_app",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:40:55.828673"
+        },
+        {
+          "index": 1,
+          "action": "shortcut",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:40:57.834645"
+        },
+        {
+          "index": 2,
+          "action": "type",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:40:58.307058"
+        },
+        {
+          "index": 3,
+          "action": "press_key",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:40:58.412178"
+        }
+      ],
+      "current_action_index": 3
+    }
+  }
+}

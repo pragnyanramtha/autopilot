@@ -23,8 +23,8 @@ class VisualVerificationConfig:
     enabled: bool = True
     timeout_seconds: int = 10
     confidence_threshold: float = 0.7
-    primary_model: str = "gemini-2.0-flash-exp"
-    fallback_model: str = "gemini-1.5-flash"
+    primary_model: str = "gemini-flash-lite-latest"
+    fallback_model: str = "gemini-2.5-flash"
 
 
 @dataclass
@@ -119,8 +119,8 @@ class ConfigLoader:
                 enabled=vision_data.get('enabled', True),
                 timeout_seconds=vision_data.get('timeout_seconds', 10),
                 confidence_threshold=vision_data.get('confidence_threshold', 0.7),
-                primary_model=vision_data.get('primary_model', 'gemini-2.0-flash-exp'),
-                fallback_model=vision_data.get('fallback_model', 'gemini-1.5-flash')
+                primary_model=vision_data.get('primary_model', 'gemini-flash-lite-latest'),
+                fallback_model=vision_data.get('fallback_model', 'gemini-2.5-flash')
             )
             
             # Load mouse movement config

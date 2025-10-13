@@ -733,6 +733,11 @@ USER COMMAND: "{user_input}"
 
 Your task is to generate a JSON protocol that accomplishes this command using the available actions.
 
+⚠️ CRITICAL: Use the ACTUAL content from the user command, NOT placeholders!
+- If user says "search for John Doe", use "John Doe" in the protocol, NOT "query" or "search_term"
+- If user says "type hello world", use "hello world", NOT "text" or "message"
+- ALWAYS extract and use the real values from the user's command
+
 # PROTOCOL SCHEMA
 
 Generate a JSON object with this structure:
@@ -787,14 +792,24 @@ Generate a JSON object with this structure:
    - Use longer waits after app launches (2000-3000ms)
    - Use shorter waits after keystrokes (100-200ms)
 
+# IMPORTANT REMINDER BEFORE EXAMPLES
+
+When you see the user command "{user_input}", you MUST extract the actual search terms, names, or text from it.
+DO NOT use placeholder words like "query", "text", "search_term", "name", etc.
+
+For example:
+- User says "check the us markets" → Use "us markets" in the protocol
+- User says "search for John Doe" → Use "John Doe" in the protocol  
+- User says "type hello world" → Use "hello world" in the protocol
+
 # EXAMPLES
 
-## Example 1: Simple Search
+## Example 1: Simple Search (User said: "search for Elon Musk")
 ```json
 {{
   "version": "1.0",
   "metadata": {{
-    "description": "Search for Elon Musk",
+    "description": "Search for Elon Musk in the default browser",
     "complexity": "simple",
     "uses_vision": false
   }},
@@ -806,6 +821,7 @@ Generate a JSON object with this structure:
   ]
 }}
 ```
+NOTE: "elon musk" came from the user's command, NOT a placeholder!
 
 ## Example 2: Using Macros
 ```json
