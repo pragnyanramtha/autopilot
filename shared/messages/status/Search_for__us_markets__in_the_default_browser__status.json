@@ -1,0 +1,48 @@
+{
+  "type": "protocol_status",
+  "protocol_id": "Search for 'us markets' in the default browser.",
+  "timestamp": "2025-10-13T10:49:08.977709",
+  "payload": {
+    "protocol_id": "Search for 'us markets' in the default browser.",
+    "status": "success",
+    "actions_completed": 4,
+    "total_actions": 4,
+    "duration_ms": 6970,
+    "context": {
+      "protocol_id": "Search for 'us markets' in the default browser.",
+      "start_time": "2025-10-13T10:49:02.004838",
+      "variables": {},
+      "action_results": [
+        {
+          "index": 0,
+          "action": "open_app",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:49:03.129494"
+        },
+        {
+          "index": 1,
+          "action": "shortcut",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:49:05.137399"
+        },
+        {
+          "index": 2,
+          "action": "type",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:49:05.872260"
+        },
+        {
+          "index": 3,
+          "action": "press_key",
+          "result": null,
+          "error": null,
+          "timestamp": "2025-10-13T10:49:05.974730"
+        }
+      ],
+      "current_action_index": 3
+    }
+  }
+}

@@ -40,7 +40,7 @@ class GeminiClient:
     """Handles all interactions with Gemini API for NLP and vision."""
     
     # Model selection based on task complexity
-    ULTRA_FAST_MODEL = 'gemini-2.0-flash-exp'  # Ultra-fast model for dev mode
+    ULTRA_FAST_MODEL = 'gemini-flash-lite-latest'  # Ultra-fast model for dev mode
     SIMPLE_MODEL = 'gemini-2.5-flash'  # Fast model for simple tasks
     COMPLEX_MODEL = 'gemini-2.5-pro'  # Advanced model for complex tasks
     
@@ -733,10 +733,24 @@ USER COMMAND: "{user_input}"
 
 Your task is to generate a JSON protocol that accomplishes this command using the available actions.
 
-⚠️ CRITICAL: Use the ACTUAL content from the user command, NOT placeholders!
-- If user says "search for John Doe", use "John Doe" in the protocol, NOT "query" or "search_term"
-- If user says "type hello world", use "hello world", NOT "text" or "message"
-- ALWAYS extract and use the real values from the user's command
+🚨 CRITICAL RULE #1: NEVER USE PLACEHOLDER TEXT! 🚨
+
+The user command is: "{user_input}"
+
+You MUST extract the ACTUAL words/names/terms from this command and use them in the protocol.
+
+WRONG Examples (DO NOT DO THIS):
+- {{"text": "query"}} ❌
+- {{"text": "search_term"}} ❌  
+- {{"text": "name"}} ❌
+- {{"text": "message"}} ❌
+
+CORRECT Examples (DO THIS):
+- User says "check the us markets" → {{"text": "us markets"}} ✅
+- User says "search for John Doe" → {{"text": "John Doe"}} ✅
+- User says "type hello world" → {{"text": "hello world"}} ✅
+
+If you use placeholder words like "query", "text", "name", the protocol will FAIL!
 
 # PROTOCOL SCHEMA
 

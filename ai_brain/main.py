@@ -199,7 +199,18 @@ class AIBrainApp:
         """Handle a simple single-action protocol."""
         # Step 2: Generate protocol
         self.console.print("\n→ Generating protocol...")
-        protocol = self.protocol_generator.create_protocol(intent, intent.target)
+        
+        # Extract the actual query/text from parameters if available
+        user_input_for_protocol = intent.target
+        if intent.parameters:
+            # For search commands, use the actual query
+            if 'query' in intent.parameters:
+                user_input_for_protocol = f"search for {intent.parameters['query']}"
+            # For type commands, use the actual text
+            elif 'text' in intent.parameters:
+                user_input_for_protocol = f"type {intent.parameters['text']}"
+        
+        protocol = self.protocol_generator.create_protocol(intent, user_input_for_protocol)
         
         # Validate protocol
         validation = self.protocol_generator.validate_protocol(protocol)
