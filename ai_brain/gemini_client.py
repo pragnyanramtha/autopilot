@@ -830,7 +830,12 @@ Generate a JSON object with this structure:
 
 # CRITICAL RULES
 
-1. **press_key vs shortcut**:
+1. **Browser navigation - NEVER mix open_app and open_url**:
+   - If you open a browser with "open_app", navigate using keyboard shortcuts (Ctrl+L, type URL, Enter)
+   - NEVER use "open_url" after "open_app" - it will open in the default browser, not the app you just opened
+   - Example: {{"action": "open_app", "params": {{"app_name": "chrome"}}}}, then {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}}}, then {{"action": "type", "params": {{"text": "x.com"}}}}, then {{"action": "press_key", "params": {{"key": "enter"}}}}
+
+2. **press_key vs shortcut**:
    - Use "press_key" for SINGLE keys: {{"action": "press_key", "params": {{"key": "enter"}}}}
    - Use "shortcut" for MULTIPLE keys pressed SIMULTANEOUSLY: {{"action": "shortcut", "params": {{"keys": ["ctrl", "t"]}}}}
    - NEVER use multiple press_key actions for shortcuts like Ctrl+T
@@ -914,9 +919,9 @@ NOTE: "elon musk" came from the user's command, NOT a placeholder!
   }},
   "actions": [
     {{"action": "open_app", "params": {{"app_name": "chrome"}}, "wait_after_ms": 2000}},
-    {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
-    {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 100}},
-    {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}},
+    {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 300}},
+    {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 200}},
+    {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 4000}},
     {{"action": "visual_navigate", "params": {{"task": "Click the 'What's happening?' post compose input field"}}, "wait_after_ms": 500}},
     {{"action": "type", "params": {{"text": "Winter is here! ❄️ The crisp air, cozy sweaters, and hot cocoa make this season magical. What's your favorite winter activity? #Winter #CozyVibes"}}, "wait_after_ms": 1000}},
     {{"action": "visual_navigate", "params": {{"task": "Click the blue 'Post' button to publish the tweet"}}, "wait_after_ms": 2000}}
@@ -1173,14 +1178,16 @@ Use this exact format (valid JSON only):
   "macros": {{}},
   "actions": [
     {{"action": "open_app", "params": {{"app_name": "chrome"}}, "wait_after_ms": 2000}},
-    {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
-    {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 100}},
-    {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}},
+    {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 300}},
+    {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 200}},
+    {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 4000}},
     {{"action": "visual_navigate", "params": {{"task": "Click the 'What's happening?' post compose input field"}}, "wait_after_ms": 500}},
     {{"action": "type", "params": {{"text": "Your complete post content here with emojis and hashtags"}}, "wait_after_ms": 1000}},
     {{"action": "visual_navigate", "params": {{"task": "Click the blue 'Post' button to publish the tweet"}}, "wait_after_ms": 2000}}
   ]
 }}
+
+CRITICAL: After opening a browser with open_app, navigate using Ctrl+L, type URL, Enter. NEVER use open_url action!
 
 CRITICAL JSON RULES:
 - Return ONLY valid JSON (no explanations)

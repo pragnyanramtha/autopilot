@@ -232,8 +232,13 @@ def test_complex_workflow_mock():
                 "wait_after_ms": 1000
             },
             {
-                "action": "visual_navigate",
-                "params": {"task": "Click the first search result"},
+                "action": "mouse_move",
+                "params": {"x": 600, "y": 400},
+                "wait_after_ms": 200
+            },
+            {
+                "action": "mouse_click",
+                "params": {"button": "left"},
                 "wait_after_ms": 2000
             },
             {

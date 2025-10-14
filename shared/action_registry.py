@@ -279,7 +279,8 @@ class ActionRegistry:
         mouse_controller=None,
         screen_capture=None,
         visual_verifier=None,
-        macro_executor=None
+        macro_executor=None,
+        message_broker=None
     ):
         """
         Inject dependencies needed by action handlers.
@@ -290,9 +291,11 @@ class ActionRegistry:
             screen_capture: ScreenCapture instance
             visual_verifier: VisualVerifier instance
             macro_executor: MacroExecutor instance
+            message_broker: MessageBroker instance (for visual_navigate action)
         """
         self.input_controller = input_controller
         self.mouse_controller = mouse_controller
         self.screen_capture = screen_capture
         self.visual_verifier = visual_verifier
         self.macro_executor = macro_executor
+        self.message_broker = message_broker

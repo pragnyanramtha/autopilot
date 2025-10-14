@@ -73,12 +73,16 @@ class AutomationEngineApp:
         else:
             print("⚠ GEMINI_API_KEY not found - vision features disabled")
         
+        # Initialize message broker first (needed for visual_navigate)
+        self.message_broker = MessageBroker()
+        
         # Inject dependencies into action registry
         self.action_registry.inject_dependencies(
             input_controller=input_controller,
             mouse_controller=mouse_controller,
             screen_capture=screen_capture,
-            visual_verifier=visual_verifier
+            visual_verifier=visual_verifier,
+            message_broker=self.message_broker
         )
         
         # Register all action handlers
@@ -90,9 +94,8 @@ class AutomationEngineApp:
             action_registry=self.action_registry,
             dry_run=dry_run
         )
-        self.message_broker = MessageBroker()
         
-        # Initialize visual navigation handler
+        # Initialize visual navigation handler (message_broker already initialized above)
         self.visual_handler = VisualNavigationHandler(
             screen_capture=screen_capture,
             mouse_controller=mouse_controller,

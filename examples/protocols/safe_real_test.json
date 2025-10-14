@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Safe protocol for real automation testing",
+    "complexity": "simple",
+    "uses_vision": false,
+    "notes": "This protocol is safe to run - it just opens notepad and types a message"
+  },
+  "macros": {},
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "notepad"},
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "type",
+      "params": {"text": "Hello! This is a test from the automation engine."},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "type",
+      "params": {"text": "The automation is working correctly!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "type",
+      "params": {"text": "You can close this window now."},
+      "wait_after_ms": 500
+    }
+  ]
+}

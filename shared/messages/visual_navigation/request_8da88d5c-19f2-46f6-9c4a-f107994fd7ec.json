@@ -1,0 +1,8 @@
+{
+  "type": "visual_navigation_request",
+  "timestamp": "2025-10-14T15:50:33.692848",
+  "request_id": "8da88d5c-19f2-46f6-9c4a-f107994fd7ec",
+  "task_description": "Click the 'What is happening?!' compose input field",
+  "workflow_goal": "Click the 'What is happening?!' compose input field",
+  "max_iterations": 10
+}

@@ -1,0 +1,83 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Simple test protocol without visual navigation",
+    "complexity": "simple",
+    "uses_vision": false
+  },
+  "macros": {
+    "type_and_enter": [
+      {
+        "action": "type",
+        "params": {"text": "{{text}}"},
+        "wait_after_ms": 500
+      },
+      {
+        "action": "press_key",
+        "params": {"key": "enter"},
+        "wait_after_ms": 1000
+      }
+    ]
+  },
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "notepad"},
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "type",
+      "params": {"text": "Hello from the automation engine!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "type_and_enter",
+        "vars": {"text": "This is line 2"}
+      },
+      "wait_after_ms": 500
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "type_and_enter",
+        "vars": {"text": "This is line 3"}
+      },
+      "wait_after_ms": 500
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "a"]},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "c"]},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 500, "y": 300},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Checking if notepad is open",
+        "expected": "Notepad window visible with text"
+      },
+      "wait_after_ms": 500
+    }
+  ]
+}

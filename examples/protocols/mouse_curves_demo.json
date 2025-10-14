@@ -1,0 +1,417 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Demonstrates different mouse curve types and smooth movements",
+    "complexity": "simple",
+    "uses_vision": false,
+    "notes": "Shows bezier curves, arcs, and different speeds"
+  },
+  "macros": {},
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "notepad"},
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "type",
+      "params": {"text": "=== MOUSE CURVE DEMONSTRATION ==="},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "Watch your mouse move in different patterns!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "1. Bezier Curve (default) - Smooth S-curve"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 200, "y": 200, "smooth": true, "curve_type": "bezier", "duration": 1.0},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 800, "y": 200, "smooth": true, "curve_type": "bezier", "duration": 1.0},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 800, "y": 600, "smooth": true, "curve_type": "bezier", "duration": 1.0},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 200, "y": 600, "smooth": true, "curve_type": "bezier", "duration": 1.0},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 200, "y": 200, "smooth": true, "curve_type": "bezier", "duration": 1.0},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Bezier curve complete!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "2. Arc Curve - Circular arc path"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 300, "y": 300, "smooth": true, "curve_type": "arc", "duration": 1.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 700, "y": 300, "smooth": true, "curve_type": "arc", "duration": 1.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 700, "y": 500, "smooth": true, "curve_type": "arc", "duration": 1.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 300, "y": 500, "smooth": true, "curve_type": "arc", "duration": 1.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 300, "y": 300, "smooth": true, "curve_type": "arc", "duration": 1.5},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Arc curve complete!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "3. Fast Speed - Quick movements"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 250, "smooth": true, "speed": 2.0, "duration": 0.3},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 600, "y": 250, "smooth": true, "speed": 2.0, "duration": 0.3},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 600, "y": 450, "smooth": true, "speed": 2.0, "duration": 0.3},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 450, "smooth": true, "speed": 2.0, "duration": 0.3},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 250, "smooth": true, "speed": 2.0, "duration": 0.3},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Fast movements complete!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "4. Slow Speed - Deliberate movements"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 350, "y": 350, "smooth": true, "speed": 0.5, "duration": 2.0},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 650, "y": 350, "smooth": true, "speed": 0.5, "duration": 2.0},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 500, "y": 500, "smooth": true, "speed": 0.5, "duration": 2.0},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Slow movements complete!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "5. Figure-8 Pattern - Complex path"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 500, "y": 300, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 600, "y": 400, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 500, "y": 500, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 400, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 500, "y": 300, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 200, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 500, "y": 100, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 600, "y": 200, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 500, "y": 300, "smooth": true, "curve_type": "bezier", "duration": 0.8},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Figure-8 complete!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "6. Straight Line (no smooth) - Direct path"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 200, "y": 400, "smooth": false},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 800, "y": 400, "smooth": false},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 200, "y": 400, "smooth": false},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Straight line complete!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "=== ALL CURVE DEMONSTRATIONS COMPLETE! ==="},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "The mouse controller supports:"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "  • Bezier curves (smooth S-curves)"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "  • Arc curves (circular paths)"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "  • Variable speeds (0.5x to 2.0x)"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "  • Custom durations"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "  • Human-like movements"},
+      "wait_after_ms": 500
+    }
+  ]
+}

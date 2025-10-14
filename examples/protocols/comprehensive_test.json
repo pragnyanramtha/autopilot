@@ -1,0 +1,378 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Comprehensive automation test - exercises all features",
+    "complexity": "complex",
+    "uses_vision": false,
+    "notes": "Tests mouse movement, keyboard shortcuts, browser automation, macros, and more"
+  },
+  "macros": {
+    "open_new_tab": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "t"]},
+        "wait_after_ms": 1000
+      }
+    ],
+    "navigate_to_url": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "l"]},
+        "wait_after_ms": 300
+      },
+      {
+        "action": "type",
+        "params": {"text": "{{url}}"},
+        "wait_after_ms": 300
+      },
+      {
+        "action": "press_key",
+        "params": {"key": "enter"},
+        "wait_after_ms": 2000
+      }
+    ],
+    "close_tab": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "w"]},
+        "wait_after_ms": 500
+      }
+    ]
+  },
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "notepad"},
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "type",
+      "params": {"text": "=== AUTOMATION ENGINE COMPREHENSIVE TEST ==="},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "1. Testing keyboard typing..."},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Basic typing works!"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "2. Testing keyboard shortcuts..."},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "a"]},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "c"]},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "end"},
+      "wait_after_ms": 200
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Ctrl+A and Ctrl+C work!"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "3. Testing mouse movement..."},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 300, "smooth": true, "duration": 0.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 800, "y": 300, "smooth": true, "duration": 0.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 800, "y": 600, "smooth": true, "duration": 0.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 600, "smooth": true, "duration": 0.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 400, "y": 300, "smooth": true, "duration": 0.5},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Mouse drew a square!"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "4. Opening browser and testing navigation..."},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "open_app",
+      "params": {"app_name": "chrome"},
+      "wait_after_ms": 3000
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "navigate_to_url",
+        "vars": {"url": "github.com"}
+      },
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "macro",
+      "params": {"name": "open_new_tab"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "navigate_to_url",
+        "vars": {"url": "stackoverflow.com"}
+      },
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "macro",
+      "params": {"name": "open_new_tab"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "navigate_to_url",
+        "vars": {"url": "python.org"}
+      },
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["ctrl", "shift", "t"]},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "macro",
+      "params": {"name": "close_tab"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "macro",
+      "params": {"name": "close_tab"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "macro",
+      "params": {"name": "close_tab"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "macro",
+      "params": {"name": "close_tab"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "shortcut",
+      "params": {"keys": ["alt", "f4"]},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "open_app",
+      "params": {"app_name": "notepad"},
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Browser automation works!"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "5. Testing macros with variables..."},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Macros executed successfully!"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "6. Testing mouse clicks..."},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "mouse_move",
+      "params": {"x": 100, "y": 100, "smooth": true},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left", "clicks": 1},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "mouse_click",
+      "params": {"button": "left", "clicks": 2},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "type",
+      "params": {"text": "   ✓ Single and double clicks work!"},
+      "wait_after_ms": 300
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "=== ALL TESTS COMPLETED SUCCESSFULLY! ==="},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "The automation engine is working perfectly!"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 100
+    },
+    {
+      "action": "type",
+      "params": {"text": "You can close this window now."},
+      "wait_after_ms": 500
+    }
+  ]
+}

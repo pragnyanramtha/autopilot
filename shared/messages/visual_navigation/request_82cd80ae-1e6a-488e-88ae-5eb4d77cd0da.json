@@ -1,0 +1,8 @@
+{
+  "type": "visual_navigation_request",
+  "timestamp": "2025-10-14T15:51:41.211152",
+  "request_id": "82cd80ae-1e6a-488e-88ae-5eb4d77cd0da",
+  "task_description": "Click the blue 'Post' button to publish the tweet",
+  "workflow_goal": "Click the blue 'Post' button to publish the tweet",
+  "max_iterations": 10
+}
