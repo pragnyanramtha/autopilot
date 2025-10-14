@@ -31,6 +31,11 @@ echo.
 
 REM Activate and run
 call venv\Scripts\activate
+if errorlevel 1 (
+    echo [ERROR] Failed to activate virtual environment!
+    pause
+    exit /b 1
+)
 python run.py
 
 if errorlevel 1 (

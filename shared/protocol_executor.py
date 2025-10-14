@@ -316,6 +316,10 @@ class ProtocolExecutor:
         if action.action == 'macro':
             return self._execute_macro_action(action)
         
+        # Handle visual_navigate actions specially
+        if action.action == 'visual_navigate':
+            return self._execute_visual_navigate(action)
+        
         # Substitute variables in parameters
         params = self._substitute_variables(action.params)
         
@@ -476,6 +480,167 @@ class ProtocolExecutor:
                     time.sleep(wait_seconds)
         
         return results
+    
+    def _execute_visual_navigate(self, action: ActionStep) -> Any:
+        """
+        Execute a visual_navigate action with AI vision guidance.
+        
+        This method:
+        1. Parses action parameters (task, goal, max_iterations, fallback_coordinates)
+        2. Sends visual navigation request to automation engine via message broker
+        3. Waits for workflow completion with timeout
+        4. Falls back to fallback_coordinates if visual navigation fails
+        
+        Args:
+            action: The visual_navigate action to execute
+            
+        Returns:
+            Result from visual navigation workflow
+            
+        Raises:
+            ValueError: If required parameters are missing
+            RuntimeError: If message broker is not available
+            
+        Requirements:
+        - 8.1: Protocol integration with visual_navigate action
+        - 8.2: Task and goal parameter parsing
+        - 8.3: Workflow completion handling
+        - 8.4: Fallback coordinate support
+        """
+        import uuid
+        from shared.communication import MessageBroker
+        
+        # Parse action parameters
+        task = action.params.get('task')
+        if not task:
+            raise ValueError("visual_navigate action requires 'task' parameter")
+        
+        goal = action.params.get('goal', task)
+        max_iterations = action.params.get('max_iterations', 10)
+        fallback_coordinates = action.params.get('fallback_coordinates')
+        timeout_seconds = action.params.get('timeout', 60)
+        
+        print(f"  Starting visual navigation:")
+        print(f"    Task: {task}")
+        print(f"    Goal: {goal}")
+        print(f"    Max iterations: {max_iterations}")
+        if fallback_coordinates:
+            print(f"    Fallback coordinates: {fallback_coordinates}")
+        
+        if self.dry_run:
+            print(f"  [DRY RUN] Would execute visual navigation")
+            return {'status': 'dry_run', 'task': task}
+        
+        # Get message broker from action registry
+        # The action registry should have a reference to the message broker
+        if not hasattr(self.action_registry, 'message_broker'):
+            raise RuntimeError(
+                "ActionRegistry must have 'message_broker' attribute for visual_navigate action. "
+                "Set action_registry.message_broker = message_broker_instance"
+            )
+        
+        message_broker: MessageBroker = self.action_registry.message_broker
+        
+        # Generate unique request ID
+        request_id = str(uuid.uuid4())
+        
+        # Send visual navigation request
+        try:
+            request = {
+                'request_id': request_id,
+                'task_description': task,
+                'workflow_goal': goal,
+                'max_iterations': max_iterations,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            message_broker.send_visual_navigation_request(request)
+            print(f"  ✓ Visual navigation request sent (ID: {request_id[:8]}...)")
+            
+            # Wait for workflow completion
+            # The AI Brain will handle the visual navigation workflow and send back a result
+            # We poll for a completion message or timeout
+            start_time = time.time()
+            result = None
+            
+            while time.time() - start_time < timeout_seconds:
+                # Check for visual navigation result
+                # This would be sent by AI Brain when workflow completes
+                result_msg = message_broker.receive_visual_navigation_result(request_id, timeout=0.5)
+                
+                if result_msg:
+                    result = result_msg
+                    break
+                
+                # Check if we should stop
+                if self._should_stop:
+                    print(f"  ⚠ Visual navigation stopped by user")
+                    return {'status': 'stopped', 'request_id': request_id}
+            
+            if result:
+                status = result.get('status', 'unknown')
+                print(f"  ✓ Visual navigation completed: {status}")
+                
+                if status == 'success':
+                    return result
+                elif status == 'failed' and fallback_coordinates:
+                    # Fall back to fallback coordinates
+                    print(f"  ⚠ Visual navigation failed, using fallback coordinates")
+                    return self._execute_fallback_click(fallback_coordinates)
+                else:
+                    return result
+            else:
+                # Timeout
+                print(f"  ⚠ Visual navigation timed out after {timeout_seconds}s")
+                
+                if fallback_coordinates:
+                    print(f"  → Using fallback coordinates")
+                    return self._execute_fallback_click(fallback_coordinates)
+                else:
+                    return {
+                        'status': 'timeout',
+                        'error': f'Visual navigation timed out after {timeout_seconds}s',
+                        'request_id': request_id
+                    }
+        
+        except Exception as e:
+            error_msg = f"Visual navigation error: {str(e)}"
+            print(f"  ✗ {error_msg}")
+            
+            if fallback_coordinates:
+                print(f"  → Using fallback coordinates due to error")
+                return self._execute_fallback_click(fallback_coordinates)
+            else:
+                raise RuntimeError(error_msg)
+    
+    def _execute_fallback_click(self, coordinates: list) -> dict:
+        """
+        Execute a standard click action using fallback coordinates.
+        
+        Args:
+            coordinates: [x, y] coordinates to click
+            
+        Returns:
+            Result from click action
+            
+        Requirements:
+        - 8.4: Fallback coordinate support
+        """
+        if not isinstance(coordinates, list) or len(coordinates) != 2:
+            raise ValueError(f"Fallback coordinates must be [x, y], got: {coordinates}")
+        
+        x, y = coordinates
+        print(f"  Executing fallback click at ({x}, {y})")
+        
+        # Execute standard click action via action registry
+        result = self.action_registry.execute('click', {'x': x, 'y': y})
+        
+        return {
+            'status': 'fallback_success',
+            'action': 'click',
+            'coordinates': {'x': x, 'y': y},
+            'result': result
+        }
     
     def _substitute_variables(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """

@@ -51,7 +51,7 @@ timeout /t 3 /nobreak >nul
 
 REM Start AI Brain in new window (RIGHT side)
 echo Starting AI Brain...
-start "AI Brain [DEV]" cmd /k "title AI Brain [DEV] && color 0B && call venv\Scripts\activate && SET USE_ULTRA_FAST_MODEL=true && echo ============================================================ && echo   AI BRAIN - DEVELOPER MODE (Ultra Fast) && echo ============================================================ && echo. && echo Using model: gemini-2.0-flash-exp && echo. && echo TIP: Try simple commands first: && echo   - search for pragnyan ramtha && echo   - type hello world && echo   - click at 500 300 && echo. && echo ============================================================ && echo. && python -m ai_brain.main"
+start "AI Brain [DEV]" cmd /k "title AI Brain [DEV] && color 0B && SET USE_ULTRA_FAST_MODEL=true && call venv\Scripts\activate && echo ============================================================ && echo   AI BRAIN - DEVELOPER MODE (Ultra Fast) && echo ============================================================ && echo. && echo Using ultra-fast models (no pro in dev mode) && echo. && echo TIP: Try simple commands first: && echo   - search for pragnyan ramtha && echo   - type hello world && echo   - click at 500 300 && echo. && echo ============================================================ && echo. && python -m ai_brain.main"
 
 echo.
 echo ============================================================

@@ -19,6 +19,7 @@ from rich import print as rprint
 
 from ai_brain.gemini_client import GeminiClient, CommandIntent
 from ai_brain.protocol_generator import ProtocolGenerator
+from ai_brain.vision_navigator import VisionNavigator
 from shared.communication import MessageBroker, CommunicationError
 from shared.data_models import ExecutionResult
 
@@ -44,6 +45,7 @@ class AIBrainApp:
         self.gemini_client: Optional[GeminiClient] = None
         self.protocol_generator: Optional[ProtocolGenerator] = None
         self.message_broker: Optional[MessageBroker] = None
+        self.vision_navigator: Optional[VisionNavigator] = None
         
     def _load_config(self, config_path: str) -> dict:
         """Load configuration from JSON file."""
@@ -111,6 +113,15 @@ class AIBrainApp:
             # Initialize message broker
             self.console.print("✓ Initializing communication layer...")
             self.message_broker = MessageBroker()
+            
+            # Initialize vision navigator if enabled
+            visual_nav_config = self.config.get('visual_navigation', {})
+            if visual_nav_config.get('enabled', True):
+                self.console.print("✓ Initializing vision navigator...")
+                self.vision_navigator = VisionNavigator(
+                    gemini_client=self.gemini_client,
+                    config=self.config
+                )
             
             self.console.print("[green]✓ All components initialized successfully![/green]\n")
             return True
@@ -183,6 +194,11 @@ class AIBrainApp:
             # Display parsed intent
             self._display_intent(intent)
             
+            # Check if visual navigation is needed
+            if self._requires_visual_navigation(intent, user_input):
+                self._handle_visual_navigation(intent, user_input)
+                return
+            
             # Check if complex protocol requires additional processing
             complexity = intent.parameters.get('complexity', 'simple')
             if complexity == 'complex':
@@ -194,6 +210,308 @@ class AIBrainApp:
             self.console.print(f"[red]Communication error: {e}[/red]")
         except Exception as e:
             self.console.print(f"[red]Error processing command: {e}[/red]")
+    
+    def _requires_visual_navigation(self, intent: CommandIntent, user_input: str) -> bool:
+        """
+        Determine if a command requires visual navigation.
+        
+        Args:
+            intent: Parsed command intent
+            user_input: Original user input
+            
+        Returns:
+            True if visual navigation should be used, False otherwise
+        """
+        # Check if visual navigation is enabled
+        if not self.vision_navigator:
+            return False
+        
+        # Check for explicit visual navigation keywords
+        visual_keywords = ['find', 'locate', 'look for', 'search for', 'click on', 'click the']
+        user_lower = user_input.lower()
+        
+        # If user explicitly mentions visual elements without coordinates
+        has_visual_keyword = any(keyword in user_lower for keyword in visual_keywords)
+        has_coordinates = intent.parameters.get('x') is not None or intent.parameters.get('coordinates') is not None
+        
+        # Use visual navigation if:
+        # 1. User mentions visual elements AND no coordinates provided
+        # 2. Intent explicitly requests visual navigation
+        # 3. Action is 'click' or 'double_click' without specific coordinates
+        if has_visual_keyword and not has_coordinates:
+            return True
+        
+        if intent.parameters.get('use_visual_navigation', False):
+            return True
+        
+        if intent.action in ['click', 'double_click', 'right_click'] and not has_coordinates:
+            # Check if target description suggests visual search
+            target = intent.target or ''
+            if any(word in target.lower() for word in ['button', 'link', 'icon', 'menu', 'tab']):
+                return True
+        
+        return False
+    
+    def _handle_visual_navigation(self, intent: CommandIntent, user_input: str):
+        """
+        Handle visual navigation workflow.
+        
+        Args:
+            intent: Parsed command intent
+            user_input: Original user input
+        """
+        import uuid
+        import base64
+        from io import BytesIO
+        
+        self.console.print("\n[bold cyan]Visual Navigation Mode Activated[/bold cyan]")
+        
+        # Extract task description and goal
+        task_description = intent.target or user_input
+        workflow_goal = intent.parameters.get('goal', task_description)
+        
+        # Get max iterations from config
+        visual_nav_config = self.config.get('visual_navigation', {})
+        max_iterations = visual_nav_config.get('max_iterations', 10)
+        iteration_timeout = visual_nav_config.get('iteration_timeout_seconds', 30)
+        
+        self.console.print(f"  Task: {task_description}")
+        self.console.print(f"  Max iterations: {max_iterations}")
+        
+        # Generate unique request ID
+        request_id = str(uuid.uuid4())
+        
+        # Send initial visual navigation request
+        self.console.print("\n→ Requesting screenshot from automation engine...")
+        self.message_broker.send_visual_navigation_request({
+            "request_id": request_id,
+            "task_description": task_description,
+            "workflow_goal": workflow_goal,
+            "iteration": 0,
+            "max_iterations": max_iterations
+        })
+        
+        # Wait for screenshot response
+        response = self.message_broker.receive_visual_navigation_response(
+            request_id=request_id,
+            timeout=iteration_timeout
+        )
+        
+        if not response:
+            self.console.print("[red]Error: No response from automation engine (timeout)[/red]")
+            self.console.print("[yellow]Make sure the automation engine is running[/yellow]")
+            return
+        
+        self.console.print("[green]✓ Screenshot received[/green]")
+        
+        # Decode screenshot
+        screenshot_base64 = response.get('screenshot_base64', '')
+        screenshot_data = base64.b64decode(screenshot_base64)
+        screenshot = Image.open(BytesIO(screenshot_data))
+        
+        mouse_position = response.get('mouse_position', {})
+        current_mouse_pos = (mouse_position.get('x', 0), mouse_position.get('y', 0))
+        
+        screen_size_dict = response.get('screen_size', {})
+        screen_size = (screen_size_dict.get('width', 1920), screen_size_dict.get('height', 1080))
+        
+        # Iteration loop: analyze → execute → verify
+        iteration = 0
+        actions_taken = []
+        
+        # Reset action history for loop detection
+        self.vision_navigator.reset_action_history()
+        
+        with self.console.status("[bold green]Executing visual navigation workflow...") as status:
+            while iteration < max_iterations:
+                iteration += 1
+                status.update(f"[bold green]Iteration {iteration}/{max_iterations}...")
+                
+                self.console.print(f"\n[cyan]→ Iteration {iteration}: Analyzing screen...[/cyan]")
+                
+                # Analyze screenshot with AI
+                try:
+                    result = self.vision_navigator.analyze_screen_for_action(
+                        screenshot=screenshot,
+                        current_mouse_pos=current_mouse_pos,
+                        task_description=task_description,
+                        screen_size=screen_size
+                    )
+                except Exception as e:
+                    self.console.print(f"[red]Error analyzing screen: {e}[/red]")
+                    break
+                
+                # Display result
+                self.console.print(f"  Action: {result.action}")
+                if result.coordinates:
+                    self.console.print(f"  Coordinates: {result.coordinates}")
+                self.console.print(f"  Confidence: {result.confidence:.2%}")
+                self.console.print(f"  Reasoning: {result.reasoning}")
+                
+                # Check if workflow is complete
+                if result.action == 'complete':
+                    self.console.print("\n[green]✓ Workflow complete![/green]")
+                    break
+                
+                # Check if no action needed
+                if result.action == 'no_action':
+                    self.console.print("\n[yellow]No action needed[/yellow]")
+                    break
+                
+                # Check for loop detection (repeated clicks on same coordinates)
+                if result.coordinates:
+                    loop_detected, loop_warning = self.vision_navigator.detect_loop(result.coordinates)
+                    if loop_detected:
+                        self.console.print(f"\n[bold red]⚠ LOOP DETECTED ⚠[/bold red]")
+                        self.console.print(f"[red]{loop_warning}[/red]")
+                        self.console.print("[yellow]Halting execution to prevent infinite loop[/yellow]")
+                        break
+                
+                # Check for critical actions and require confirmation
+                is_critical, matched_keywords = self.vision_navigator.is_critical_action(
+                    result.reasoning, 
+                    result.action
+                )
+                if is_critical:
+                    self.console.print("\n[bold red]⚠ CRITICAL ACTION DETECTED ⚠[/bold red]")
+                    self.console.print(f"[red]Matched keywords: {', '.join(matched_keywords)}[/red]")
+                    self.console.print(f"[yellow]The AI wants to: {result.reasoning}[/yellow]")
+                    self.console.print(f"[yellow]Action: {result.action} at {result.coordinates}[/yellow]")
+                    
+                    confirm = Prompt.ask(
+                        "[bold]This action may be destructive. Continue?[/bold]",
+                        choices=["y", "n"],
+                        default="n"
+                    )
+                    
+                    if confirm.lower() != 'y':
+                        self.console.print("[yellow]Critical action cancelled by user[/yellow]")
+                        break
+                
+                # Check confidence threshold
+                confidence_threshold = visual_nav_config.get('confidence_threshold', 0.6)
+                if result.confidence < confidence_threshold:
+                    self.console.print(f"[yellow]Warning: Low confidence ({result.confidence:.2%})[/yellow]")
+                    confirm = Prompt.ask(
+                        "Continue with this action?",
+                        choices=["y", "n"],
+                        default="n"
+                    )
+                    if confirm.lower() != 'y':
+                        self.console.print("[yellow]Action skipped by user[/yellow]")
+                        break
+                
+                # Store action for history
+                actions_taken.append({
+                    'iteration': iteration,
+                    'action': result.action,
+                    'coordinates': result.coordinates,
+                    'confidence': result.confidence,
+                    'reasoning': result.reasoning
+                })
+                
+                # Send action command to automation engine
+                self.console.print(f"\n→ Executing {result.action}...")
+                self.message_broker.send_visual_action_command({
+                    "request_id": request_id,
+                    "action": result.action,
+                    "coordinates": {"x": result.coordinates[0], "y": result.coordinates[1]} if result.coordinates else None,
+                    "text": result.text_to_type,
+                    "request_followup": result.requires_followup
+                })
+                
+                # Wait for action result
+                action_result = self.message_broker.receive_visual_action_result(
+                    request_id=request_id,
+                    timeout=iteration_timeout
+                )
+                
+                if not action_result:
+                    self.console.print("[red]Error: No action result received (timeout)[/red]")
+                    break
+                
+                if action_result.get('status') != 'success':
+                    error = action_result.get('error', 'Unknown error')
+                    self.console.print(f"[red]Error executing action: {error}[/red]")
+                    break
+                
+                self.console.print("[green]✓ Action executed[/green]")
+                
+                # Add action to history for loop detection
+                if result.coordinates:
+                    self.vision_navigator.add_action_to_history(result.action, result.coordinates)
+                
+                # If followup requested, get new screenshot
+                if result.requires_followup:
+                    self.console.print("→ Capturing new screenshot...")
+                    
+                    # Decode new screenshot from action result
+                    new_screenshot_base64 = action_result.get('screenshot_base64', '')
+                    if new_screenshot_base64:
+                        screenshot_data = base64.b64decode(new_screenshot_base64)
+                        screenshot = Image.open(BytesIO(screenshot_data))
+                        
+                        new_mouse_pos = action_result.get('mouse_position', {})
+                        current_mouse_pos = (new_mouse_pos.get('x', 0), new_mouse_pos.get('y', 0))
+                        
+                        self.console.print("[green]✓ New screenshot captured[/green]")
+                    else:
+                        self.console.print("[yellow]Warning: No new screenshot in response[/yellow]")
+                        break
+                else:
+                    # Workflow complete without followup
+                    break
+        
+        # Determine final status
+        if iteration >= max_iterations:
+            final_status = 'timeout'
+            error_msg = f'Maximum iterations ({max_iterations}) reached'
+            # Log timeout warning with partial results
+            self.console.print(f"\n[bold yellow]⚠ Workflow Timeout[/bold yellow]")
+            self.console.print(f"[yellow]Maximum iterations ({max_iterations}) reached[/yellow]")
+            self.console.print(f"[yellow]Partial results: {len(actions_taken)} actions completed[/yellow]")
+            if actions_taken:
+                self.console.print("[yellow]Last action:[/yellow]")
+                last_action = actions_taken[-1]
+                self.console.print(f"  {last_action['action']} at {last_action['coordinates']}")
+                self.console.print(f"  Reasoning: {last_action['reasoning']}")
+        elif actions_taken and actions_taken[-1]['action'] == 'complete':
+            final_status = 'success'
+            error_msg = None
+        elif not actions_taken:
+            final_status = 'failed'
+            error_msg = 'No actions taken'
+        else:
+            final_status = 'success'
+            error_msg = None
+        
+        # Send final result back to protocol executor (if it's waiting)
+        final_result = {
+            'request_id': request_id,
+            'status': final_status,
+            'actions_taken': actions_taken,
+            'iterations': iteration,
+            'final_coordinates': current_mouse_pos,
+            'error': error_msg
+        }
+        
+        try:
+            self.message_broker.send_visual_navigation_result(final_result)
+        except Exception as e:
+            # If sending fails, it's likely because no one is waiting for it
+            # (e.g., user initiated visual navigation directly, not via protocol)
+            pass
+        
+        # Display summary
+        self.console.print(f"\n[bold cyan]Visual Navigation Summary[/bold cyan]")
+        self.console.print(f"  Status: {final_status}")
+        self.console.print(f"  Total iterations: {iteration}")
+        self.console.print(f"  Actions taken: {len(actions_taken)}")
+        
+        if actions_taken:
+            self.console.print("\n[bold]Actions:[/bold]")
+            for action in actions_taken:
+                self.console.print(f"  {action['iteration']}. {action['action']} at {action['coordinates']} (confidence: {action['confidence']:.2%})")
     
     def _handle_simple_protocol(self, intent: CommandIntent):
         """Handle a simple single-action protocol."""

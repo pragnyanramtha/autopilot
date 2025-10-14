@@ -1,0 +1,71 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Example protocol demonstrating AI visual navigation",
+    "complexity": "medium",
+    "estimated_duration_seconds": 15,
+    "tags": ["visual-navigation", "ai-vision", "example"]
+  },
+  "actions": [
+    {
+      "action": "visual_navigate",
+      "params": {
+        "task": "Click the login button",
+        "goal": "Navigate to the login page",
+        "max_iterations": 5,
+        "timeout": 30,
+        "fallback_coordinates": [960, 540]
+      },
+      "wait_after_ms": 1000,
+      "description": "Use AI vision to locate and click the login button. Falls back to center of screen if not found."
+    },
+    {
+      "action": "visual_navigate",
+      "params": {
+        "task": "Find and click the username input field",
+        "goal": "Focus the username field for input",
+        "max_iterations": 3
+      },
+      "wait_after_ms": 500,
+      "description": "Locate the username input field using AI vision"
+    },
+    {
+      "action": "type",
+      "params": {
+        "text": "user@example.com"
+      },
+      "wait_after_ms": 500,
+      "description": "Type username into the focused field"
+    },
+    {
+      "action": "visual_navigate",
+      "params": {
+        "task": "Find and click the password input field",
+        "goal": "Focus the password field for input",
+        "max_iterations": 3
+      },
+      "wait_after_ms": 500,
+      "description": "Locate the password input field using AI vision"
+    },
+    {
+      "action": "type",
+      "params": {
+        "text": "password123"
+      },
+      "wait_after_ms": 500,
+      "description": "Type password into the focused field"
+    },
+    {
+      "action": "visual_navigate",
+      "params": {
+        "task": "Click the submit button to log in",
+        "goal": "Submit the login form",
+        "max_iterations": 5,
+        "fallback_coordinates": [960, 600]
+      },
+      "wait_after_ms": 2000,
+      "description": "Find and click the submit button. Falls back to expected button location if not found."
+    }
+  ],
+  "macros": {}
+}

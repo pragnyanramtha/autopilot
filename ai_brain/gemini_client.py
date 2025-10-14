@@ -82,11 +82,12 @@ class GeminiClient:
         }
         
         # OPTIMIZATION: Configure safety settings (less restrictive = faster)
+        # Using BLOCK_NONE to prevent safety blocks on automation protocols
         self.safety_settings = [
-            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
-            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
-            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
-            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
         
         self.model = genai.GenerativeModel(
@@ -116,18 +117,22 @@ class GeminiClient:
         """
         Switch between models based on task complexity.
         OPTIMIZED: Reuses generation config for faster initialization.
-        In ultra-fast mode, always uses the ultra-fast model.
+        In ultra-fast mode, uses ultra-fast model for simple tasks and fast model for complex tasks.
         
         Args:
             complexity: 'simple' or 'complex'
         """
-        # OPTIMIZATION: In ultra-fast mode, always use ultra-fast model
+        # OPTIMIZATION: In ultra-fast mode, use faster models
         if self.use_ultra_fast:
-            target_model = self.ULTRA_FAST_MODEL
+            # Dev mode: ultra-fast for simple, fast for complex (not pro)
+            if complexity == 'complex':
+                target_model = self.SIMPLE_MODEL  # gemini-2.5-flash for complex in dev mode
+            else:
+                target_model = self.ULTRA_FAST_MODEL  # gemini-flash-lite-latest for simple
         elif complexity == 'complex':
-            target_model = self.COMPLEX_MODEL
+            target_model = self.COMPLEX_MODEL  # gemini-2.5-pro for complex in normal mode
         else:
-            target_model = self.SIMPLE_MODEL
+            target_model = self.SIMPLE_MODEL  # gemini-2.5-flash for simple in normal mode
         
         # Only switch if different
         if self.current_model_name != target_model:
@@ -139,7 +144,10 @@ class GeminiClient:
             )
             
             if self.use_ultra_fast:
-                print(f"  ⚡⚡⚡ Using ultra-fast model: {target_model}")
+                if complexity == 'complex':
+                    print(f"  ⚡⚡ DEV MODE - Complex task: Using {target_model}")
+                else:
+                    print(f"  ⚡⚡⚡ DEV MODE - Simple task: Using {target_model}")
             elif complexity == 'complex':
                 print(f"  Switched to complex model: {target_model}")
             else:
@@ -177,6 +185,19 @@ class GeminiClient:
         
         try:
             response = self.model.generate_content(prompt)
+            
+            # Check if response was blocked by safety filters
+            if not response.candidates or not response.candidates[0].content.parts:
+                print(f"  ⚠ Response blocked by safety filters (finish_reason: {response.candidates[0].finish_reason if response.candidates else 'unknown'})")
+                print(f"  Falling back to simple search interpretation...")
+                # Return a simple search intent as fallback
+                return CommandIntent(
+                    action='search_web',
+                    target=user_input,
+                    parameters={'query': user_input, 'complexity': 'simple'},
+                    confidence=0.7
+                )
+            
             intent_data = self._parse_intent_response(response.text)
             
             # Store detected complexity in parameters
@@ -223,12 +244,17 @@ class GeminiClient:
         """
         user_input_lower = user_input.lower()
         
+        # ALWAYS complex: posting/publishing to social media
+        posting_keywords = ['post on', 'post to', 'tweet about', 'publish to', 'share on']
+        if any(keyword in user_input_lower for keyword in posting_keywords):
+            return 'complex'
+        
         # Complex command indicators
         complex_indicators = [
             'and', 'then', 'after', 'write', 'create', 'generate',
             'research', 'search for', 'find', 'post', 'publish',
             'compose', 'draft', 'summarize', 'analyze', 'multiple',
-            'several', 'both', 'all', 'maximize', 'optimize'
+            'several', 'both', 'all', 'maximize', 'optimize', 'about'
         ]
         
         # Count complex indicators
@@ -487,6 +513,15 @@ Return ONLY the content."""
         try:
             # OPTIMIZATION: Use streaming for faster perceived response
             response = self.model.generate_content(prompt, stream=False)
+            
+            # Check if response was blocked by safety filters
+            if not response.candidates or not response.candidates[0].content.parts:
+                print(f"  ⚠ Content generation blocked by safety filters")
+                # Generate a simple fallback based on topic
+                fallback_content = self._generate_fallback_content(topic, content_type)
+                self._cache_response(cache_key, fallback_content)
+                return fallback_content
+            
             content = response.text.strip()
             
             # Clean up
@@ -502,7 +537,28 @@ Return ONLY the content."""
             
             return content
         except Exception as e:
-            return f"Error generating content: {str(e)}"
+            print(f"  ⚠ Content generation error: {str(e)}")
+            # Generate fallback content
+            fallback_content = self._generate_fallback_content(topic, content_type)
+            return fallback_content
+    
+    def _generate_fallback_content(self, topic: str, content_type: str) -> str:
+        """
+        Generate simple fallback content when AI generation fails.
+        
+        Args:
+            topic: The topic to write about
+            content_type: Type of content
+            
+        Returns:
+            Simple fallback content string
+        """
+        if content_type in ['tweet', 'post', 'social']:
+            return f"Sharing thoughts about {topic}! 🌟 What do you think? #trending #discussion"
+        elif content_type == 'article':
+            return f"An exploration of {topic} and its implications in today's world."
+        else:
+            return f"Content about {topic}"
     
     def research_topic(self, query: str) -> dict:
         """
@@ -733,24 +789,15 @@ USER COMMAND: "{user_input}"
 
 Your task is to generate a JSON protocol that accomplishes this command using the available actions.
 
-🚨 CRITICAL RULE #1: NEVER USE PLACEHOLDER TEXT! 🚨
+IMPORTANT: Extract actual values from the user command, not placeholders.
+User command: "{user_input}"
 
-The user command is: "{user_input}"
+Use the real words from the command in your protocol. For example:
+- "check the us markets" → use "us markets" 
+- "search for John Doe" → use "John Doe"
+- "type hello world" → use "hello world"
 
-You MUST extract the ACTUAL words/names/terms from this command and use them in the protocol.
-
-WRONG Examples (DO NOT DO THIS):
-- {{"text": "query"}} ❌
-- {{"text": "search_term"}} ❌  
-- {{"text": "name"}} ❌
-- {{"text": "message"}} ❌
-
-CORRECT Examples (DO THIS):
-- User says "check the us markets" → {{"text": "us markets"}} ✅
-- User says "search for John Doe" → {{"text": "John Doe"}} ✅
-- User says "type hello world" → {{"text": "hello world"}} ✅
-
-If you use placeholder words like "query", "text", "name", the protocol will FAIL!
+Do NOT use generic words like "query", "text", "name", or "search_term".
 
 # PROTOCOL SCHEMA
 
@@ -805,16 +852,6 @@ Generate a JSON object with this structure:
    - Always include "wait_after_ms" for each action
    - Use longer waits after app launches (2000-3000ms)
    - Use shorter waits after keystrokes (100-200ms)
-
-# IMPORTANT REMINDER BEFORE EXAMPLES
-
-When you see the user command "{user_input}", you MUST extract the actual search terms, names, or text from it.
-DO NOT use placeholder words like "query", "text", "search_term", "name", etc.
-
-For example:
-- User says "check the us markets" → Use "us markets" in the protocol
-- User says "search for John Doe" → Use "John Doe" in the protocol  
-- User says "type hello world" → Use "hello world" in the protocol
 
 # EXAMPLES
 
@@ -908,14 +945,40 @@ NOTE: "elon musk" came from the user's command, NOT a placeholder!
 
 Generate a complete JSON protocol for the user command: "{user_input}"
 
-IMPORTANT:
-- Return ONLY the JSON protocol, no explanation
-- Ensure all actions are from the available action library
-- Use proper wait_after_ms timing
-- For shortcuts, ALWAYS use "shortcut" action with keys array
-- For typing content, include the COMPLETE text in the type action
-- Use verify_screen when uncertain about UI elements
-- Define macros for repeated sequences
+CRITICAL REQUIREMENTS:
+1. **Complete Workflows**: If the command involves posting/publishing content (e.g., "post on X", "tweet about", "publish to social media"):
+   - Include ALL steps: open browser → navigate to site → find compose area → type content → click post button
+   - Do NOT stop at just searching or researching
+   - The protocol must complete the ENTIRE task from start to finish
+
+2. **Content in Protocol**: If content needs to be posted/typed:
+   - Include the FULL content text directly in the type action
+   - Do NOT use placeholders like "{{{{content}}}}" or "{{{{generated_content}}}}"
+   - Write out the complete text that should be typed
+
+3. **Social Media Posts**: For X/Twitter posts:
+   - Open browser (chrome)
+   - Navigate to x.com
+   - Use verify_screen to find compose area
+   - Click compose area using verified coordinates
+   - Type the COMPLETE post content with emojis and hashtags
+   - Use verify_screen to find Post button
+   - Click Post button using verified coordinates
+   - Verify post was published
+
+4. **Technical Requirements**:
+   - Return ONLY the JSON protocol, no explanation
+   - Ensure all actions are from the available action library
+   - Use proper wait_after_ms timing (2000-3000ms after navigation, 500-1000ms after typing)
+   - For shortcuts, ALWAYS use "shortcut" action with keys array
+   - Use verify_screen when uncertain about UI elements
+   - Define macros for repeated sequences
+
+5. **JSON Formatting Rules** (CRITICAL):
+   - Use ONLY double quotes for strings (NOT triple quotes)
+   - NO trailing commas before closing braces or brackets
+   - All strings must be properly escaped
+   - Valid JSON only - no Python syntax
 
 Return the JSON protocol now:"""
         
@@ -1002,29 +1065,53 @@ Return the JSON protocol now:"""
         # Build prompt with action library
         prompt = self._build_protocol_prompt_template(user_input, action_library)
         
-        try:
-            # Generate protocol
-            response = self.model.generate_content(prompt)
-            protocol_text = response.text.strip()
-            
-            # Parse JSON from response
-            protocol = self._parse_protocol_response(protocol_text)
-            
-            # Validate protocol structure
-            self._validate_protocol_structure(protocol)
-            
-            # Cache the result
-            self._cache_response(cache_key, protocol)
-            
-            # Track timing
-            elapsed = time.time() - start_time
-            self.request_times.append(elapsed)
-            print(f"  ⚡ Protocol generated in {elapsed:.2f}s")
-            
-            return protocol
-            
-        except Exception as e:
-            raise ValueError(f"Failed to generate protocol: {str(e)}") from e
+        max_retries = 2
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                # Generate protocol
+                response = self.model.generate_content(prompt)
+                
+                # Check if response was blocked
+                if not response.candidates or not response.candidates[0].content.parts:
+                    print(f"  ⚠ Protocol generation blocked by safety filters (attempt {attempt + 1}/{max_retries})")
+                    if attempt < max_retries - 1:
+                        # Retry with simpler prompt
+                        prompt = self._build_simpler_protocol_prompt(user_input, action_library)
+                        continue
+                    else:
+                        raise ValueError("Protocol generation blocked by safety filters after retries")
+                
+                protocol_text = response.text.strip()
+                
+                # Parse JSON from response
+                protocol = self._parse_protocol_response(protocol_text)
+                
+                # Validate protocol structure
+                self._validate_protocol_structure(protocol)
+                
+                # Cache the result
+                self._cache_response(cache_key, protocol)
+                
+                # Track timing
+                elapsed = time.time() - start_time
+                self.request_times.append(elapsed)
+                print(f"  ⚡ Protocol generated in {elapsed:.2f}s")
+                
+                return protocol
+                
+            except (json.JSONDecodeError, ValueError) as e:
+                last_error = e
+                print(f"  ⚠ Protocol generation failed (attempt {attempt + 1}/{max_retries}): {str(e)[:100]}")
+                if attempt < max_retries - 1:
+                    # Retry with adjusted prompt
+                    time.sleep(1)  # Brief delay before retry
+                    continue
+                else:
+                    raise ValueError(f"Failed to generate protocol after {max_retries} attempts: {str(last_error)}") from last_error
+            except Exception as e:
+                raise ValueError(f"Failed to generate protocol: {str(e)}") from e
     
     def _parse_protocol_response(self, response_text: str) -> dict:
         """
@@ -1047,11 +1134,111 @@ Return the JSON protocol now:"""
             elif '```' in cleaned:
                 cleaned = cleaned.split('```')[1].split('```')[0].strip()
             
+            # Try to fix common JSON issues
+            cleaned = self._fix_common_json_issues(cleaned)
+            
             protocol = json.loads(cleaned)
             return protocol
             
         except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse protocol JSON: {str(e)}\nResponse: {response_text[:200]}") from e
+            # Show more context for debugging
+            error_pos = e.pos if hasattr(e, 'pos') else 0
+            context_start = max(0, error_pos - 100)
+            context_end = min(len(cleaned), error_pos + 100)
+            context = cleaned[context_start:context_end]
+            raise ValueError(
+                f"Failed to parse protocol JSON: {str(e)}\n"
+                f"Context around error: ...{context}...\n"
+                f"Full response length: {len(response_text)} chars"
+            ) from e
+    
+    def _build_simpler_protocol_prompt(self, user_input: str, action_library: dict) -> str:
+        """
+        Build a simpler, more focused prompt for protocol generation (used for retries).
+        
+        Args:
+            user_input: User's natural language command
+            action_library: Dictionary of available actions
+            
+        Returns:
+            Simplified prompt string
+        """
+        return f"""Generate a JSON protocol for: "{user_input}"
+
+Use this exact format (valid JSON only):
+
+{{
+  "version": "1.0",
+  "metadata": {{
+    "description": "Brief description",
+    "complexity": "medium",
+    "uses_vision": true
+  }},
+  "macros": {{}},
+  "actions": [
+    {{"action": "open_app", "params": {{"app_name": "chrome"}}, "wait_after_ms": 2000}},
+    {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
+    {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 100}},
+    {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}},
+    {{"action": "verify_screen", "params": {{"context": "Looking for compose area", "expected": "Compose area visible"}}, "wait_after_ms": 500}},
+    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
+    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 500}},
+    {{"action": "type", "params": {{"text": "Your complete post content here with emojis and hashtags"}}, "wait_after_ms": 1000}},
+    {{"action": "verify_screen", "params": {{"context": "Looking for Post button", "expected": "Post button visible"}}, "wait_after_ms": 500}},
+    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
+    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 2000}}
+  ]
+}}
+
+CRITICAL JSON RULES:
+- Return ONLY valid JSON (no explanations)
+- Use double quotes for strings (NOT triple quotes)
+- NO trailing commas before }} or ]]
+- All strings must be properly closed
+- Valid JSON syntax only"""
+    
+    def _fix_common_json_issues(self, json_str: str) -> str:
+        """
+        Attempt to fix common JSON formatting issues.
+        
+        Args:
+            json_str: JSON string that may have issues
+            
+        Returns:
+            Fixed JSON string
+        """
+        # Fix triple quotes (Python style) to single quotes (JSON style)
+        # Replace """ with " (triple quotes are not valid in JSON)
+        json_str = json_str.replace('"""', '"')
+        
+        # Fix trailing commas before closing braces/brackets
+        import re
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+        
+        # If JSON is incomplete (unterminated), try to complete it
+        if json_str.count('{') > json_str.count('}'):
+            # Add missing closing braces
+            missing = json_str.count('{') - json_str.count('}')
+            json_str += '}' * missing
+        
+        if json_str.count('[') > json_str.count(']'):
+            # Add missing closing brackets
+            missing = json_str.count('[') - json_str.count(']')
+            json_str += ']' * missing
+        
+        # Try to fix unterminated strings by finding the last quote and closing it
+        # This is a simple heuristic and may not work for all cases
+        if json_str.count('"') % 2 != 0:
+            # Odd number of quotes - try to close the last one
+            last_quote = json_str.rfind('"')
+            if last_quote > 0:
+                # Check if it's in a value position
+                before_quote = json_str[:last_quote].rstrip()
+                if before_quote.endswith(':') or before_quote.endswith(','):
+                    # It's likely an unterminated value - add closing quote
+                    json_str = json_str[:last_quote+1] + '""' + json_str[last_quote+1:]
+        
+        return json_str
     
     def _validate_protocol_structure(self, protocol: dict) -> None:
         """

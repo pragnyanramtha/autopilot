@@ -1,8 +1,8 @@
-# ⚡⚡⚡ Ultra-Fast Mode
+# ⚡⚡⚡ Ultra-Fast Mode (Dev Mode)
 
 ## Overview
 
-Ultra-Fast Mode uses Google's **gemini-2.0-flash-exp** model for maximum speed during development.
+Ultra-Fast Mode (Dev Mode) uses an opt-2.0-flash-exp** model for maximum speed during development.
 
 ## Speed Comparison
 

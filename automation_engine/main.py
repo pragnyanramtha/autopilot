@@ -49,6 +49,7 @@ class AutomationEngineApp:
         from automation_engine.input_controller import InputController
         from automation_engine.mouse_controller import MouseController
         from automation_engine.screen_capture import ScreenCapture
+        from automation_engine.visual_navigation_handler import VisualNavigationHandler
         from shared.visual_verifier import VisualVerifier
         
         input_controller = InputController()
@@ -90,6 +91,13 @@ class AutomationEngineApp:
             dry_run=dry_run
         )
         self.message_broker = MessageBroker()
+        
+        # Initialize visual navigation handler
+        self.visual_handler = VisualNavigationHandler(
+            screen_capture=screen_capture,
+            mouse_controller=mouse_controller,
+            message_broker=self.message_broker
+        )
         
         # Application state
         self.running = False
@@ -165,6 +173,19 @@ class AutomationEngineApp:
         try:
             while self.running:
                 try:
+                    # Check for visual navigation requests
+                    visual_request = self.message_broker.receive_visual_navigation_request(timeout=0)
+                    if visual_request:
+                        self.visual_handler.handle_visual_navigation_request(visual_request)
+                        continue
+                    
+                    # Check for visual action commands
+                    action_command = self.message_broker.receive_visual_action_command(timeout=0)
+                    if action_command:
+                        result = self.visual_handler.execute_visual_action(action_command)
+                        self.message_broker.send_visual_action_result(result)
+                        continue
+                    
                     # Poll for incoming protocols
                     protocol_data = self.message_broker.receive_protocol(timeout=0)
                     

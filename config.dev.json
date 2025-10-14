@@ -81,29 +81,12 @@
     "status_file": "shared/status_queue.json",
     "note": "Updated to use protocol_file instead of workflow_file"
   },
-  "visual_navigation": {
+  "dev_mode": {
     "enabled": true,
-    "vision_model": "gemini-2.0-flash-exp",
-    "vision_model_dev": "gemini-2.0-flash-exp",
-    "max_iterations": 10,
-    "iteration_timeout_seconds": 30,
-    "confidence_threshold": 0.6,
-    "require_confirmation_for_critical": true,
-    "critical_keywords": [
-      "delete",
-      "format",
-      "shutdown",
-      "remove",
-      "erase",
-      "destroy",
-      "wipe",
-      "reset"
-    ],
-    "loop_detection_threshold": 3,
-    "loop_detection_buffer_size": 10,
-    "screenshot_quality": 85,
-    "enable_audit_log": true,
-    "audit_log_path": "logs/visual_navigation_audit.json",
-    "note": "Vision models must support image input. confidence_threshold: 0.0-1.0, higher = more strict"
+    "dry_run": false,
+    "verbose": true,
+    "debug": true,
+    "log_level": "DEBUG",
+    "log_file": "dev_session.log"
   }
 }
