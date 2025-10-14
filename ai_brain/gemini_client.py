@@ -143,15 +143,17 @@ class GeminiClient:
                 safety_settings=self.safety_settings
             )
             
+            # Print appropriate message based on mode
             if self.use_ultra_fast:
                 if complexity == 'complex':
-                    print(f"  ⚡⚡ DEV MODE - Complex task: Using {target_model}")
+                    print(f"  ⚡⚡ DEV MODE - Complex task: Using {target_model} (no pro in dev mode)")
                 else:
                     print(f"  ⚡⚡⚡ DEV MODE - Simple task: Using {target_model}")
-            elif complexity == 'complex':
-                print(f"  Switched to complex model: {target_model}")
             else:
-                print(f"  Switched to simple model: {target_model}")
+                if complexity == 'complex':
+                    print(f"  Switched to complex model: {target_model}")
+                else:
+                    print(f"  Switched to simple model: {target_model}")
     
     def process_command(self, user_input: str, context: Optional[dict] = None) -> CommandIntent:
         """
@@ -838,10 +840,12 @@ Generate a JSON object with this structure:
    - When user says "post something about X", generate the COMPLETE content in the type action
    - Example: {{"action": "type", "params": {{"text": "Complete post content here with hashtags and emojis..."}}}}
 
-3. **Visual verification when uncertain**:
-   - Use "verify_screen" when you're uncertain about UI state or element location
-   - Example: {{"action": "verify_screen", "params": {{"context": "Looking for login button", "expected": "Login button visible"}}}}
-   - After verification, use {{{{verified_x}}}} and {{{{verified_y}}}} for coordinates
+3. **Visual navigation for UI interactions**:
+   - Use "visual_navigate" to find and click UI elements (handles verification + click automatically)
+   - Example: {{"action": "visual_navigate", "params": {{"task": "Click the blue Login button"}}}}
+   - The "task" parameter should describe what to do (e.g., "Click the submit button", "Find and click the search icon")
+   - Use "verify_screen" ONLY for checking state without clicking (e.g., "verify page loaded")
+   - NEVER use verify_screen followed by mouse_move - use visual_navigate instead
 
 4. **Macros for reusability**:
    - Define macros for repeated action sequences
@@ -913,30 +917,24 @@ NOTE: "elon musk" came from the user's command, NOT a placeholder!
     {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
     {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 100}},
     {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}},
-    {{"action": "verify_screen", "params": {{"context": "Looking for post input field", "expected": "Post compose area visible"}}, "wait_after_ms": 500}},
-    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
-    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 500}},
+    {{"action": "visual_navigate", "params": {{"task": "Click the 'What's happening?' post compose input field"}}, "wait_after_ms": 500}},
     {{"action": "type", "params": {{"text": "Winter is here! ❄️ The crisp air, cozy sweaters, and hot cocoa make this season magical. What's your favorite winter activity? #Winter #CozyVibes"}}, "wait_after_ms": 1000}},
-    {{"action": "verify_screen", "params": {{"context": "Looking for Post button", "expected": "Post button visible"}}, "wait_after_ms": 500}},
-    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
-    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 2000}}
+    {{"action": "visual_navigate", "params": {{"task": "Click the blue 'Post' button to publish the tweet"}}, "wait_after_ms": 2000}}
   ]
 }}
 ```
 
-## Example 4: Visual Verification Usage
+## Example 4: Visual Navigation Usage
 ```json
 {{
   "version": "1.0",
   "metadata": {{
-    "description": "Click login button with verification",
+    "description": "Click login button using visual navigation",
     "complexity": "simple",
     "uses_vision": true
   }},
   "actions": [
-    {{"action": "verify_screen", "params": {{"context": "Looking for login button", "expected": "Login button visible on screen"}}, "wait_after_ms": 500}},
-    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
-    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 1000}}
+    {{"action": "visual_navigate", "params": {{"task": "Click the blue Login button"}}, "wait_after_ms": 1000}}
   ]
 }}
 ```
@@ -959,12 +957,10 @@ CRITICAL REQUIREMENTS:
 3. **Social Media Posts**: For X/Twitter posts:
    - Open browser (chrome)
    - Navigate to x.com
-   - Use verify_screen to find compose area
-   - Click compose area using verified coordinates
+   - Use visual_navigate with task="Click the compose area" to find and click compose area
    - Type the COMPLETE post content with emojis and hashtags
-   - Use verify_screen to find Post button
-   - Click Post button using verified coordinates
-   - Verify post was published
+   - Use visual_navigate with task="Click the Post button" to find and click Post button
+   - IMPORTANT: visual_navigate requires a "task" parameter describing what to do
 
 4. **Technical Requirements**:
    - Return ONLY the JSON protocol, no explanation
@@ -1180,13 +1176,9 @@ Use this exact format (valid JSON only):
     {{"action": "shortcut", "params": {{"keys": ["ctrl", "l"]}}, "wait_after_ms": 200}},
     {{"action": "type", "params": {{"text": "x.com"}}, "wait_after_ms": 100}},
     {{"action": "press_key", "params": {{"key": "enter"}}, "wait_after_ms": 3000}},
-    {{"action": "verify_screen", "params": {{"context": "Looking for compose area", "expected": "Compose area visible"}}, "wait_after_ms": 500}},
-    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
-    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 500}},
+    {{"action": "visual_navigate", "params": {{"task": "Click the 'What's happening?' post compose input field"}}, "wait_after_ms": 500}},
     {{"action": "type", "params": {{"text": "Your complete post content here with emojis and hashtags"}}, "wait_after_ms": 1000}},
-    {{"action": "verify_screen", "params": {{"context": "Looking for Post button", "expected": "Post button visible"}}, "wait_after_ms": 500}},
-    {{"action": "mouse_move", "params": {{"x": "{{{{verified_x}}}}", "y": "{{{{verified_y}}}}"}}, "wait_after_ms": 200}},
-    {{"action": "mouse_click", "params": {{"button": "left"}}, "wait_after_ms": 2000}}
+    {{"action": "visual_navigate", "params": {{"task": "Click the blue 'Post' button to publish the tweet"}}, "wait_after_ms": 2000}}
   ]
 }}
 

@@ -1,0 +1,72 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "description": "Example protocol for testing with mock actions (no API calls)",
+    "complexity": "medium",
+    "uses_vision": true,
+    "author": "Mock Testing Suite",
+    "notes": "This protocol can be executed with mock actions to test without API calls"
+  },
+  "macros": {
+    "navigate_to_site": [
+      {
+        "action": "shortcut",
+        "params": {"keys": ["ctrl", "l"]},
+        "wait_after_ms": 200
+      },
+      {
+        "action": "type",
+        "params": {"text": "{{url}}"},
+        "wait_after_ms": 100
+      },
+      {
+        "action": "press_key",
+        "params": {"key": "enter"},
+        "wait_after_ms": 3000
+      }
+    ]
+  },
+  "actions": [
+    {
+      "action": "open_app",
+      "params": {"app_name": "chrome"},
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "macro",
+      "params": {
+        "name": "navigate_to_site",
+        "vars": {"url": "github.com"}
+      },
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "visual_navigate",
+      "params": {"task": "Click the search input field"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "type",
+      "params": {"text": "automation testing"},
+      "wait_after_ms": 500
+    },
+    {
+      "action": "press_key",
+      "params": {"key": "enter"},
+      "wait_after_ms": 2000
+    },
+    {
+      "action": "visual_navigate",
+      "params": {"task": "Click the first repository result"},
+      "wait_after_ms": 1000
+    },
+    {
+      "action": "verify_screen",
+      "params": {
+        "context": "Looking for repository page",
+        "expected": "Repository page loaded with README visible"
+      },
+      "wait_after_ms": 500
+    }
+  ]
+}

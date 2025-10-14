@@ -1,13 +1,39 @@
 {
+  "_comment_1": "=== AI VISUAL NAVIGATION EXAMPLE PROTOCOL ===",
+  "_comment_2": "This protocol demonstrates the visual_navigate action which uses AI vision to intelligently locate and click UI elements.",
+  "_comment_3": "The AI analyzes screenshots in real-time to determine optimal coordinates, making automation more adaptive to dynamic UIs.",
+  "_comment_4": "",
+  "_comment_5": "KEY FEATURES:",
+  "_comment_6": "1. AI-powered element detection - No need for hardcoded coordinates",
+  "_comment_7": "2. Iterative feedback loop - AI can request new screenshots to verify actions",
+  "_comment_8": "3. Fallback coordinates - Graceful degradation if AI vision fails",
+  "_comment_9": "4. Configurable iterations - Control how many attempts the AI makes",
+  "_comment_10": "",
+  "_comment_11": "REQUIREMENTS DEMONSTRATED:",
+  "_comment_12": "- Requirement 8.1: Protocol includes visual_navigate action",
+  "_comment_13": "- Requirement 8.2: Protocol execution continues after visual navigation completes",
+  "_comment_14": "- Requirement 8.3: Visual navigation takes precedence over hardcoded coordinates",
+  "_comment_15": "- Requirement 8.4: Fallback coordinates used if visual navigation fails",
+  "_comment_16": "",
+  
   "version": "1.0",
   "metadata": {
-    "description": "Example protocol demonstrating AI visual navigation",
+    "description": "Example protocol demonstrating AI visual navigation for login workflow",
     "complexity": "medium",
     "estimated_duration_seconds": 15,
-    "tags": ["visual-navigation", "ai-vision", "example"]
+    "tags": ["visual-navigation", "ai-vision", "example", "login-workflow"]
   },
+  
   "actions": [
     {
+      "_comment": "VISUAL_NAVIGATE ACTION - Uses AI vision to find and click the login button",
+      "_params_explanation": {
+        "task": "Clear description of what to click (required)",
+        "goal": "Overall workflow objective for context (optional)",
+        "max_iterations": "Maximum AI analysis attempts (default: 10)",
+        "timeout": "Timeout in seconds per iteration (default: 30)",
+        "fallback_coordinates": "Backup [x, y] if AI fails (optional but recommended)"
+      },
       "action": "visual_navigate",
       "params": {
         "task": "Click the login button",
@@ -19,7 +45,9 @@
       "wait_after_ms": 1000,
       "description": "Use AI vision to locate and click the login button. Falls back to center of screen if not found."
     },
+    
     {
+      "_comment": "VISUAL_NAVIGATE without fallback - Demonstrates pure AI vision approach",
       "action": "visual_navigate",
       "params": {
         "task": "Find and click the username input field",
@@ -27,9 +55,11 @@
         "max_iterations": 3
       },
       "wait_after_ms": 500,
-      "description": "Locate the username input field using AI vision"
+      "description": "Locate the username input field using AI vision (no fallback coordinates)"
     },
+    
     {
+      "_comment": "STANDARD TYPE ACTION - Works with any focused input field",
       "action": "type",
       "params": {
         "text": "user@example.com"
@@ -37,7 +67,9 @@
       "wait_after_ms": 500,
       "description": "Type username into the focused field"
     },
+    
     {
+      "_comment": "VISUAL_NAVIGATE with fewer iterations - Faster for simple elements",
       "action": "visual_navigate",
       "params": {
         "task": "Find and click the password input field",
@@ -47,7 +79,9 @@
       "wait_after_ms": 500,
       "description": "Locate the password input field using AI vision"
     },
+    
     {
+      "_comment": "STANDARD TYPE ACTION - Continues protocol execution after visual navigation",
       "action": "type",
       "params": {
         "text": "password123"
@@ -55,7 +89,10 @@
       "wait_after_ms": 500,
       "description": "Type password into the focused field"
     },
+    
     {
+      "_comment": "VISUAL_NAVIGATE with fallback - Best practice for critical actions",
+      "_note": "Fallback coordinates ensure workflow continues even if AI vision fails",
       "action": "visual_navigate",
       "params": {
         "task": "Click the submit button to log in",
@@ -67,5 +104,25 @@
       "description": "Find and click the submit button. Falls back to expected button location if not found."
     }
   ],
-  "macros": {}
+  
+  "macros": {},
+  
+  "_usage_notes": {
+    "1": "The visual_navigate action triggers the AI visual navigation system",
+    "2": "AI analyzes screenshots to determine optimal click coordinates",
+    "3": "Iterative feedback loop allows AI to verify actions and continue",
+    "4": "Mix visual_navigate with standard actions (type, shortcut, etc.)",
+    "5": "Always include fallback_coordinates for critical workflow steps",
+    "6": "Adjust max_iterations based on UI complexity (simple: 3, complex: 10)",
+    "7": "The 'task' parameter should be clear and specific",
+    "8": "The 'goal' parameter provides context for better AI decisions"
+  },
+  
+  "_safety_features": {
+    "coordinate_validation": "AI-suggested coordinates are validated against screen bounds",
+    "loop_detection": "System detects if AI repeatedly clicks same coordinates",
+    "iteration_limits": "max_iterations prevents infinite loops",
+    "critical_action_confirmation": "User confirmation required for destructive actions",
+    "audit_logging": "All visual navigation actions logged with screenshots"
+  }
 }

@@ -317,11 +317,19 @@ class VisualVerifier:
         Returns:
             Formatted prompt string
         """
+        # Get screen resolution
+        try:
+            screen_width, screen_height = self.screen_capture.get_screen_size()
+        except:
+            # Default to common resolution if unable to detect
+            screen_width, screen_height = 1920, 1080
+        
         prompt = f"""You are a visual verification AI for desktop automation.
 
 **Context:** {context}
 **Expected State:** {expected}
 **Confidence Threshold:** {confidence_threshold}
+**Screen Resolution:** {screen_width}x{screen_height} pixels
 
 Analyze this screenshot and determine:
 
@@ -335,6 +343,8 @@ Analyze this screenshot and determine:
 3. **Element Coordinates** (if applicable)
    - If you can identify the target element, provide its approximate center coordinates
    - Coordinates should be in pixels from top-left corner (x, y)
+   - The screen resolution is {screen_width}x{screen_height}, so x must be 0-{screen_width} and y must be 0-{screen_height}
+   - Provide actual pixel coordinates, not percentages or ratios
 
 4. **Analysis**
    - Brief description of what you see
