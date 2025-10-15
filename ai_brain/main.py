@@ -22,6 +22,7 @@ from ai_brain.protocol_generator import ProtocolGenerator
 from ai_brain.vision_navigator import VisionNavigator
 from shared.communication import MessageBroker, CommunicationError
 from shared.data_models import ExecutionResult
+from PIL import Image
 
 # Load environment variables from .env file
 load_dotenv()
@@ -252,9 +253,87 @@ class AIBrainApp:
         
         return False
     
+    def _handle_incoming_visual_navigation_request(self, request: dict):
+        """
+        Handle incoming visual navigation request from automation engine (protocol execution).
+        
+        Args:
+            request: Visual navigation request from automation engine
+        """
+        import uuid
+        import base64
+        from io import BytesIO
+        from PIL import Image
+        
+        request_id = request.get('request_id', str(uuid.uuid4()))
+        task_description = request.get('task_description', 'Unknown task')
+        workflow_goal = request.get('workflow_goal', task_description)
+        max_iterations = request.get('max_iterations', 10)
+        
+        self.console.print(f"  Task: {task_description}")
+        self.console.print(f"  Goal: {workflow_goal}")
+        self.console.print(f"  Max iterations: {max_iterations}")
+        
+        # Get iteration timeout from config
+        visual_nav_config = self.config.get('visual_navigation', {})
+        iteration_timeout = visual_nav_config.get('iteration_timeout_seconds', 30)
+        
+        # Send initial visual navigation request to get screenshot
+        self.console.print("\n→ Requesting screenshot from automation engine...")
+        self.message_broker.send_visual_navigation_request({
+            "request_id": request_id,
+            "task_description": task_description,
+            "workflow_goal": workflow_goal,
+            "iteration": 0,
+            "max_iterations": max_iterations
+        })
+        
+        # Wait for screenshot response
+        response = self.message_broker.receive_visual_navigation_response(
+            request_id=request_id,
+            timeout=iteration_timeout
+        )
+        
+        if not response:
+            self.console.print("[red]Error: No response from automation engine (timeout)[/red]")
+            # Send failure result
+            self.message_broker.send_visual_navigation_result({
+                'request_id': request_id,
+                'status': 'failed',
+                'error': 'No response from automation engine',
+                'actions_taken': [],
+                'iterations': 0
+            })
+            return
+        
+        self.console.print("[green]✓ Screenshot received[/green]")
+        
+        # Decode screenshot
+        screenshot_base64 = response.get('screenshot_base64', '')
+        screenshot_data = base64.b64decode(screenshot_base64)
+        screenshot = Image.open(BytesIO(screenshot_data))
+        
+        mouse_position = response.get('mouse_position', {})
+        current_mouse_pos = (mouse_position.get('x', 0), mouse_position.get('y', 0))
+        
+        screen_size_dict = response.get('screen_size', {})
+        screen_size = (screen_size_dict.get('width', 1920), screen_size_dict.get('height', 1080))
+        
+        # Execute visual navigation workflow
+        self._execute_visual_navigation_workflow(
+            request_id=request_id,
+            task_description=task_description,
+            workflow_goal=workflow_goal,
+            max_iterations=max_iterations,
+            screenshot=screenshot,
+            current_mouse_pos=current_mouse_pos,
+            screen_size=screen_size,
+            iteration_timeout=iteration_timeout
+        )
+    
     def _handle_visual_navigation(self, intent: CommandIntent, user_input: str):
         """
-        Handle visual navigation workflow.
+        Handle visual navigation workflow initiated by user command.
         
         Args:
             intent: Parsed command intent
@@ -263,6 +342,7 @@ class AIBrainApp:
         import uuid
         import base64
         from io import BytesIO
+        from PIL import Image
         
         self.console.print("\n[bold cyan]Visual Navigation Mode Activated[/bold cyan]")
         
@@ -314,6 +394,49 @@ class AIBrainApp:
         
         screen_size_dict = response.get('screen_size', {})
         screen_size = (screen_size_dict.get('width', 1920), screen_size_dict.get('height', 1080))
+        
+        # Execute visual navigation workflow
+        self._execute_visual_navigation_workflow(
+            request_id=request_id,
+            task_description=task_description,
+            workflow_goal=workflow_goal,
+            max_iterations=max_iterations,
+            screenshot=screenshot,
+            current_mouse_pos=current_mouse_pos,
+            screen_size=screen_size,
+            iteration_timeout=iteration_timeout
+        )
+    
+    def _execute_visual_navigation_workflow(
+        self,
+        request_id: str,
+        task_description: str,
+        workflow_goal: str,
+        max_iterations: int,
+        screenshot: 'Image.Image',
+        current_mouse_pos: tuple,
+        screen_size: tuple,
+        iteration_timeout: int
+    ):
+        """
+        Execute the visual navigation workflow (common logic for user and protocol requests).
+        
+        Args:
+            request_id: Unique request ID
+            task_description: Description of the task
+            workflow_goal: Overall workflow goal
+            max_iterations: Maximum iterations allowed
+            screenshot: Initial screenshot
+            current_mouse_pos: Current mouse position
+            screen_size: Screen dimensions
+            iteration_timeout: Timeout per iteration
+        """
+        import base64
+        from io import BytesIO
+        from PIL import Image
+        
+        # Get visual navigation config
+        visual_nav_config = self.config.get('visual_navigation', {})
         
         # Iteration loop: analyze → execute → verify
         iteration = 0
@@ -696,9 +819,14 @@ class AIBrainApp:
             default="y"
         )
         
+        # Debug: show what was received
+        self.console.print(f"[dim]Debug: Received confirmation: '{confirm}'[/dim]")
+        
         if confirm.lower() != 'y':
-            self.console.print("[yellow]Protocol cancelled[/yellow]")
+            self.console.print(f"[yellow]Protocol cancelled (received: '{confirm}')[/yellow]")
             return
+        
+        self.console.print("[green]✓ Confirmation received, proceeding...[/green]")
         
         # Add generated content to protocol metadata
         if hasattr(self, '_protocol_context'):
@@ -824,6 +952,7 @@ class AIBrainApp:
     def _wait_for_result(self, protocol_id: str, timeout: float = 30.0):
         """
         Wait for execution result from automation engine.
+        Also handles incoming visual navigation requests while waiting.
         
         Args:
             protocol_id: ID of the protocol to wait for
@@ -831,8 +960,28 @@ class AIBrainApp:
         """
         self.console.print(f"\n→ Waiting for execution result (timeout: {timeout}s)...")
         
+        import time
+        start_time = time.time()
+        result = None
+        
         with self.console.status("[bold green]Executing protocol...") as status:
-            result = self.message_broker.receive_status(protocol_id, timeout=timeout)
+            while time.time() - start_time < timeout:
+                # Check for visual navigation requests while waiting
+                visual_request = self.message_broker.receive_visual_navigation_request(timeout=0.1)
+                if visual_request:
+                    self.console.print("\n[bold yellow]📸 Visual navigation request during protocol execution[/bold yellow]")
+                    self._handle_incoming_visual_navigation_request(visual_request)
+                    continue
+                
+                # Check for protocol result
+                result = self.message_broker.receive_status(protocol_id, timeout=0.1)
+                if result:
+                    break
+                
+                # Update status message periodically
+                elapsed = int(time.time() - start_time)
+                if elapsed % 5 == 0:  # Update every 5 seconds
+                    status.update(f"[bold green]Executing protocol... ({elapsed}s elapsed)")
         
         if result:
             self._display_result(result)
